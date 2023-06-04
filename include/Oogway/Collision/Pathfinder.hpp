@@ -2,9 +2,9 @@
 
 #include <vector>
 #include <optional>
-#include "Overlord/Collision/Vector2d.hpp"
+#include "Oogway/Collision/Vector2d.hpp"
 
-namespace Overlord
+namespace Oogway
 {
 	
 	struct Obstacle
@@ -64,5 +64,5 @@ namespace Overlord
 
 		std::optional<Path> PathfindOffset(Vector2dd start, Vector2dd end, Vector2dd offset, int depth = 5);
 	};
-} // namespace Overlord
+} // namespace Oogway
 

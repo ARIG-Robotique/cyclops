@@ -1,4 +1,4 @@
-#include "Overlord/Collision/Pathfinder.hpp"
+#include "Oogway/Collision/Pathfinder.hpp"
 
 #include <iostream>
 #include <set>
@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <assert.h>
 
-using namespace Overlord;
+using namespace Oogway;
 using namespace std;
 
 bool Pathfinder::IsInArena(Vector2dd pos) const

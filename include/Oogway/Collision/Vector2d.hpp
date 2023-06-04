@@ -4,7 +4,7 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
-namespace Overlord
+namespace Oogway
 {
 	template<class T>
 	struct Vector2d
@@ -205,4 +205,4 @@ namespace Overlord
 		return rem;
 	}
 	
-} // namespace Overlord
+} // namespace Oogway

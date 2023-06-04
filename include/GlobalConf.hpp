@@ -12,7 +12,7 @@ enum class RunType
 {
 	CameraExternal,
 	CameraInternal,
-	Overlord,
+	Oogway,
 	OverlordSim
 };
 
