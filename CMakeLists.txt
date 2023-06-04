@@ -1,7 +1,7 @@
 # cmake needs this line
 cmake_minimum_required(VERSION 3.1)
 
-set(PROJECT_NAME sauron)
+set(PROJECT_NAME cyclops)
 add_compile_definitions(WITH_SAURON) #For Overlord display
 # Define project name
 project(${PROJECT_NAME})

@@ -7,10 +7,11 @@
 #include <opencv2/video/tracking.hpp>
 #include "TrackedObjects/ObjectIdentity.hpp"
 
-class ArucoCamera;
+class Camera;
 class BoardViz2D;
-struct CameraView;
 struct CameraArucoData;
+
+
 struct ArucoMarker
 {
 	float sideLength; //Length of a side of the tags. Tag should be square
@@ -80,8 +81,6 @@ public:
 	virtual bool ShouldBeDisplayed(unsigned long Tick);
 	virtual cv::Affine3d GetLocation();
 
-	virtual cv::Affine3d ResolveLocation(std::vector<cv::Affine3d>& Cameras, std::vector<CameraView>& views);
-
 	//Find the parameters and the accumulated transform of the tag in the component and it's childs
 	virtual bool FindTag(int MarkerID, ArucoMarker& Marker, cv::Affine3d& TransformToMarker);
 
@@ -105,6 +104,6 @@ public:
 
 cv::Affine3d GetTagTransform(float SideLength, std::vector<cv::Point2f> Corners, cv::Mat& CameraMatrix, cv::Mat& DistanceCoefficients);
 
-cv::Affine3d GetTagTransform(float SideLength, std::vector<cv::Point2f> Corners, ArucoCamera* Cam);
+cv::Affine3d GetTagTransform(float SideLength, std::vector<cv::Point2f> Corners, Camera* Cam);
 
-cv::Affine3d GetTransformRelativeToTag(ArucoMarker& Tag, std::vector<cv::Point2f> Corners, ArucoCamera* Cam);
+cv::Affine3d GetTransformRelativeToTag(ArucoMarker& Tag, std::vector<cv::Point2f> Corners, Camera* Cam);

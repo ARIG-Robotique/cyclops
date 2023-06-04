@@ -1,6 +1,7 @@
 #pragma once
 
 #include <opencv2/core.hpp>
+#include <opencv2/videoio.hpp>
 
 #ifdef WITH_CUDA
 #include <opencv2/cudacodec.hpp>
@@ -15,10 +16,9 @@ struct BufferStatus
 {
 	bool HasGrabbed;
 	bool HasAruco;
-	bool HasViews;
 
 	BufferStatus()
-	:HasGrabbed(false), HasAruco(false), HasViews(false)
+	:HasGrabbed(false), HasAruco(false)
 	{}
 };
 
@@ -46,8 +46,6 @@ struct CameraSettings
 	uint8_t Framerate;
 	//Framerate divider : you can set 60fps but only sample 1 of 2 frames to have less latency and less computation
 	uint8_t FramerateDivider;
-	//Size of the camera frame buffer, to pipeline opencv computations
-	uint8_t BufferSize;
 	//data from v4l2 about the device
 	v4l2::devices::DEVICE_INFO DeviceInfo;
 
@@ -62,8 +60,7 @@ struct CameraSettings
 	cv::Mat distanceCoeffs;
 
 	CameraSettings()
-	:Resolution(-1,-1), Framerate(0), FramerateDivider(1),
-	BufferSize(0), ApiID(-1)
+	:Resolution(-1,-1), Framerate(0), FramerateDivider(1), ApiID(cv::CAP_ANY)
 	{}
 
 	bool IsValidCalibration();
@@ -112,6 +109,8 @@ public:
 	//Are any of the frames valid ?
 	bool IsValid();
 
+	void Invalidate();
+
 	//Return the size of the first valid stored frame
 	cv::Size GetSize();
 
@@ -156,7 +155,6 @@ public:
 
 	std::vector<int> markerIDs;
 	std::vector<std::vector<cv::Point2f>> markerCorners;
-	std::vector<CameraView> markerViews;
 	std::vector<std::vector<cv::Point2d>> reprojectedCorners;
 
 public:
@@ -164,5 +162,7 @@ public:
 	BufferedFrame()
 		:Status()
 	{}
+
+	void Reset();
 
 };

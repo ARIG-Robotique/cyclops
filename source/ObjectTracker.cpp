@@ -150,38 +150,6 @@ void ObjectTracker::SolveLocationsPerObject(const vector<CameraArucoData>& Camer
 	//});
 }
 
-void ObjectTracker::SolveLocationsTagByTag(vector<Affine3d>& Cameras, vector<CameraView>& Tags)
-{
-	vector<vector<CameraView>> tagsForObject;
-	tagsForObject.resize(objects.size());
-	//assign each view of a tag to an object
-	for (int i = 0; i < Tags.size(); i++)
-	{
-		int ObjectIdx = ArucoMap[Tags[i].TagID];
-		if (ObjectIdx <0) //no object
-		{
-			continue;
-		}
-		tagsForObject[ObjectIdx].push_back(Tags[i]);
-	}
-	for (int ObjIdx = 0; ObjIdx < tagsForObject.size(); ObjIdx++)
-	{
-		vector<CameraView> arucos;
-		if (tagsForObject[ObjIdx].size() == 0)
-		{
-			continue;
-		}
-		
-		arucos.resize(tagsForObject[ObjIdx].size());
-		for (int i = 0; i < arucos.size(); i++)
-		{
-			CameraView& v = tagsForObject[ObjIdx][i];
-			arucos[i] = v;
-		}
-		objects[ObjIdx]->ResolveLocation(Cameras, arucos);
-	}
-}
-
 vector<ObjectData> ObjectTracker::GetObjectDataVector(unsigned long Tick)
 {
 	vector<ObjectData> ObjectDatas;

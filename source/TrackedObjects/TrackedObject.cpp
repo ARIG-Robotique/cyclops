@@ -89,99 +89,6 @@ Affine3d TrackedObject::GetLocation()
 	return Location;
 }
 
-Affine3d TrackedObject::ResolveLocation(vector<Affine3d>& Cameras, vector<CameraView>& views)
-{
-	vector<Affine3d> positions;
-	vector<Vec3d> CameraRays;
-	vector<int> bestViews; //each element contains the index of a view which is the best for the camera
-	positions.resize(views.size());
-	CameraRays.resize(views.size());
-
-	for (int ViewIdx = 0; ViewIdx < views.size(); ViewIdx++)
-	{
-		for (int MarkerIdx = 0; MarkerIdx < markers.size(); MarkerIdx++)
-		{
-			if (markers[MarkerIdx].number == views[ViewIdx].TagID)
-			{
-				Affine3d MarkerWorld = Cameras[views[ViewIdx].Camera] * views[ViewIdx].TagTransform;
-				Affine3d OriginWorld = MarkerWorld * markers[MarkerIdx].Pose.inv();
-				positions[ViewIdx] = OriginWorld;
-				Vec3d ray = OriginWorld.translation() - Cameras[views[ViewIdx].Camera].translation();
-				double raylength = sqrt(ray.ddot(ray));
-				Vec3d raydir = ray / raylength;
-				CameraRays[ViewIdx] = ray;
-				float localscore = MarkerWorld.rotation().col(2).ddot(-raydir);
-				views[ViewIdx].score = localscore;
-				bool HasCameraInBestViews = false;
-				for (int k = 0; k < bestViews.size(); k++)
-				{
-					if (views[bestViews[k]].Camera != views[ViewIdx].Camera)
-					{
-						continue;
-					}
-					if (views[bestViews[k]].score < views[ViewIdx].score)
-					{
-						bestViews[k] = ViewIdx;
-					}
-					HasCameraInBestViews = true;
-					break;
-				}
-				if (!HasCameraInBestViews)
-				{
-					bestViews.push_back(ViewIdx);
-				}
-				break;
-			}
-		}
-	}
-	/*vector<Affine3d> ChildLocations;
-	for (int i = 0; i < childs.size(); i++)
-	{
-		Affine3d ChildWorld = childs[i]->ResolveLocation(Cameras, views);
-		ChildLocations.push_back(childs[i]->Location * ChildWorld);
-	}*/
-	if (bestViews.size() >= 2) //more than one camera sees the object
-	{
-		int best =-1;
-		int secondbest = -1;
-		for (int i = 0; i < bestViews.size(); i++)
-		{
-			if (best==-1)
-			{
-				best=i;
-			}
-			else if (views[bestViews[i]].score > views[bestViews[best]].score)
-			{
-				secondbest = best;
-				best = i;
-			}
-			else if (secondbest ==-1)
-			{
-				secondbest = i;
-			}
-			else if (views[bestViews[i]].score > views[bestViews[secondbest]].score)
-			{
-				secondbest = i;
-			}
-		}
-		int bestidx = bestViews[best];
-		int secondbestidx = bestViews[secondbest];
-		Vec3d bestpoint, secondbestpoint;
-		ClosestPointsOnTwoLine(positions[bestidx].translation(), CameraRays[bestidx], 
-		positions[secondbestidx].translation(), CameraRays[secondbestidx], bestpoint, secondbestpoint);
-
-		Affine3d theend = Affine3d(positions[bestidx].rotation(), (bestpoint + secondbestpoint)/2);
-		Location = theend;
-	}
-	else
-	{
-		/*cout << "Only one camera sees "<< Name << " so positioning using aruco #" 
-		<< views[bestViews[0]].TagID << " (score " << views[bestViews[0]].score << ")" << endl;*/
-		Location = positions[bestViews[0]];
-	}
-	return Location;
-}
-
 bool TrackedObject::FindTag(int MarkerID, ArucoMarker& Marker, Affine3d& TransformToMarker)
 {
 	for (int i = 0; i < markers.size(); i++)
@@ -382,7 +289,7 @@ Affine3d GetTagTransform(float SideLength, std::vector<Point2f> Corners, Mat& Ca
 	return Affine3d(rotationMatrix, tvec);
 }
 
-Affine3d GetTagTransform(float SideLength, std::vector<Point2f> Corners, ArucoCamera* Cam)
+Affine3d GetTagTransform(float SideLength, std::vector<Point2f> Corners, Camera* Cam)
 {
 	Mat rvec, tvec;
 	Mat CamMatrix, distCoeffs;
@@ -390,7 +297,7 @@ Affine3d GetTagTransform(float SideLength, std::vector<Point2f> Corners, ArucoCa
 	return GetTagTransform(SideLength, Corners, CamMatrix, distCoeffs);
 }
 
-Affine3d GetTransformRelativeToTag(ArucoMarker& Tag, std::vector<Point2f> Corners, ArucoCamera* Cam)
+Affine3d GetTransformRelativeToTag(ArucoMarker& Tag, std::vector<Point2f> Corners, Camera* Cam)
 {
 	return Tag.Pose * GetTagTransform(Tag.sideLength, Corners, Cam).inv();
 }

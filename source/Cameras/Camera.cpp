@@ -20,7 +20,6 @@
 
 #include "ObjectTracker.hpp"
 #include "GlobalConf.hpp"
-#include "data/FVector2D.hpp"
 
 using namespace cv;
 using namespace std;
@@ -66,9 +65,9 @@ void Camera::GetCameraSettingsAfterUndistortion(Mat& CameraMatrix, Mat& Distance
 	DistanceCoefficients = Mat::zeros(4,1, CV_64F);
 }
 
-BufferStatus Camera::GetStatus(int BufferIndex)
+BufferStatus Camera::GetStatus()
 {
-	return FrameBuffer[BufferIndex].Status;
+	return FrameBuffer.Status;
 }
 
 bool Camera::StartFeed()
@@ -77,25 +76,19 @@ bool Camera::StartFeed()
 	return false;
 }
 
-bool Camera::Grab(int BufferIndex)
+bool Camera::Grab()
 {
 	cerr << "ERROR : Tried to grab on base class Camera !" << endl;
 	return false;
 }
 
-bool Camera::Read(int BufferIndex)
+bool Camera::Read()
 {
 	cerr << "ERROR : Tried to read on base class Camera !" << endl;
 	return false;
 }
 
-bool Camera::InjectImage(int BufferIndex, UMat& frame)
-{
-	cerr << "ERROR : Tried to read on base class Camera !" << endl;
-	return false;
-}
-
-void Camera::Undistort(int BufferIdx)
+void Camera::Undistort()
 {
 	CameraSettings setcopy = GetCameraSettings();
 	if (!HasUndistortionMaps)
@@ -126,7 +119,7 @@ void Camera::Undistort(int BufferIdx)
 		HasUndistortionMaps = true;
 	}
 
-	BufferedFrame& buff = FrameBuffer[BufferIdx];
+	BufferedFrame& buff = FrameBuffer;
 	
 	#ifdef WITH_CUDA
 	if (!buff.FrameRaw.MakeGPUAvailable())
@@ -149,9 +142,9 @@ void Camera::Undistort(int BufferIdx)
 	#endif
 }
 
-void Camera::GetFrameUndistorted(int BufferIndex, UMat& frame)
+void Camera::GetFrameUndistorted(UMat& frame)
 {
-	BufferedFrame& buff = FrameBuffer[BufferIndex];
+	BufferedFrame& buff = FrameBuffer;
 	if (!buff.FrameUndistorted.MakeCPUAvailable())
 	{
 		return;
@@ -211,14 +204,14 @@ void Camera::Calibrate(vector<vector<Point3f>> objectPoints,
 	
 }
 
-void Camera::GetFrame(int BufferIndex, UMat& OutFrame)
+void Camera::GetFrame(UMat& OutFrame)
 {
-	FrameBuffer[BufferIndex].FrameRaw.GetCPUFrame(OutFrame);
+	FrameBuffer.FrameRaw.GetCPUFrame(OutFrame);
 }
 
-void Camera::GetOutputFrame(int BufferIndex, UMat& OutFrame, Rect window)
+void Camera::GetOutputFrame(UMat& OutFrame, Rect window)
 {
-	BufferedFrame& buff = FrameBuffer[BufferIndex];
+	BufferedFrame& buff = FrameBuffer;
 	MixedFrame& frametoUse = buff.FrameUndistorted;
 	if (!frametoUse.IsValid())
 	{
@@ -292,7 +285,7 @@ void Camera::GetOutputFrame(int BufferIndex, UMat& OutFrame, Rect window)
 			}
 			
 		}
-		aruco::drawDetectedMarkers(OutFrame, ArucoCornersResized, FrameBuffer[BufferIndex].markerIDs);
+		aruco::drawDetectedMarkers(OutFrame, ArucoCornersResized, buff.markerIDs);
 		if (ArucoCornersReprojected.size() > 0)
 		{
 			aruco::drawDetectedMarkers(OutFrame, ArucoCornersReprojected, ArucoIDsReprojected, cv::Scalar(255,0,0));
@@ -317,12 +310,12 @@ Affine3d Camera::GetObjectTransform(const CameraArucoData& CameraData, float& Su
 }
 
 ///////////////////////////////
-// SECTION ArucoCamera
+// SECTION Camera
 ///////////////////////////////
 
-void ArucoCamera::RescaleFrames(int BufferIdx)
+void Camera::RescaleFrames()
 {
-	BufferedFrame& buff = FrameBuffer[BufferIdx];
+	BufferedFrame& buff = FrameBuffer;
 	#ifdef WITH_CUDA
 	if (!buff.FrameUndistorted.MakeGPUAvailable())
 	{
@@ -367,9 +360,9 @@ void ArucoCamera::RescaleFrames(int BufferIdx)
 	#endif
 }
 
-void ArucoCamera::detectMarkers(int BufferIndex, aruco::ArucoDetector& Detector)
+void Camera::detectMarkers(aruco::ArucoDetector& Detector)
 {
-	BufferedFrame& buff = FrameBuffer[BufferIndex];
+	BufferedFrame& buff = FrameBuffer;
 
 	Size framesize = Settings.Resolution;
 	Size rescaled = GetArucoReduction();
@@ -394,7 +387,7 @@ void ArucoCamera::detectMarkers(int BufferIndex, aruco::ArucoDetector& Detector)
 
 	buff.reprojectedCorners.resize(IDs.size());
 
-	FVector2D scalefactor = FVector2D(framesize)/FVector2D(rescaled);
+	Size2d scalefactor((double)framesize.width/rescaled.width, (double)framesize.height/rescaled.height);
 
 	float reductionFactors = GetReductionFactor();
 
@@ -405,8 +398,9 @@ void ArucoCamera::detectMarkers(int BufferIndex, aruco::ArucoDetector& Detector)
 		{
 			for (size_t k = 0; k < 4; k++)
 			{
-				FVector2D pos = FVector2D(corners[j][k]) * scalefactor;
-				corners[j][k] = pos;
+				Point2f& corner = corners[j][k];
+				corner.x *= scalefactor.width;
+				corner.y *= scalefactor.height;
 			}
 		}
 
@@ -422,55 +416,22 @@ void ArucoCamera::detectMarkers(int BufferIndex, aruco::ArucoDetector& Detector)
 	buff.Status.HasAruco = true;
 }
 
-bool ArucoCamera::GetMarkerData(int BufferIndex, CameraArucoData& CameraData)
+bool Camera::GetMarkerData(CameraArucoData& CameraData)
 {
-	if (!FrameBuffer[BufferIndex].Status.HasAruco)
+	BufferedFrame& buff = FrameBuffer;
+	if (!buff.Status.HasAruco)
 	{
 		return false;
 	}
-	CameraData.TagIDs = FrameBuffer[BufferIndex].markerIDs;
-	CameraData.TagCorners = FrameBuffer[BufferIndex].markerCorners;
+	CameraData.TagIDs = buff.markerIDs;
+	CameraData.TagCorners = buff.markerCorners;
 	GetCameraSettingsAfterUndistortion(CameraData.CameraMatrix, CameraData.DistanceCoefficients);
 	CameraData.CameraTransform = Location;
 	CameraData.SourceCamera = this;
 	return true;
 }
 
-void ArucoCamera::SetMarkerReprojection(int MarkerIndex, const vector<cv::Point2d> &Corners)
+void Camera::SetMarkerReprojection(int MarkerIndex, const vector<cv::Point2d> &Corners)
 {
-	FrameBuffer[0].reprojectedCorners[MarkerIndex] = Corners;
-}
-
-void ArucoCamera::SolveMarkers(int BufferIndex, int CameraIdx, ObjectTracker* registry)
-{
-	BufferedFrame& buff = FrameBuffer[BufferIndex];
-	if (!buff.Status.HasAruco)
-	{
-		return;
-	}
-	buff.markerViews.resize(buff.markerIDs.size());
-	Mat CamMatrix, distCoefs;
-	GetCameraSettingsAfterUndistortion(CamMatrix, distCoefs);
-	for (int i = 0; i < buff.markerIDs.size(); i++)
-	{
-		float sideLength = registry->GetArucoSize(buff.markerIDs[i]);
-		Affine3d TagTransform = GetTagTransform(sideLength, buff.markerCorners[i], CamMatrix, distCoefs);
-		buff.markerViews[i] = CameraView(CameraIdx, buff.markerIDs[i], TagTransform);
-	}
-	buff.Status.HasViews = true;
-}
-
-int ArucoCamera::GetCameraViewsSize(int BufferIndex)
-{
-	return FrameBuffer[BufferIndex].markerViews.size();
-}
-
-bool ArucoCamera::GetCameraViews(int BufferIndex, vector<CameraView>& views)
-{
-	if (!FrameBuffer[BufferIndex].Status.HasViews)
-	{
-		return false;
-	}
-	views = FrameBuffer[BufferIndex].markerViews;
-	return true;
+	FrameBuffer.reprojectedCorners[MarkerIndex] = Corners;
 }

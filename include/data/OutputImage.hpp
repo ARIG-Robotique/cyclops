@@ -11,11 +11,11 @@ public:
 	OutputImage(/* args */);
 	~OutputImage();
 
-	virtual void SetFrame(int BufferIndex, cv::UMat& frame);
+	virtual void SetFrame(cv::UMat& frame);
 
-	virtual void GetFrame(int BufferIndex, cv::UMat& frame);
+	virtual void GetFrame(cv::UMat& frame);
 
-	virtual void GetOutputFrame(int BufferIndex, cv::UMat& frame, cv::Rect window);
+	virtual void GetOutputFrame(cv::UMat& frame, cv::Rect window);
 };
 
-cv::UMat ConcatCameras(int BufferIndex, std::vector<OutputImage*> Cameras, int NumCams);
+cv::UMat ConcatCameras(std::vector<OutputImage*> Cameras, int NumCams);

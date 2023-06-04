@@ -26,7 +26,7 @@ using namespace cv;
 using namespace std;
 
 //Camera steps pipeline
-void BufferedPipeline(int BufferCaptureIdx, vector<ArucoCamera*> Cameras, 
+void BufferedPipeline(vector<Camera*> Cameras, 
 	aruco::ArucoDetector& Detector, ObjectTracker* registry);
 
 map<PacketType, bool> GetDefaultAllowMap();

@@ -12,7 +12,7 @@
 #include "data/ImageTypes.hpp"
 
 
-class VideoCaptureCamera : public ArucoCamera
+class VideoCaptureCamera : public Camera
 {
 
 
@@ -23,7 +23,7 @@ private:
 public:
 
 	VideoCaptureCamera(CameraSettings InSettings)
-		:ArucoCamera(InSettings)
+		:Camera(InSettings)
 	{
 	}
 
@@ -40,12 +40,9 @@ public:
 
 	//Lock a frame to be captured at this time
 	//This allow for simultaneous capture
-	virtual bool Grab(int BufferIndex) override;
+	virtual bool Grab() override;
 
 	//Retrieve or read a frame
-	virtual bool Read(int BufferIndex) override;
-
-	//Useful to simulate the pipeline, inject an image as if the camera had captured it.
-	virtual bool InjectImage(int BufferIndex, cv::UMat& frame) override;
+	virtual bool Read() override;
 
 };

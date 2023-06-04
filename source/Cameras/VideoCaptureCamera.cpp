@@ -20,7 +20,6 @@
 #include "TrackedObjects/TrackedObject.hpp" //CameraView
 #include "ObjectTracker.hpp"
 #include "GlobalConf.hpp"
-#include "data/FVector2D.hpp"
 
 using namespace cv;
 using namespace std;
@@ -32,11 +31,7 @@ bool VideoCaptureCamera::StartFeed()
 	{
 		return false;
 	}
-	FrameBuffer.resize(Settings.BufferSize);
-	for (int i = 0; i < Settings.BufferSize; i++)
-	{
-		FrameBuffer[i] = BufferedFrame();
-	}
+	FrameBuffer = BufferedFrame();
 
 	string pathtodevice = Settings.DeviceInfo.device_paths[0];	
 	
@@ -141,43 +136,42 @@ bool VideoCaptureCamera::StartFeed()
 	return true;
 }
 
-bool VideoCaptureCamera::Grab(int BufferIndex)
+bool VideoCaptureCamera::Grab()
 {
 	if (!connected)
 	{
 		return false;
 	}
+	BufferedFrame& buff = FrameBuffer;
 	bool grabsuccess = false;
 	grabsuccess = feed->grab();
 	if (grabsuccess)
 	{
-		FrameBuffer[BufferIndex].Status.HasGrabbed = true;
-		FrameBuffer[BufferIndex].CaptureTick = getCPUTickCount();
+		buff.Status.HasGrabbed = true;
+		buff.CaptureTick = getCPUTickCount();
 		RegisterNoError();
 	}
 	else
 	{
-		cerr << "Failed to grab frame for camera " << Settings.DeviceInfo.device_description << " with buffer " << BufferIndex <<endl;
-		FrameBuffer[BufferIndex].Status = BufferStatus();
+		cerr << "Failed to grab frame for camera " << Settings.DeviceInfo.device_description <<endl;
+		buff.Status = BufferStatus();
 		RegisterError();
 	}
 	
 	return grabsuccess;
 }
 
-bool VideoCaptureCamera::Read(int BufferIndex)
+bool VideoCaptureCamera::Read()
 {
-	BufferedFrame& buff = FrameBuffer[BufferIndex];
+	BufferedFrame& buff = FrameBuffer;
 	if (!connected)
 	{
 		return false;
 	}
 	bool ReadSuccess = false;
-	buff.FrameRaw.HasCPU = false; 
-	#ifdef WITH_CUDA
-	buff.FrameRaw.HasGPU = false;
-	#endif
-	if (buff.Status.HasGrabbed)
+	bool HadGrabbed = buff.Status.HasGrabbed;
+	buff.Reset();
+	if (HadGrabbed)
 	{
 		ReadSuccess = feed->retrieve(buff.FrameRaw.CPUFrame);
 	}
@@ -188,33 +182,12 @@ bool VideoCaptureCamera::Read(int BufferIndex)
 	}
 	buff.FrameRaw.HasCPU = ReadSuccess;
 	
-	if (ReadSuccess)
+	if (!ReadSuccess)
 	{
-		buff.Status = BufferStatus();
-	}
-	else
-	{
-		cerr << "Failed to read frame for camera " << Settings.DeviceInfo.device_description << " with buffer " << BufferIndex <<endl;
-		buff.Status = BufferStatus();
-		buff.FrameRaw = MixedFrame();
-		buff.FrameUndistorted = MixedFrame();
-		buff.GrayFrame = MixedFrame();
-		buff.RescaledFrame = MixedFrame();
+		cerr << "Failed to read frame for camera " << Settings.DeviceInfo.device_description <<endl;
 		RegisterError();
 		return false;
 	}
 	RegisterNoError();
-	return true;
-}
-
-bool VideoCaptureCamera::InjectImage(int BufferIndex, UMat& frame)
-{
-	BufferedFrame& buff = FrameBuffer[BufferIndex];
-	buff.FrameRaw.CPUFrame = frame;
-	buff.FrameRaw.HasCPU = true;
-	#ifdef WITH_CUDA
-	buff.FrameRaw.HasGPU = false;
-	#endif
-	buff.Status = BufferStatus();
 	return true;
 }

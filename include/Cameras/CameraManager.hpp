@@ -22,8 +22,8 @@ private:
 	std::vector<std::string> paths;
 public:
 	std::function<bool(CameraSettings)> OnConnect;
-	std::function<bool(ArucoCamera*)> PostCameraConnect, OnDisconnect;
-	std::vector<ArucoCamera*> Cameras;
+	std::function<bool(Camera*)> PostCameraConnect, OnDisconnect;
+	std::vector<Camera*> Cameras;
 
 	CameraManager(CameraStartType InStart, std::string InFilter, bool InAllowNoCalib = false)
 		:Start(InStart), Filter(InFilter), AllowNoCalib(InAllowNoCalib),
@@ -51,7 +51,7 @@ private:
 	template<class CameraType>
 	CameraType* StartCamera(CameraSettings Settings)
 	{
-		ArucoCamera* cam = new CameraType(Settings);
+		Camera* cam = new CameraType(Settings);
 		if(!cam->StartFeed())
 		{
 			std::cerr << "ERROR! Unable to open camera " << cam->GetCameraSettings().DeviceInfo.device_description << std::endl;
@@ -126,7 +126,7 @@ public:
 								
 							}
 							
-							ArucoCamera* cam = StartCamera<CameraType>(settings);
+							Camera* cam = StartCamera<CameraType>(settings);
 							std::vector<InternalCameraConfig>& campos = GetInternalCameraPositionsConfig();
 							for (int j = 0; j < campos.size(); j++)
 							{

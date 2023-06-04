@@ -14,7 +14,7 @@ void CDFRInternalMain(bool direct, bool v3d)
 
 	auto& Detector = GetArucoDetector();
 
-	vector<ArucoCamera*> &physicalCameras = CameraMan.Cameras;
+	vector<Camera*> &physicalCameras = CameraMan.Cameras;
 	if (direct)
 	{
 		namedWindow("Cameras", WINDOW_NORMAL);
@@ -50,7 +50,7 @@ void CDFRInternalMain(bool direct, bool v3d)
 		double deltaTime = fps.GetDeltaTime();
 		CameraMan.Tick<VideoCaptureCamera>();
 		int64 GrabTick = getTickCount();
-		BufferedPipeline(0, vector<ArucoCamera*>(physicalCameras.begin(), physicalCameras.end()), Detector, &tracker);
+		BufferedPipeline(vector<Camera*>(physicalCameras.begin(), physicalCameras.end()), Detector, &tracker);
 
 		//cout << "Pipeline took " << TimePipeline << "s to run" << endl;
 		
@@ -60,8 +60,8 @@ void CDFRInternalMain(bool direct, bool v3d)
 
 		for (int i = 0; i < physicalCameras.size(); i++)
 		{
-			ArucoCamera* cam = physicalCameras[i];
-			if (!cam->GetMarkerData(0, arucoDatas[i]))
+			Camera* cam = physicalCameras[i];
+			if (!cam->GetMarkerData(arucoDatas[i]))
 			{
 				continue;
 			}
@@ -77,7 +77,7 @@ void CDFRInternalMain(bool direct, bool v3d)
 			{
 				OutputTargets.push_back(physicalCameras[i]);
 			}
-			UMat image = ConcatCameras(0, OutputTargets, OutputTargets.size());
+			UMat image = ConcatCameras(OutputTargets, OutputTargets.size());
 			//board.GetOutputFrame(0, image, GetFrameSize());
 			//cout << "Concat OK" <<endl;
 			fps.AddFpsToImage(image, deltaTime);

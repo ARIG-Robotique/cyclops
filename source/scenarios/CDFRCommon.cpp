@@ -1,16 +1,18 @@
 #include "Scenarios/CDFRCommon.hpp"
 #include "data/ManualProfiler.hpp"
 
-ManualProfiler mp("Pipeline ", {"Read", "Undistort", "Rescale", "ArucoDetect", "ArucoSolve"});
+typedef ManualProfiler<false> pipelineprof;
 
-void BufferedPipeline(int BufferCaptureIdx, vector<ArucoCamera*> Cameras, aruco::ArucoDetector& Detector, ObjectTracker* registry)
+pipelineprof mp("Pipeline ", {"Read", "Undistort", "Rescale", "ArucoDetect", "ArucoSolve"});
+
+void BufferedPipeline(vector<Camera*> Cameras, aruco::ArucoDetector& Detector, ObjectTracker* registry)
 {
 	int numCams = Cameras.size();
 	vector<uint8_t> BufToCamMap;
 	vector<uint8_t> BufIdxMap;
 	for (int i = 0; i < Cameras.size(); i++)
 	{
-		Cameras[i]->Grab(BufferCaptureIdx);
+		Cameras[i]->Grab();
 		for (size_t j = 0; j < 1/*Cameras[i]->GetCameraSettings().BufferSize*/; j++)
 		{
 			BufToCamMap.push_back(i);
@@ -19,40 +21,37 @@ void BufferedPipeline(int BufferCaptureIdx, vector<ArucoCamera*> Cameras, aruco:
 		
 	}
 	//Range range(0, numCams*Camera::FrameBufferSize);
-	vector<ManualProfiler> mps;
+	vector<pipelineprof> mps;
 	mps.resize(BufToCamMap.size());
 	parallel_for_(Range(0, BufToCamMap.size()), [&](const Range& range)
 	{
 		for (int i = range.start; i < range.end; i++)
 		{
-			ManualProfiler& localprof = mps[i];
+			pipelineprof& localprof = mps[i];
 			int pf = 0;
 			localprof.EnterSection(pf++);
 			int CamIdx = BufToCamMap[i];
-			ArucoCamera* cam = Cameras[CamIdx];
+			Camera* cam = Cameras[CamIdx];
 			int Buffer0 = BufIdxMap[i];
-			int BufferIdx = (BufferCaptureIdx + Buffer0) % cam->GetCameraSettings().BufferSize;
 			//Detect aruco
-			cam->Read(BufferIdx);
+			cam->Read();
 			localprof.EnterSection(pf++);
-			cam->Undistort(BufferIdx);
+			cam->Undistort();
 			localprof.EnterSection(pf++);
-			cam->RescaleFrames(BufferIdx);
+			cam->RescaleFrames();
 			localprof.EnterSection(pf++);
-			cam->detectMarkers(BufferIdx, Detector);
-			//localprof.EnterSection(pf++);
-			//cam->SolveMarkers(BufferIdx, CamIdx, registry);
+			cam->detectMarkers(Detector);
 			localprof.EnterSection(-1);
 			
 			
 		}
 		//cout << "Aruco stripe from " << range.start << " to " << range.end << endl;
 	}, BufToCamMap.size());
-	/*for (int i = 0; i < BufToCamMap.size(); i++)
+	for (int i = 0; i < BufToCamMap.size(); i++)
 	{
 		mp += mps[i];
-	}*/
-	//mp.PrintIfShould();
+	}
+	mp.PrintIfShould();
 	
 } 
 

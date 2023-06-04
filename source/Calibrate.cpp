@@ -249,13 +249,18 @@ void CalibrationWorker()
 bool docalibration(CameraSettings CamSett)
 {
 	bool HasCamera = CamSett.IsValid();
-	CamSett.BufferSize = 1;
 
-	CamToCalib = new VideoCaptureCamera(CamSett);
+	
 	if (HasCamera)
 	{
+		CamToCalib = new VideoCaptureCamera(CamSett);
 		CamToCalib->StartFeed();
 	}
+	else
+	{
+		CamToCalib = nullptr;
+	}
+	
 
 	bool AutoCapture = false;
 	float AutoCaptureFramerate = 2;
@@ -278,9 +283,9 @@ bool docalibration(CameraSettings CamSett)
 			Mat image = imread(pathes[i]);
 			UMat image2, undist;
 			image.copyTo(image2);
-			CamToCalib->InjectImage(0, image2);
-			CamToCalib->Undistort(0);
-			CamToCalib->GetFrameUndistorted(0, undist);
+			CamToCalib->Read();
+			CamToCalib->Undistort();
+			CamToCalib->GetFrameUndistorted(undist);
 			imshow(CalibWindowName, undist);
 			waitKey(1000);
 		}
@@ -314,7 +319,7 @@ bool docalibration(CameraSettings CamSett)
 		cuda::Stream resizestream;
 		#endif
 		
-		if (!CamToCalib->Read(0))
+		if (!CamToCalib->Read())
 		{
 			//cout<< "read fail" <<endl;
 			failed++;
@@ -331,13 +336,13 @@ bool docalibration(CameraSettings CamSett)
 		if (ShowUndistorted)
 		{
 			UMat frameundist;
-			CamToCalib->Undistort(0);
+			CamToCalib->Undistort();
 
-			CamToCalib->GetOutputFrame(0, frame, Rect(Point2i(0,0), CamSett.Resolution));
+			CamToCalib->GetOutputFrame(frame, Rect(Point2i(0,0), CamSett.Resolution));
 		}
 		else
 		{
-			CamToCalib->GetFrame(0, frame);
+			CamToCalib->GetFrame(frame);
 		}
 		
 		if (GetScreenResolution() != CamSett.Resolution)

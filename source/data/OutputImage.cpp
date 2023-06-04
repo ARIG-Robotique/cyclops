@@ -12,18 +12,18 @@ OutputImage::~OutputImage()
 {
 }
 
-void OutputImage::SetFrame(int BufferIndex, UMat& InFrame)
+void OutputImage::SetFrame(UMat& InFrame)
 {
 
 }
 
-void OutputImage::GetFrame(int BufferIndex, UMat& OutFrame)
+void OutputImage::GetFrame(UMat& OutFrame)
 {
 
 }
 
 
-void OutputImage::GetOutputFrame(int BufferIndex, UMat& OutFrame, Rect window)
+void OutputImage::GetOutputFrame(UMat& OutFrame, Rect window)
 {
 
 }
@@ -49,7 +49,7 @@ Size findSplit(Size screensize, Size targetAspect, int numscreen)
 	return splits;
 }
 
-UMat ConcatCameras(int BufferIndex, vector<OutputImage*> Cameras, int NumCams)
+UMat ConcatCameras(vector<OutputImage*> Cameras, int NumCams)
 {
 	Size screensize = GetScreenResolution();
 	UMat concatenated(screensize, CV_8UC3, Scalar(0,0,255));
@@ -67,7 +67,7 @@ UMat ConcatCameras(int BufferIndex, vector<OutputImage*> Cameras, int NumCams)
 			{
 				continue;
 			}*/
-			Cameras[i]->GetOutputFrame(0, concatenated, roi);
+			Cameras[i]->GetOutputFrame(concatenated, roi);
 			//Size offset = (Size(winWidth, winHeight) - region.size())/2;
 			//region.copyTo(concatenated(Rect(roi.x+offset.width, roi.y+offset.height, region.cols, region.rows)));
 			//region.copyTo(concatenated(roi));

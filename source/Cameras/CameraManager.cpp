@@ -32,7 +32,6 @@ CameraSettings CameraManager::DeviceToSettings(v4l2::devices::DEVICE_INFO device
 	settings.Framerate = cfg.CaptureFramerate;
 	settings.FramerateDivider = cfg.FramerateDivider;
 	settings.DeviceInfo = device;
-	settings.BufferSize = 2;
 	settings.StartType = Start;
 
 	//these only get populated when StartFeed is called

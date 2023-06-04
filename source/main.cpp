@@ -31,8 +31,6 @@
 #include "Scenarios/CDFRInternal.hpp"
 #include "mapping.hpp"
 
-#include "Overlord/Overlord.hpp"
-
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
@@ -219,20 +217,6 @@ int main(int argc, char** argv )
 	case RunType::CameraInternal :
 		cout << "Starting internal camera program" <<endl;
 		CDFRInternalMain(direct, opengl);
-		break;
-	case RunType::Overlord : 
-		cout << "Starting Overlord" << endl;
-		{
-			Overlord::Manager man;
-			man.Thread(opengl, false);
-		}
-		break;
-	case RunType::OverlordSim :
-		cout << "Starting Overlord in simulation mode" << endl;
-		{
-			Overlord::Manager man;
-			man.Thread(opengl, true);
-		}
 		break;
 	default:
 		cerr << "Run type unknown, nothing started" << endl;

@@ -10,7 +10,7 @@
 #include <thread>
 #include <memory>
 
-CDFRTeam GetTeamFromCameras(vector<ArucoCamera*> Cameras)
+CDFRTeam GetTeamFromCameras(vector<Camera*> Cameras)
 {
 	if (Cameras.size() == 0)
 	{
@@ -25,7 +25,7 @@ CDFRTeam GetTeamFromCameras(vector<ArucoCamera*> Cameras)
 		{CDFRTeam::Green, {{0, -ydist}, {-xdist, ydist}, {xdist, ydist}, {-1.622, 0.1}}}
 	};
 	map<CDFRTeam, int> TeamScores;
-	for (ArucoCamera* cam : Cameras)
+	for (Camera* cam : Cameras)
 	{
 		auto campos = cam->GetLocation().translation();
 		Vec2d pos2d(campos[0], campos[1]);
@@ -70,7 +70,7 @@ CDFRTeam GetTeamFromCameras(vector<ArucoCamera*> Cameras)
 
 void CDFRExternalMain(bool direct, bool v3d)
 {
-	ManualProfiler prof("frames ");
+	ManualProfiler<false> prof("frames ");
 	int ps = 0;
 	prof.NameSection(ps++, "CameraMan Tick");
 	prof.NameSection(ps++, "Camera Pipeline");
@@ -82,7 +82,7 @@ void CDFRExternalMain(bool direct, bool v3d)
 
 	auto& Detector = GetArucoDetector();
 
-	vector<ArucoCamera*>& physicalCameras = CameraMan.Cameras;
+	vector<Camera*>& physicalCameras = CameraMan.Cameras;
 
 	//display/debug section
 	FrameCounter fps;
@@ -134,14 +134,14 @@ void CDFRExternalMain(bool direct, bool v3d)
 	
 	
 	//track and untrack cameras dynamically
-	CameraMan.PostCameraConnect = [&bluetracker, &greentracker](ArucoCamera* cam) -> bool
+	CameraMan.PostCameraConnect = [&bluetracker, &greentracker](Camera* cam) -> bool
 	{
 		bluetracker.RegisterTrackedObject(cam);
 		greentracker.RegisterTrackedObject(cam);
 		cout << "Registering new camera @" << cam << endl;
 		return true;
 	};
-	CameraMan.OnDisconnect = [&bluetracker, &greentracker](ArucoCamera* cam) -> bool
+	CameraMan.OnDisconnect = [&bluetracker, &greentracker](Camera* cam) -> bool
 	{
 		bluetracker.UnregisterTrackedObject(cam);
 		greentracker.UnregisterTrackedObject(cam);
@@ -192,7 +192,7 @@ void CDFRExternalMain(bool direct, bool v3d)
 			TrackerToUse = &greentracker;
 		}
 		 
-		BufferedPipeline(0, vector<ArucoCamera*>(physicalCameras.begin(), physicalCameras.end()), Detector, TrackerToUse);
+		BufferedPipeline(vector<Camera*>(physicalCameras.begin(), physicalCameras.end()), Detector, TrackerToUse);
 		prof.EnterSection(ps++);
 		int NumCams = physicalCameras.size();
 		vector<CameraArucoData> arucoDatas;
@@ -205,9 +205,8 @@ void CDFRExternalMain(bool direct, bool v3d)
 
 		for (int i = 0; i < NumCams; i++)
 		{
-			ArucoCamera* cam = physicalCameras[i];
-			vector<CameraView> CameraViews;
-			if (!cam->GetMarkerData(0, arucoDatas[i]))
+			Camera* cam = physicalCameras[i];
+			if (!cam->GetMarkerData(arucoDatas[i]))
 			{
 				continue;
 			}
@@ -257,7 +256,7 @@ void CDFRExternalMain(bool direct, bool v3d)
 			}
 			//OutputTargets.push_back(board);
 			//board->DisplayData(ObjData);
-			UMat image = ConcatCameras(0, OutputTargets, OutputTargets.size());
+			UMat image = ConcatCameras(OutputTargets, OutputTargets.size());
 			//board.GetOutputFrame(0, image, GetFrameSize());
 			//cout << "Concat OK" <<endl;
 			fps.AddFpsToImage(image, deltaTime);

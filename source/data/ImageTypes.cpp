@@ -11,7 +11,7 @@ bool CameraSettings::IsValidCalibration()
 
 bool CameraSettings::IsValid()
 {
-	return Framerate >0 && Resolution.width >0 && Resolution.height >0 && BufferSize > 0 && FramerateDivider > 0;
+	return Framerate >0 && Resolution.width >0 && Resolution.height >0 && FramerateDivider > 0;
 }
 
 bool MixedFrame::IsValid()
@@ -21,6 +21,14 @@ bool MixedFrame::IsValid()
 	|| HasGPU
 	#endif
 	;
+}
+
+void MixedFrame::Invalidate()
+{
+	HasCPU = false;
+	#ifdef WITH_CUDA 
+	HasGPU = false;
+	#endif
 }
 
 Size MixedFrame::GetSize()
@@ -94,3 +102,12 @@ bool MixedFrame::MakeGPUAvailable()
 	return true;
 }
 #endif
+
+void BufferedFrame::Reset()
+{
+	Status = BufferStatus();
+	FrameRaw.Invalidate();
+	FrameUndistorted.Invalidate();
+	GrayFrame.Invalidate();
+	RescaledFrame.Invalidate();
+}

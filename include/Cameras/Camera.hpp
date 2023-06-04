@@ -61,7 +61,7 @@ public:
 
 protected:
 	//frame buffer, increases fps but also latency
-	std::vector<BufferedFrame> FrameBuffer;
+	BufferedFrame FrameBuffer;
 
 public:
 	//status
@@ -74,14 +74,11 @@ public:
 		HasUndistortionMaps(false),
 		errors(0),
 		connected(false),
-		FrameBuffer(InSettings.BufferSize)
-	{
-	}
+		FrameBuffer()
+	{}
 
 	~Camera()
-	{
-		
-	}
+	{}
 
 protected:
 	void RegisterError();
@@ -99,72 +96,44 @@ public:
 	virtual void GetCameraSettingsAfterUndistortion(cv::Mat& CameraMatrix, cv::Mat& DistanceCoefficients);
 
 	//Get the status of a buffer (read, aruco'ed, 3D-ed...)
-	virtual BufferStatus GetStatus(int BufferIndex);
+	virtual BufferStatus GetStatus();
 
 	//Start the camera
 	virtual bool StartFeed();
 
 	//Lock a frame to be capture at this time
 	//This allow for simultaneous capture
-	virtual bool Grab(int BufferIndex);
+	virtual bool Grab();
 
 	//Retrieve or read a frame
-	virtual bool Read(int BufferIndex);
+	virtual bool Read();
 
-	virtual bool InjectImage(int BufferIndex, cv::UMat& frame);
+	virtual void Undistort();
 
-	virtual void Undistort(int BufferIdx);
-
-	virtual void GetFrameUndistorted(int BufferIndex, cv::UMat& frame);
+	virtual void GetFrameUndistorted(cv::UMat& frame);
 
 	virtual void Calibrate(std::vector<std::vector<cv::Point3f>> objectPoints,
 	std::vector<std::vector<cv::Point2f>> imagePoints, std::vector<std::string> imagePaths, cv::Size imageSize,
 	cv::Mat& cameraMatrix, cv::Mat& distCoeffs,
 	std::vector<cv::Mat> &rvecs, std::vector<cv::Mat> &tvecs);
 
-	virtual void GetFrame(int BufferIndex, cv::UMat& frame) override;
+	virtual void GetFrame(cv::UMat& frame) override;
 
-	virtual void GetOutputFrame(int BufferIndex, cv::UMat& frame, cv::Rect window) override;
+	virtual void GetOutputFrame(cv::UMat& frame, cv::Rect window) override;
 
 	virtual std::vector<ObjectData> ToObjectData(int BaseNumeral) override;
 
 	virtual cv::Affine3d GetObjectTransform(const CameraArucoData& CameraData, float& Surface, float& ReprojectionError) override;
-};
-
-
-//Extension of the base camera class to allow for aruco detection
-class ArucoCamera : public Camera
-{
-
-public:
-
-	ArucoCamera(CameraSettings InCameraSettings)
-	:Camera(InCameraSettings)
-	{}
 
 	//Create lower-resolution copies of the frame to be used in aruco detection
-	virtual void RescaleFrames(int BufferIdx);
+	virtual void RescaleFrames();
 
 	//detect markers using the lower resolutions and improve accuracy using the higher-resolution image
-	virtual void detectMarkers(int BufferIndex, cv::aruco::ArucoDetector& Detector);
+	virtual void detectMarkers(cv::aruco::ArucoDetector& Detector);
 
 	//Gather detected markers in screen space
-	virtual bool GetMarkerData(int BufferIndex, CameraArucoData& CameraData);
+	virtual bool GetMarkerData(CameraArucoData& CameraData);
 
 	//Used to debug reprojected location of markers in 2D debug (direct)
 	void SetMarkerReprojection(int MarkerIndex, const std::vector<cv::Point2d> &Corners);
-
-	//convert corner pixel location into 3D space relative to camera
-	//Arco tags must be registered into the registry beforehand to have correct depth (registry handles the tag size)
-	//Deprecated function as now the tags have their location resolved by the object
-	virtual void SolveMarkers(int BufferIndex, int CameraIdx, ObjectTracker* registry);
-
-	//Get the number of seen markers in 3D space
-	//Deprecated
-	virtual int GetCameraViewsSize(int BufferIndex);
-
-	//Gather detected markers in 3D space relative to the camera created by SolveMarkers
-	//Deprecated
-	virtual bool GetCameraViews(int BufferIndex, std::vector<CameraView>& views);
-
 };
