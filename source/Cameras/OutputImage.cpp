@@ -1,4 +1,4 @@
-#include "data/OutputImage.hpp"
+#include "Cameras/OutputImage.hpp"
 #include "GlobalConf.hpp"
 
 using namespace cv;

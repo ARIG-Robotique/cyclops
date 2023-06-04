@@ -1,5 +1,5 @@
-#include "data/ImageTypes.hpp"
-#include "data/CameraView.hpp"
+#include "Cameras/ImageTypes.hpp"
+#include "Cameras/CameraView.hpp"
 
 using namespace cv;
 using namespace std;

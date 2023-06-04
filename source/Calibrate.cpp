@@ -1,10 +1,3 @@
-/* 
-
-	Ce fichier est un script conçu pour calibrer une caméra en utilisant une mire d'étalonnage comme un échiquier. Basé sur l'API OpenCV et utilise des bibliothèque d'accélération matérielle CUDA et OpenCL pour accélérer le traitement d'image ainsi que la prise en charge du multi-threading pour accélérer le traitement des données.
-
-	Dans l'ensemble, le script capture des images de la mire d'étalonnage à l'aide de la caméra, localise les coins sur l'échiquier et utilise ces informations pour calculer les paramètres intrinsèques de la caméra pour la calibration.
-
-*/
 
 #include "Calibrate.hpp"
 
@@ -31,8 +24,8 @@
 #include "GlobalConf.hpp"
 #include "Cameras/Camera.hpp"
 #include "Cameras/VideoCaptureCamera.hpp"
-#include "data/CameraView.hpp"
-#include "data/Calibfile.hpp"
+#include "Cameras/CameraView.hpp"
+#include "Cameras/Calibfile.hpp"
 #include "data/FrameCounter.hpp"
 
 using namespace std;
@@ -43,7 +36,6 @@ const String TempImgPath = "TempCalib";
 const String CalibWindowName = "Calibration";
 
 
-// Cette fonction crée un ensemble de points 3D correspondant aux coins de l'échiquier
 void CreateKnownBoardPos(Size BoardSize, float squareEdgeLength, vector<Point3f>& corners)
 {
 	for (int i = 0; i < BoardSize.height; i++)
@@ -55,7 +47,6 @@ void CreateKnownBoardPos(Size BoardSize, float squareEdgeLength, vector<Point3f>
 	}
 }
 
-// Cette fonction effectue l'étalonnage de la caméra. Elle prend comme entrée les points de l'échiquier dans l'image et les correspondances de ces points dans l'espace 3D. Elle renvoie la matrice de la caméra et les coefficients de distorsion.
 void CameraCalibration(vector<vector<Point2f>> CheckerboardImageSpacePoints, vector<string> ImagePaths, Size BoardSize, Size resolution, float SquareEdgeLength, Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamToCalibrate)
 {
 	vector<vector<Point3f>> WorldSpaceCornerPoints(1);
@@ -73,7 +64,6 @@ void CameraCalibration(vector<vector<Point2f>> CheckerboardImageSpacePoints, vec
 		rVectors, tVectors);
 }
 
-// Cette fonction récupère la liste des chemins des images d'étalonnage stockées dans le dossier TempImgPath.
 vector<String> CalibrationImages()
 {
 	vector<String> pathos;
@@ -105,7 +95,6 @@ int LastIdx(vector<String> Pathes)
 	return next;
 }
 
-// Cette fonction lit les images de la mire d'étalonnage et effectue l'étalonnage de la caméra dans un thread séparé.
 Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamToCalibrate)
 {
 	auto calconf = GetCalibrationConfig();

@@ -17,7 +17,7 @@
 #include "ObjectTracker.hpp"
 
 #include "data/FrameCounter.hpp"
-#include "data/CameraView.hpp"
+#include "Cameras/CameraView.hpp"
 
 #include "data/senders/DataSender.hpp"
 

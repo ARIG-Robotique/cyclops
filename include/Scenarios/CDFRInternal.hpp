@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "data/ImageTypes.hpp"
+#include "Cameras/ImageTypes.hpp"
 
 using std::vector;
 

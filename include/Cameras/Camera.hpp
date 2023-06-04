@@ -13,8 +13,8 @@
 #include <opencv2/cudacodec.hpp>
 #endif
 
-#include "data/OutputImage.hpp"
-#include "data/ImageTypes.hpp"
+#include "Cameras/OutputImage.hpp"
+#include "Cameras/ImageTypes.hpp"
 #include "TrackedObjects/TrackedObject.hpp"
 
 class Camera;

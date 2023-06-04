@@ -10,7 +10,7 @@
 #include "metadata.hpp"
 #include "GlobalConf.hpp"
 #include "Cameras/Camera.hpp"
-#include "data/CameraView.hpp"
+#include "Cameras/CameraView.hpp"
 #include "visualisation/BoardGL.hpp"
 
 using namespace cv;

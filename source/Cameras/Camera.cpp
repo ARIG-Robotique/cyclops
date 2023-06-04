@@ -15,8 +15,8 @@
 #endif
 
 #include "math3d.hpp"
-#include "data/Calibfile.hpp"
-#include "data/CameraView.hpp"
+#include "Cameras/Calibfile.hpp"
+#include "Cameras/CameraView.hpp"
 
 #include "ObjectTracker.hpp"
 #include "GlobalConf.hpp"

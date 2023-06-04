@@ -13,9 +13,9 @@
 #include "thirdparty/list-devices.hpp"
 #include "thirdparty/serialib.h"
 
-#include "data/Calibfile.hpp"
+#include "Cameras/Calibfile.hpp"
 #include "data/FrameCounter.hpp"
-#include "data/CameraView.hpp"
+#include "Cameras/CameraView.hpp"
 
 #include "TrackedObjects/TrackedObject.hpp" //CameraView
 #include "ObjectTracker.hpp"

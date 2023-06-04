@@ -1,5 +1,5 @@
 #include "ObjectTracker.hpp"
-#include "data/CameraView.hpp"
+#include "Cameras/CameraView.hpp"
 #include "math3d.hpp"
 #include "TrackedObjects/StaticObject.hpp"
 

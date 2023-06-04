@@ -2,7 +2,6 @@
 cmake_minimum_required(VERSION 3.1)
 
 set(PROJECT_NAME cyclops)
-add_compile_definitions(WITH_SAURON) #For Oogway display
 # Define project name
 project(${PROJECT_NAME})
 
@@ -15,11 +14,11 @@ find_package(OpenCV 4.7 REQUIRED)
 find_package(X11 REQUIRED)
 add_compile_definitions(WITH_X11)
 
-find_package(CUDAToolkit)
-if(CUDAToolkit_FOUND)
-    #add_compile_definitions(WITH_CUDA)
-    message(STATUS "CUDA found, assuming OpenCV was built with CUDA")
-endif(CUDAToolkit_FOUND)
+#find_package(CUDAToolkit)
+#if(CUDAToolkit_FOUND)
+#	add_compile_definitions(WITH_CUDA)
+#	message(STATUS "CUDA found, assuming OpenCV was built with CUDA")
+#endif(CUDAToolkit_FOUND)
 
 # OpenGL
 find_package(OpenGL REQUIRED)
@@ -40,14 +39,14 @@ message(STATUS "    libraries: ${OpenCV_LIBS}")
 message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 MACRO(HEADER_DIRECTORIES return_list)
-    FILE(GLOB_RECURSE new_list include/*.h*)
-    SET(dir_list "")
-    FOREACH(file_path ${new_list})
-        GET_FILENAME_COMPONENT(dir_path ${file_path} PATH)
-        SET(dir_list ${dir_list} ${dir_path})
-    ENDFOREACH()
-    LIST(REMOVE_DUPLICATES dir_list)
-    SET(${return_list} ${dir_list})
+	FILE(GLOB_RECURSE new_list include/*.h*)
+	SET(dir_list "")
+	FOREACH(file_path ${new_list})
+		GET_FILENAME_COMPONENT(dir_path ${file_path} PATH)
+		SET(dir_list ${dir_list} ${dir_path})
+	ENDFOREACH()
+	LIST(REMOVE_DUPLICATES dir_list)
+	SET(${return_list} ${dir_list})
 ENDMACRO()
 
 HEADER_DIRECTORIES(INCLUDES)
@@ -57,9 +56,9 @@ message(STATUS "include directories : ${INCLUDES}")
 include_directories(
 	${OPENCV_INCLUDE_DIRS}
 	${INCLUDES}
-    ${OPENGL_INCLUDE_DIRS}
-    ${GLUT_INCLUDE_DIRS}
-    ${GLEW_INCLUDE_DIRS})
+	${OPENGL_INCLUDE_DIRS}
+	${GLUT_INCLUDE_DIRS}
+	${GLEW_INCLUDE_DIRS})
 
 file(GLOB_RECURSE SOURCES "source/*.cpp")
 
@@ -78,12 +77,12 @@ target_link_libraries(${PROJECT_NAME}
 	${OpenCV_LIBS} 
 	stdc++fs
 	${X11_LIBRARIES}
-    Xrandr
+	Xrandr
 	config++
-    pthread
-    ${OPENGL_LIBRARIES} 
-    glfw
-    GLEW::glew
-    glm::glm
-    assimp
+	pthread
+	${OPENGL_LIBRARIES} 
+	glfw
+	GLEW::glew
+	glm::glm
+	assimp
 )

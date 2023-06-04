@@ -9,7 +9,7 @@
 
 
 #include "Cameras/Camera.hpp"
-#include "data/ImageTypes.hpp"
+#include "Cameras/ImageTypes.hpp"
 
 
 class VideoCaptureCamera : public Camera

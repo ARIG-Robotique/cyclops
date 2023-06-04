@@ -1,6 +1,6 @@
 #include "GlobalConf.hpp"
 
-#include "data/ImageTypes.hpp"
+#include "Cameras/ImageTypes.hpp"
 
 #include <iostream>
 #include <libconfig.h++>

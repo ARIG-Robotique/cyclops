@@ -4,7 +4,7 @@
 
 #include "math3d.hpp"
 #include "TrackedObjects/ObjectIdentity.hpp"
-#include "data/CameraView.hpp"
+#include "Cameras/CameraView.hpp"
 #include "Cameras/Camera.hpp"
 
 using namespace cv;

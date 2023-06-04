@@ -1,12 +1,3 @@
-/*
-
-	Ce fichier est le point d'entrée de l'application. Basée sur OpenCV pour le traitement d'images et de vidéos. Il s'agit d'une application de suivie d'objets en 3D avec une interface en ligne de commande. 
-
-	Le programme utilise également les bibliothèque d'accélération matérielle CUDA et OpenCL pour accélérer le traitement d'image ainsi que la prise en charge du multi-threading pour accélérer le traitement des données.
-
-*/
-
-
 #include <iostream> // for standard I/O
 #include <string>   // for strings
 #include <sstream>  // string to number conversion
@@ -19,7 +10,7 @@
 #include <opencv2/core/ocl.hpp> //opencl
 #include <opencv2/imgproc.hpp>
 
-#include "data/CameraView.hpp"
+#include "Cameras/CameraView.hpp"
 
 #include "GlobalConf.hpp"
 #include "Cameras/VideoCaptureCamera.hpp"
@@ -41,7 +32,6 @@
 using namespace std;
 using namespace cv;
 
-// Fonction principale du programme
 int main(int argc, char** argv )
 {
 	const string keys = 
@@ -107,7 +97,7 @@ int main(int argc, char** argv )
 		exit(EXIT_SUCCESS);
 	}
 
-	// L'option marker permet de générer des marqueurs
+	
 	if (parser.has("marker"))
 	{
 		auto& detector = GetArucoDetector();
@@ -163,7 +153,7 @@ int main(int argc, char** argv )
 		cerr << "No cameras detected" << endl;
 	}
 	
-	// Permet de démarrer l'assistant de calibration des caméras
+	
 	if (parser.has("calibrate"))
 	{
 		cout << "Starting calibration of camera index" << parser.get<int>("calibrate") <<endl;
@@ -206,7 +196,6 @@ int main(int argc, char** argv )
 	}
 
 
-	// Selon les options fournies et configurations définies le programme principale est exécuté. Selon le type d'éxecution, le programme peut être un serveur, un client, un programme de test OpenGL ou un programme de test de caméra.
 	
 	switch (GetRunType())
 	{

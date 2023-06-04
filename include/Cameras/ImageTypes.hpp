@@ -8,7 +8,7 @@
 #endif
 
 #include "thirdparty/list-devices.hpp"
-#include "data/CameraView.hpp"
+#include "Cameras/CameraView.hpp"
 
 
 //Progression status for a buffer
