@@ -1,16 +1,18 @@
 #pragma once
 
-#include <opencv2/core.hpp>
+#include <chrono>
 #include <string>
-
-using std::string;
+#include <opencv2/core.hpp>
 
 //Helper class to count frames per second
 class FrameCounter
 {
+	typedef std::chrono::steady_clock deltaclock;
+	typedef std::chrono::time_point<deltaclock> deltapoint;
+	typedef std::chrono::duration<double> deltatype;
 private:
-	int64 dt;
-	int64 startTime;
+	deltapoint LastTime;
+	deltapoint StartTime;
 public:
 	FrameCounter(/* args */);
 	~FrameCounter();
@@ -21,7 +23,7 @@ public:
 	//Return time since creation of this object
 	double GetAbsoluteTime();
 
-	static string GetFPSString(double DeltaTime);
+	static std::string GetFPSString(double DeltaTime);
 
 	//helper function to add a fps counter
 	static void AddFpsToImage(cv::InputOutputArray img, double DeltaTime);

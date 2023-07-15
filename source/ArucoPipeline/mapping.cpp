@@ -1,4 +1,4 @@
-#include "mapping.hpp"
+#include "ArucoPipeline/mapping.hpp"
 
 #include <string>
 #include <iostream>
@@ -18,7 +18,7 @@
 #include "data/metadata.hpp"
 #include "Calibfile.hpp"
 #include "GlobalConf.hpp"
-#include "TrackedObjects/TrackedObject.hpp"
+#include "ArucoPipeline/TrackedObject.hpp"
 #include "CameraView.hpp"
 #include "BoardGL.hpp"
 
@@ -72,7 +72,7 @@ SolvableView GetUnseenSolvable(const CameraArucoData& ImageIDs, const TrackedObj
 }
 
 
-void SLAMSolve(void)
+void MappingSolve(void)
 {
 	Mat CameraMatrix, DistortionCoefficients;
 	if (!readCameraParameters(MappingFolderName + "calibration", CameraMatrix, DistortionCoefficients, Size(0,0)))

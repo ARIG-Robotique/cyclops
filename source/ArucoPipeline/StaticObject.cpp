@@ -1,9 +1,9 @@
-#include "TrackedObjects/StaticObject.hpp"
+#include "ArucoPipeline/StaticObject.hpp"
 
 #include <opencv2/calib3d.hpp>
 
 #include "math3d.hpp"
-#include "TrackedObjects/ObjectIdentity.hpp"
+#include "ArucoPipeline/ObjectIdentity.hpp"
 #include "Cameras/CameraView.hpp"
 #include "Cameras/Camera.hpp"
 

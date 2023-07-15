@@ -1,6 +1,6 @@
-#include "TrackedObjects/TopTracker.hpp"
+#include "ArucoPipeline/TopTracker.hpp"
 
-#include "TrackedObjects/ObjectIdentity.hpp"
+#include "ArucoPipeline/ObjectIdentity.hpp"
 
 #include "math3d.hpp"
 #include "metadata.hpp"

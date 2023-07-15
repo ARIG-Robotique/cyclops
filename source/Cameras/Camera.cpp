@@ -14,11 +14,13 @@
 #include <opencv2/imgproc.hpp>
 #endif
 
+#include "math2d.hpp"
 #include "math3d.hpp"
+
 #include "Cameras/Calibfile.hpp"
 #include "Cameras/CameraView.hpp"
 
-#include "ObjectTracker.hpp"
+#include "ArucoPipeline/ObjectTracker.hpp"
 #include "GlobalConf.hpp"
 
 using namespace cv;

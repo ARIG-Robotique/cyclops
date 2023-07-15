@@ -15,12 +15,13 @@
 #include "GlobalConf.hpp"
 #include "Cameras/VideoCaptureCamera.hpp"
 #include "Cameras/CameraManager.hpp"
-#include "ObjectTracker.hpp"
+#include "ArucoPipeline/ObjectTracker.hpp"
 #include "Calibrate.hpp"
 #include "visualisation/BoardGL.hpp"
+#include "visualisation/ImguiWindow.hpp"
 #include "Scenarios/CDFRExternal.hpp"
 #include "Scenarios/CDFRInternal.hpp"
-#include "mapping.hpp"
+#include "ArucoPipeline/mapping.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -43,7 +44,7 @@ int main(int argc, char** argv )
 		"{cuda           |      | print cuda info}"
 		"{opengl ogl     |      | runs opengl test}"
 		"{server s       |      | force server/client state}"
-		"{slam           |      | runs slam for object mapping, using saved images and calibration}"
+		"{map            |      | runs object mapping, using saved images and calibration}"
 		"{nodisplay | | start without a display}"
 		;
 	CommandLineParser parser(argc, argv, keys);
@@ -189,12 +190,12 @@ int main(int argc, char** argv )
 		}
 	}
 	
-	if (parser.has("slam"))
+	if (parser.has("map"))
 	{
-		SLAMSolve();
+		MappingSolve();
 		exit(EXIT_SUCCESS);
 	}
-
+	
 
 	
 	switch (GetRunType())

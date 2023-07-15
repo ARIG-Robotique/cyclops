@@ -15,7 +15,7 @@
 
 #include "Cameras/OutputImage.hpp"
 #include "Cameras/ImageTypes.hpp"
-#include "TrackedObjects/TrackedObject.hpp"
+#include "ArucoPipeline/TrackedObject.hpp"
 
 class Camera;
 struct CameraArucoData;

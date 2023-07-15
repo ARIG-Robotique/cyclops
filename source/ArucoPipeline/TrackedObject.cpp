@@ -1,5 +1,5 @@
-#include "TrackedObjects/TrackedObject.hpp"
-#include "TrackedObjects/TrackerCube.hpp" // for the test env
+#include "ArucoPipeline/TrackedObject.hpp"
+#include "ArucoPipeline/TrackerCube.hpp" // for the test env
 #include <opencv2/core.hpp>
 #include <opencv2/core/affine.hpp>
 #include <opencv2/calib3d.hpp>

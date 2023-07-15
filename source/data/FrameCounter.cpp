@@ -8,8 +8,8 @@ using namespace cv;
 
 FrameCounter::FrameCounter()
 {
-	dt = getTickCount();
-	startTime = dt;
+	LastTime = deltaclock::now();
+	StartTime = LastTime;
 }
 
 FrameCounter::~FrameCounter()
@@ -19,29 +19,29 @@ FrameCounter::~FrameCounter()
 
 double FrameCounter::GetDeltaTime()
 {
-	int64 dt2 = getTickCount();
-	double deltaTime = (double)(dt2-dt) / getTickFrequency();
-	dt = dt2;
-	return deltaTime;
+	deltapoint dt2 = deltaclock::now();
+	deltatype deltaTime = (dt2-LastTime);
+	LastTime = dt2;
+	return deltaTime.count();
 }
 
 double FrameCounter::GetAbsoluteTime()
 {
-	int64 dt2 = getTickCount();
-	double deltaTime = (double)(dt2-startTime) / getTickFrequency();
-	return deltaTime;
+	deltapoint dt2 = deltaclock::now();
+	deltatype deltaTime = dt2-StartTime;
+	return deltaTime.count();
 }
 
-string FrameCounter::GetFPSString(double DeltaTime)
+std::string FrameCounter::GetFPSString(double DeltaTime)
 {
 	char buffer[20];
 	snprintf(buffer, 20, "fps : %.1f", 1/DeltaTime);
-	return string(buffer);
+	return std::string(buffer);
 }
 
 void FrameCounter::AddFpsToImage(InputOutputArray img, double DeltaTime)
 {
-	String strfps = GetFPSString(DeltaTime);
+	std::string strfps = GetFPSString(DeltaTime);
 	putText(img, strfps, Point2i(0,img.rows()-20), FONT_HERSHEY_SIMPLEX, 2, Scalar(255, 255, 255), 5);
 	putText(img, strfps, Point2i(0,img.rows()-20), FONT_HERSHEY_SIMPLEX, 2, Scalar(0, 0, 0), 2);
 }

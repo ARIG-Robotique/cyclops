@@ -1,4 +1,4 @@
-#include "TrackedObjects/ObjectIdentity.hpp"
+#include "ArucoPipeline/ObjectIdentity.hpp"
 #include <cassert>
 #include <map>
 #include "math3d.hpp"

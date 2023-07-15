@@ -18,15 +18,9 @@
 #include "GlobalConf.hpp"
 #include "data/metadata.hpp"
 #include "visualisation/openGL/Mesh.hpp"
-#include "TrackedObjects/TrackedObject.hpp"
 
 using namespace std;
 
-/*GLuint BoardGL::VertexArrayID;
-Shader BoardGL::ShaderProgram;
-bool BoardGL::MeshesLoaded = false, BoardGL::TagsLoaded = false;
-map<MeshNames, Mesh> BoardGL::Meshes;
-vector<Texture> BoardGL::TagTextures;*/
 
 static string shaderfolder = "../source/visualisation/openGL/";
 
@@ -260,7 +254,6 @@ void BoardGL::Start(string name)
 bool BoardGL::Tick(std::vector<GLObject> data)
 {
 	glfwMakeContextCurrent(Window);
-	glfwSwapBuffers(Window);
 	glfwPollEvents();
 	HandleInputs();
 	glm::vec3 direction = GetDirection();
@@ -322,6 +315,8 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 			break;
 		}
 	}
+
+	glfwSwapBuffers(Window);
 
 	bool IsDone = glfwGetKey(Window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(Window) == 0;
 

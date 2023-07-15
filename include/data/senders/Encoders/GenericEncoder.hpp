@@ -3,8 +3,8 @@
 #include <vector>
 #include <cstdint>
 
-#include "TrackedObjects/ObjectIdentity.hpp"
-#include "TrackedObjects/TrackedObject.hpp"
+#include "ArucoPipeline/ObjectIdentity.hpp"
+#include "ArucoPipeline/TrackedObject.hpp"
 
 struct EncodedData
 {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 #include <string>
 #include <iostream>
 
@@ -20,6 +21,7 @@ private:
 	bool AllowNoCalib;
 	int scanidx;
 	std::vector<std::string> paths;
+	std::set<std::string> blockedpaths;
 public:
 	std::function<bool(CameraSettings)> OnConnect;
 	std::function<bool(Camera*)> PostCameraConnect, OnDisconnect;
@@ -31,6 +33,7 @@ public:
 	{
 
 	}
+	
 	~CameraManager()
 	{
 		for (int i = 0; i < Cameras.size(); i++)
@@ -100,23 +103,28 @@ public:
 			v4l2::devices::list(devices);
 			for (int i = 0; i < devices.size(); i++)
 			{
-				if ((devices[i].device_paths.size() > 0) && DeviceInFilter(devices[i], Filter))
+				auto& device = devices[i];
+				if ((device.device_paths.size() > 0) && DeviceInFilter(device, Filter))
 				{
-					std::string pathtofind = devices[i].device_paths[0];
+					std::string pathtofind = device.device_paths[0];
 					auto pos = std::find(paths.begin(), paths.end(), pathtofind);
 					if (pos == paths.end()) //new camera
 					{
+						if (blockedpaths.find(pathtofind) != blockedpaths.end())
+						{
+							continue;
+						}
 						
-						CameraSettings settings = DeviceToSettings(devices[i], Start);
+						CameraSettings settings = DeviceToSettings(device, Start);
 						if (!settings.IsValid()) //no valid settings
 						{
-							std::cerr << "Failed to open camera " << devices[i].device_description << " @" << devices[i].device_paths[0] << " : Invalid settings" << std::endl;
+							std::cerr << "Failed to open camera " << device.device_description << " @" << pathtofind << " : Invalid settings" << std::endl;
 							continue;
 						}
 						bool HasCalib = settings.IsValidCalibration();
 						if (AllowNoCalib || HasCalib)
 						{
-							std::cout << "Detected camera " << devices[i].device_description << " @" << devices[i].device_paths[0] << std::endl;
+							std::cout << "Detected camera " << device.device_description << " @" << pathtofind << std::endl;
 							if (OnConnect)
 							{
 								if (!OnConnect(settings))
@@ -130,10 +138,10 @@ public:
 							std::vector<InternalCameraConfig>& campos = GetInternalCameraPositionsConfig();
 							for (int j = 0; j < campos.size(); j++)
 							{
-								if (DeviceInFilter(devices[i], campos[j].CameraName))
+								if (DeviceInFilter(device, campos[j].CameraName))
 								{
 									cam->SetLocation(campos[j].LocationRelative, 0);
-									std::cout << "Using stored position " << j << " for camera " << devices[i].device_description << std::endl;
+									std::cout << "Using stored position " << j << " for camera " << device.device_description << std::endl;
 									break;
 								}
 								
@@ -145,7 +153,8 @@ public:
 						}
 						else
 						{
-							std::cerr << "Did not open camera " << devices[i].device_description << " @" << devices[i].device_paths[0] << " : Camera has no calibration" << std::endl;
+							std::cerr << "Did not open camera " << device.device_description << " @" << pathtofind << " : Camera has no calibration" << std::endl;
+							blockedpaths.emplace(pathtofind);
 						}
 						
 					}

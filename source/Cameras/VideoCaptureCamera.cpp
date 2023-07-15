@@ -17,8 +17,8 @@
 #include "data/FrameCounter.hpp"
 #include "Cameras/CameraView.hpp"
 
-#include "TrackedObjects/TrackedObject.hpp" //CameraView
-#include "ObjectTracker.hpp"
+#include "ArucoPipeline/TrackedObject.hpp" //CameraView
+#include "ArucoPipeline/ObjectTracker.hpp"
 #include "GlobalConf.hpp"
 
 using namespace cv;

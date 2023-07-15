@@ -1,7 +1,7 @@
-#include "ObjectTracker.hpp"
+#include "ArucoPipeline/ObjectTracker.hpp"
 #include "Cameras/CameraView.hpp"
 #include "math3d.hpp"
-#include "TrackedObjects/StaticObject.hpp"
+#include "ArucoPipeline/StaticObject.hpp"
 
 using namespace cv;
 using namespace std;

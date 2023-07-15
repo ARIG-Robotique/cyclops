@@ -4,7 +4,7 @@
 #include <fstream>
 #include <thread>
 #include <mutex>
-#include "TrackedObjects/TrackedObject.hpp"
+#include "ArucoPipeline/TrackedObject.hpp"
 #include "data/senders/Encoders/GenericEncoder.hpp"
 #include "data/senders/Transport/GenericTransport.hpp"
 

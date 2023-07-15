@@ -1,7 +1,7 @@
 #pragma once
 
 #include <opencv2/core.hpp>
-#include "TrackedObjects/TrackedObject.hpp"
+#include "ArucoPipeline/TrackedObject.hpp"
 
 //Class that handles the objects, and holds information about each tag's size
 //Registered objects will have their locations solved and turned into a vector of ObjectData for display and data sending

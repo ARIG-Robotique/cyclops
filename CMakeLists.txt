@@ -51,22 +51,33 @@ ENDMACRO()
 
 HEADER_DIRECTORIES(INCLUDES)
 
-message(STATUS "include directories : ${INCLUDES}")
+#imgui files
+set(imguiroot ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui)
+set(imguifolders ${imguiroot} ${imguiroot}/backends)
+
+set(imguisource ${imguiroot}/imgui.cpp ${imguiroot}/imgui_tables.cpp ${imguiroot}/imgui_widgets.cpp ${imguiroot}/imgui_draw.cpp ${imguiroot}/imgui_demo.cpp)
+set(imguisource ${imguisource} ${imguiroot}/backends/imgui_impl_glfw.cpp ${imguiroot}/backends/imgui_impl_opengl3.cpp)
+
+add_compile_definitions(IMGUI_USER_CONFIG="visualisation/imguiconfig.hpp")
+
+#message(STATUS "include directories : ${INCLUDES}")
 
 include_directories(
 	${OPENCV_INCLUDE_DIRS}
 	${INCLUDES}
 	${OPENGL_INCLUDE_DIRS}
 	${GLUT_INCLUDE_DIRS}
-	${GLEW_INCLUDE_DIRS})
+	${GLEW_INCLUDE_DIRS}
+	${imguifolders})
 
 file(GLOB_RECURSE SOURCES "source/*.cpp")
+set(SOURCES ${SOURCES} ${imguisource})
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 
 
-message(STATUS "Sources found : ${SOURCES}")
+#message(STATUS "Sources found : ${SOURCES}")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")

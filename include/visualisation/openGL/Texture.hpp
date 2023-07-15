@@ -13,6 +13,8 @@ struct Texture
 private:
 	GLuint TextureID;
 
+	cv::Size LastSize;
+
 public:
 	cv::Mat Texture;
 
@@ -22,5 +24,12 @@ public:
 
 	void Bind(); //Send the texutre to the GPU
 
+	void Refresh(); //Update the GPU texture with the one inside here
+
 	void Draw(); //Set the texture as the currently active texture
+
+	GLuint GetTextureID() 
+	{
+		return TextureID;
+	}
 };

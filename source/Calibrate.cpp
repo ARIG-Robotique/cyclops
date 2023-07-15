@@ -20,6 +20,11 @@
 #include <opencv2/cudawarping.hpp>
 #endif
 
+#include "math2d.hpp"
+
+#include "visualisation/ImguiWindow.hpp"
+#include "visualisation/openGL/Texture.hpp"
+
 #include "thirdparty/serialib.h"
 #include "GlobalConf.hpp"
 #include "Cameras/Camera.hpp"
@@ -83,7 +88,8 @@ int LastIdx(vector<String> Pathes)
 		String stripped = Pathes[i].substr(TempImgPath.length()+1, Pathes[i].length() - TempImgPath.length()-1 - String(".png").length());
 		try
 		{
-			int thatidx = stoi(stripped);
+			int thatidx = 0;
+			sscanf(Pathes[i].c_str(), "%d", &thatidx);
 			next = next < thatidx ? thatidx : next;
 		}
 		catch(const std::exception& e)
@@ -238,7 +244,6 @@ void CalibrationWorker()
 bool docalibration(CameraSettings CamSett)
 {
 	bool HasCamera = CamSett.IsValid();
-
 	
 	if (HasCamera)
 	{
@@ -259,8 +264,8 @@ bool docalibration(CameraSettings CamSett)
 	
 	fs::create_directory(TempImgPath);
 
-	namedWindow(CalibWindowName, WINDOW_NORMAL);
-	setWindowProperty(CalibWindowName, WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
+	//namedWindow(CalibWindowName, WINDOW_NORMAL);
+	//setWindowProperty(CalibWindowName, WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
 
 	if (!HasCamera)
 	{
@@ -283,6 +288,13 @@ bool docalibration(CameraSettings CamSett)
 	}
 	CamToCalib->StartFeed();
 
+	ImguiWindow imguiinst;
+	Texture cameratex;
+	cameratex.Texture = Mat::zeros(CamSett.Resolution, CV_8UC3);
+	cameratex.valid = true;
+	
+	cameratex.Bind();
+
 
 	cout << "Camera calibration mode !" << endl
 	<< "Press [space] to capture an image, [enter] to calibrate, [a] to capture an image every " << 1/AutoCaptureFramerate << "s" <<endl
@@ -299,8 +311,12 @@ bool docalibration(CameraSettings CamSett)
 	FrameCounter fps;
 	int failed = 0;
 	bool CapturedImageLastFrame = false;
+	bool mirrored = true;
 	while (true)
 	{
+		imguiinst.StartFrame();
+		ImGuiIO& IO = ImGui::GetIO();
+
 		UMat frame, frameresized;
 		bool CaptureImageThisFrame = false;
 		#ifdef WITH_CUDA
@@ -322,6 +338,26 @@ bool docalibration(CameraSettings CamSett)
 		//cout << "read success" << endl;
 		//drawChessboardCorners(drawToFrame, CheckerSize, foundPoints, found);
 		//char character = waitKey(1);
+		/*#ifdef IMGUI_HAS_VIEWPORT
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->GetWorkPos());
+		ImGui::SetNextWindowSize(viewport->GetWorkSize());
+		ImGui::SetNextWindowViewport(viewport->ID);
+		#else 
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+		ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+		#endif
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::Begin("Background", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus);
+		ImGui::End();
+		ImGui::PopStyleVar(1);*/
+
+		if (ImGui::Begin("Controls"))
+		{
+			ImGui::Text("FPS : %f", 1/fps.GetDeltaTime());
+			ImGui::Checkbox("Mirror", &mirrored);
+		}
+
 		if (ShowUndistorted)
 		{
 			UMat frameundist;
@@ -334,7 +370,7 @@ bool docalibration(CameraSettings CamSett)
 			CamToCalib->GetFrame(frame);
 		}
 		
-		if (GetScreenResolution() != CamSett.Resolution)
+		if (GetScreenResolution() != CamSett.Resolution && false)
 		{
 			#ifdef WITH_CUDA
 			gpuframe.upload(frame, resizestream);
@@ -348,32 +384,32 @@ bool docalibration(CameraSettings CamSett)
 		{
 			frameresized = frame;
 		}
-
-		switch (pollKey())
+		
+		if (!ShowUndistorted)
 		{
-		case 'a':
-			if (!ShowUndistorted)
+			if(ImGui::Checkbox("Auto capture", &AutoCapture))
 			{
-				AutoCapture = !AutoCapture;
+				//AutoCapture = !AutoCapture;
 				AutoCaptureStart = fps.GetAbsoluteTime();
 				LastAutoCapture = 0;
 			}
-			break;
-		case ' ':
+			ImGui::SliderFloat("Auto capture framerate", &AutoCaptureFramerate, 1, 10);
+		}
+		if(ImGui::Button("Capture Image"))
+		{
 			//save image
 			if (!ShowUndistorted)
 			{
 				CaptureImageThisFrame = true;
 			}
-			break;
-		
-		case 13: //enter
-			//start calib
+		}
+		if(ImGui::Button("Calibrate"))
+		{
 			if (Calibrating)
 			{
 				AutoCapture = false;
 			}
-			else if (ShowUndistorted)
+			if (ShowUndistorted)
 			{
 				ShowUndistorted = false;
 			}
@@ -381,15 +417,6 @@ bool docalibration(CameraSettings CamSett)
 			{
 				CalibrationThread = new thread(CalibrationWorker);
 			}
-			break;
-
-		case 27:
-			//exit
-			return true;
-			break;
-
-		default:
-			break;
 		}
 
 		if (AutoCapture)
@@ -419,20 +446,55 @@ bool docalibration(CameraSettings CamSett)
 		
 		if (Calibrating)
 		{
-			putText(frameresized, "Calibrating, please wait...", Point(100,100), FONT_HERSHEY_SIMPLEX, 2, Scalar(0,255,0), 4);
+			ImGui::Text("Calibrating, please wait...");
 		}
 		else if (getTickCount() < lastCapture)
 		{
-			putText(frameresized, "Image " + to_string(nextIdx -1) + ( AutoCapture ? " AutoCaptured !" : " captured !"), Point(100,100), FONT_HERSHEY_SIMPLEX, 2, Scalar(255,0,0), 4);
+			ImGui::Text("Image %d %s !", nextIdx -1, ( AutoCapture ? "AutoCaptured" : "captured"));
 		}
 		
-		
+		ImGui::End();
+
 		#ifdef WITH_CUDA
 		resizestream.waitForCompletion();
 		#endif
 
-		fps.AddFpsToImage(frameresized, fps.GetDeltaTime());
-		imshow(CalibWindowName, frameresized);
+
+		
+		cameratex.Texture = frameresized.getMat(cv::AccessFlag::ACCESS_READ | cv::AccessFlag::ACCESS_FAST);
+		cameratex.Refresh();
+		cameratex.Texture = Mat();
+
+
+		ImDrawList* background = ImGui::GetBackgroundDrawList();
+		{
+			cv::Rect Backgroundsize(Point2i(0,0), (Size2i)imguiinst.GetWindowSize());
+			cv::Rect impos = ScaleToFit(CamSett.Resolution, Backgroundsize);
+			ImVec2 p_min = impos.tl(), p_max = impos.br(), uv_min(0,0), uv_max(1,1);
+
+			if (mirrored)
+			{
+				uv_min = ImVec2(1,0);
+				uv_max = ImVec2(0,1);
+			}
+			
+			background->AddImage((void*)(intptr_t)cameratex.GetTextureID(), p_min, p_max, uv_min, uv_max);
+		}
+		/*if(ImGui::Begin("Background", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration))
+		{
+			
+			ImGui::Image((void*)(intptr_t)cameratex.GetTextureID(), CamSett.Resolution);
+		}
+		ImGui::End();*/
+
+		
+		
+		if(!imguiinst.EndFrame())
+		{
+			return true;
+		}
+		//fps.AddFpsToImage(frameresized, fps.GetDeltaTime());
+		//imshow(CalibWindowName, frameresized);
 	}
 	return true;
 }

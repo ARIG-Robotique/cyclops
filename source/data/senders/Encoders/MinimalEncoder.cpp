@@ -6,7 +6,7 @@
 #include <opencv2/core.hpp>
 
 #include "math3d.hpp"
-#include "TrackedObjects/ObjectIdentity.hpp"
+#include "ArucoPipeline/ObjectIdentity.hpp"
 
 using namespace std;
 using namespace cv;

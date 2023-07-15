@@ -11,10 +11,10 @@
 
 #include "Cameras/VideoCaptureCamera.hpp"
 #include "Cameras/CameraManager.hpp"
-#include "TrackedObjects/TrackerCube.hpp"
-#include "TrackedObjects/TopTracker.hpp"
-#include "TrackedObjects/StaticObject.hpp"
-#include "ObjectTracker.hpp"
+#include "ArucoPipeline/TrackerCube.hpp"
+#include "ArucoPipeline/TopTracker.hpp"
+#include "ArucoPipeline/StaticObject.hpp"
+#include "ArucoPipeline/ObjectTracker.hpp"
 
 #include "data/FrameCounter.hpp"
 #include "Cameras/CameraView.hpp"
