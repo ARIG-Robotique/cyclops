@@ -37,8 +37,8 @@ using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-const String TempImgPath = "TempCalib";
-const String CalibWindowName = "Calibration";
+const string TempImgPath = "TempCalib";
+const string CalibWindowName = "Calibration";
 
 
 void CreateKnownBoardPos(Size BoardSize, float squareEdgeLength, vector<Point3f>& corners)

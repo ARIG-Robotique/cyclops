@@ -1,8 +1,8 @@
-saurondir=`pwd`
-echo $saurondir
-cat $saurondir/sauron.service | sed "s|saurondir|${saurondir}|g" | sudo tee /etc/systemd/system/sauron.service
-sudo chmod 640 /etc/systemd/system/sauron.service
+cyclopsdir=`pwd`
+echo $cyclopsdir
+cat $cyclopsdir/cyclops.service | sed "s|cyclopsdir|${cyclopsdir}|g" | sudo tee /etc/systemd/system/cyclops.service
+sudo chmod 640 /etc/systemd/system/cyclops.service
 sudo systemctl daemon-reload
-sudo systemctl enable sauron
-sudo systemctl start sauron
-sudo systemctl status sauron.service
+sudo systemctl enable cyclops
+sudo systemctl start cyclops
+sudo systemctl status cyclops.service

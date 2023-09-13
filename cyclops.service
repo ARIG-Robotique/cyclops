@@ -1,13 +1,13 @@
 [Unit]
-Description=Sauron (3D solve using Aruco and YOLO)
+Description=Cyclops (3D solve using Aruco and YOLO)
 
 Wants=network.target
 After=syslog.target network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=saurondir/build
-ExecStart=+saurondir/build/sauron --nodisplay
+WorkingDirectory=cyclopsdir/build
+ExecStart=+cyclopsdir/build/cyclops --nodisplay
 Restart=always
 RestartSec=1
 KillMode=process

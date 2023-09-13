@@ -21,14 +21,14 @@ git clone https://github.com/opencv/opencv_contrib.git || echo "Failed to clone 
 cd opencv_contrib/
 git reset --hard
 git fetch
-git checkout 4.7.0
+git checkout 4.8.0
 sudo -v
 cd ..
 git clone https://github.com/opencv/opencv.git || echo "Failed to clone opencv : already exists"
 cd opencv/
 git reset --hard
 git fetch
-git checkout 4.7.0
+git checkout 4.8.0
 sudo -v
 cd ..
 cd $STARTDIR
