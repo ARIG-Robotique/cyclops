@@ -32,5 +32,5 @@ public:
     GenericEncoder();
 	virtual ~GenericEncoder(){}
     int64 GetTick();
-	virtual EncodedData Encode(int64 GrabTime, std::vector<ObjectData> &objects) = 0;
+	virtual EncodedData Encode(int64 GrabTime, const std::vector<ObjectData> &objects) = 0;
 };

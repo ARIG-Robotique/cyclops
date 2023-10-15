@@ -9,34 +9,47 @@
 
 //TCP transport layer
 
+
+
 class TCPTransport : public GenericTransport
 {
 private:
+	struct TCPConnection
+	{
+		int filedescriptor;
+		sockaddr_in address;
+		std::string name;
+	};
 	bool Server;
 	std::string IP, Interface;
 	int Port;
 	int sockfd;
 	bool Connected;
 	std::thread* ReceiveThreadHandle;
-	std::shared_mutex listenmutex;
-	std::vector<sockaddr_in> connectionaddresses;
-	std::vector<int> connectionfd;
+	mutable std::shared_mutex listenmutex;
+	std::vector<TCPConnection> connections;
 public:
 
 	TCPTransport(bool inServer, std::string inIP, int inPort, std::string inInterface);
 
-	~TCPTransport();
+	virtual ~TCPTransport();
 
 private:
 	void CreateSocket();
 	bool Connect();
 	void CheckConnection();
 	void LowerLatency(int fd);
+	void DeleteSocket(int fd);
+	void ServerDeleteSocket(int clientidx);
 public:
 
-	virtual void Broadcast(const void *buffer, int length) override;
+	virtual std::vector<std::string> GetClients() const override;
 
-	virtual int Receive(void *buffer, int maxlength, bool blocking=false) override;
+	virtual int Receive(void *buffer, int maxlength, std::string client, bool blocking=false) override;
+
+	virtual bool Send(const void* buffer, int length, std::string client) override;
+
+	std::vector<std::string> AcceptNewConnections();
 	
 	void receiveThread();
 };

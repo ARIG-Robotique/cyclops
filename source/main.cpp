@@ -22,7 +22,8 @@
 #include "Scenarios/CDFRExternal.hpp"
 #include "Scenarios/CDFRInternal.hpp"
 #include "ArucoPipeline/mapping.hpp"
-#include "SiftPipeline/SiftTest.hpp"
+
+#include "data/senders/AdvertiseMV.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -197,7 +198,7 @@ int main(int argc, char** argv )
 		exit(EXIT_SUCCESS);
 	}
 	
-
+	AdvertiseMV advertiser;
 	
 	switch (GetRunType())
 	{
@@ -208,9 +209,6 @@ int main(int argc, char** argv )
 	case RunType::CameraInternal :
 		cout << "Starting internal camera program" <<endl;
 		CDFRInternalMain(direct, opengl);
-		break;
-	case RunType::Sift :
-		SiftTest();
 		break;
 	default:
 		cerr << "Run type unknown, nothing started" << endl;

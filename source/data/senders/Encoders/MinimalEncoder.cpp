@@ -38,9 +38,9 @@ void MinimalEncoder::Affine3dTo2D(PositionPacket &InPacket, Affine3d position)
 	InPacket.rotation = angle;
 }
 
-EncodedData MinimalEncoder::Encode(int64 GrabTime, std::vector<ObjectData> &objects)
+EncodedData MinimalEncoder::Encode(int64 GrabTime, const std::vector<ObjectData> &objects)
 {
-	vector<ObjectData>& ObjectDatas = objects;
+	const vector<ObjectData>& ObjectDatas = objects;
 
 	vector<PositionPacket> ObjectPackets;
 	ObjectPackets.reserve(ObjectDatas.size());

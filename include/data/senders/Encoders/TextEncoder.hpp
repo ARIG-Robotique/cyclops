@@ -15,5 +15,5 @@ public:
 		:GenericEncoder(), AllowMask(InAllowMask)
 	{}
 
-	virtual EncodedData Encode(int64 GrabTime, std::vector<ObjectData> &objects) override;
+	virtual EncodedData Encode(int64 GrabTime, const std::vector<ObjectData> &objects) override;
 };

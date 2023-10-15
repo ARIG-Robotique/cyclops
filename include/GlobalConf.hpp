@@ -11,10 +11,7 @@ enum class CameraStartType;
 enum class RunType
 {
 	CameraExternal,
-	CameraInternal,
-	Oogway,
-	OverlordSim,
-	Sift
+	CameraInternal
 };
 
 struct CaptureConfig

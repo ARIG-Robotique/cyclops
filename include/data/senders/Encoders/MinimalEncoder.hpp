@@ -59,7 +59,7 @@ public:
 
 	static void Affine3dTo2D(PositionPacket &InPacket, cv::Affine3d position);
 
-	virtual EncodedData Encode(int64 GrabTime, std::vector<ObjectData> &objects) override;
+	virtual EncodedData Encode(int64 GrabTime, const std::vector<ObjectData> &objects) override;
 
 	static int Decode(const EncodedData &data, DecodedMinimalData &outdecoded);
 };

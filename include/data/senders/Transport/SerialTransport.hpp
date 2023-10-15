@@ -8,7 +8,7 @@
 
 //Serial transport layer with SLIP encoding
 
-class SerialTransport : public GenericTransport
+/*class SerialTransport : public GenericTransport
 {
 private:
 	serialib* Bridge;
@@ -21,5 +21,7 @@ public:
 
 	virtual void Broadcast(const void *buffer, int length) override;
 
-	virtual int Receive(void *buffer, int maxlength, bool blocking=false) override;
-};
+	virtual int Receive(void *buffer, int maxlength, int client = -1, bool blocking=false) override;
+
+	virtual bool Send(const void* buffer, int length, int client = -1) override;
+};*/

@@ -12,6 +12,10 @@ bool Mesh::LoadMesh(std::string path)
 {
 	Assimp::Importer importer;
 	const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate );
+	if (scene == nullptr)
+	{
+		return false;
+	}
 	if (!scene->HasMeshes())
 	{
 		return false;

@@ -11,8 +11,10 @@ project(${PROJECT_NAME})
 find_package(OpenCV 4.7 REQUIRED)
 
 #Window manager, used to get the screen resolution
-find_package(X11 REQUIRED)
-add_compile_definitions(WITH_X11)
+find_package(X11)
+if(${X11_FOUND})
+	add_compile_definitions(WITH_X11)
+endif(${X11_FOUND})
 
 #find_package(CUDAToolkit)
 #if(CUDAToolkit_FOUND)
@@ -25,7 +27,7 @@ find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glm REQUIRED)
 
-
+add_subdirectory("thirdparty/json")
 
 # If the package has been found, several variables will
 # be set, you can find the full list with descriptions
@@ -90,10 +92,10 @@ target_link_libraries(${PROJECT_NAME}
 	${X11_LIBRARIES}
 	Xrandr
 	config++
-	pthread
 	${OPENGL_LIBRARIES} 
 	glfw
 	GLEW::glew
 	glm::glm
 	assimp
+	nlohmann_json::nlohmann_json
 )

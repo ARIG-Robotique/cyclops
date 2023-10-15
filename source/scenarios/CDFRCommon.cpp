@@ -63,9 +63,8 @@ map<PacketType, bool> GetDefaultAllowMap()
 		{PacketType::ReferenceAbsolute, false},
 		{PacketType::ReferenceRelative, true},
 		{PacketType::Robot, true},
-		{PacketType::TrackerCube, true},
+		{PacketType::TeamTracker, true},
 		{PacketType::TopTracker, true},
-		{PacketType::Puck, true},
 		{PacketType::Tag, false},
 		{PacketType::Team, true}
 	};

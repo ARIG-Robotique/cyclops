@@ -6,7 +6,7 @@
 using namespace std;
 
 
-FileTransport::FileTransport(string path)
+/*FileTransport::FileTransport(string path)
 {
 	file = make_unique<ofstream>(path, ios_base::openmode::_S_app | ios_base::openmode::_S_bin | ios_base::openmode::_S_ate);
 	auto currtime = chrono::system_clock::now();
@@ -19,7 +19,7 @@ void FileTransport::Broadcast(const void *buffer, int length)
 	file->write((const char*)buffer, length);
 }
 
-int FileTransport::Receive(void *buffer, int maxlength, bool blocking)
+int FileTransport::Receive(void *buffer, int maxlength, int client, bool blocking)
 {
 	return -1;
-}
+}*/

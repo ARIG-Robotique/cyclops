@@ -41,12 +41,7 @@ std::optional<GLObject> ObjectData::ToGLObject() const
 		{PacketType::ReferenceRelative, MeshNames::arena},
 		{PacketType::Tag, MeshNames::tag},
 		{PacketType::TopTracker, MeshNames::toptracker},
-		{PacketType::TrackerCube, MeshNames::trackercube},
-
-		{PacketType::PinkCake, MeshNames::pinkcake},
-		{PacketType::YellowCake, MeshNames::yellowcake},
-		{PacketType::BrownCake, MeshNames::browncake},
-		{PacketType::Cherry, MeshNames::cherry}
+		{PacketType::TeamTracker, MeshNames::trackercube}
 	};
 
 	auto foundmesh = PacketToMesh.find(identity.type);

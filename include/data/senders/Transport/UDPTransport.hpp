@@ -12,23 +12,24 @@
 class UDPTransport : public GenericTransport
 {
 private:
-	bool Server;
-	std::string IP, Interface;
+	NetworkInterface Interface;
 	int Port;
 	int sockfd;
 	bool Connected;
 	std::thread* ReceiveThreadHandle;
-	std::shared_mutex listenmutex;
+	mutable std::shared_mutex listenmutex;
 	std::vector<sockaddr_in> connectionaddresses;
 public:
 
-	UDPTransport(bool inServer, std::string inIP, int inPort, std::string inInterface);
+	UDPTransport(int inPort, NetworkInterface inInterface);
 
-	~UDPTransport();
+	virtual ~UDPTransport();
 
-	virtual void Broadcast(const void *buffer, int length) override;
+	//virtual std::vector<std::string> GetClients() const override;
 
-	virtual int Receive(void *buffer, int maxlength, bool blocking=false) override;
+	virtual int Receive(void *buffer, int maxlength, std::string client, bool blocking=false) override;
 	
+	virtual bool Send(const void* buffer, int length, std::string client) override;
+
 	void receiveThread();
 };

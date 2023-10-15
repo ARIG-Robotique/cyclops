@@ -32,7 +32,7 @@ void CDFRInternalMain(bool direct, bool v3d)
 	{
 		WebsocketConfig wscfg = GetWebsocketConfig();
 		sender.encoder = new MinimalEncoder(GetDefaultAllowMap());
-		sender.transport = new SerialTransport(115200, true);
+		sender.transport = new TCPTransport(wscfg.Server, wscfg.IP, wscfg.Port, wscfg.Interface);
 		sender.StartReceiveThread();
 	}
 

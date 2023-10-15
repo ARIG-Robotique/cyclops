@@ -1,3 +1,4 @@
+
 #include "data/senders/Transport/UDPTransport.hpp"
 
 #include <iostream>
@@ -10,60 +11,42 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #include "GlobalConf.hpp"
 
 using namespace std;
 
-UDPTransport::UDPTransport(bool inServer, std::string inIP, int inPort, std::string inInterface)
+UDPTransport::UDPTransport(int inPort, NetworkInterface inInterface)
 	:GenericTransport(),
-	Server(inServer),
-	IP(inIP), Port(inPort), Interface(inInterface)
+	Port(inPort), Interface(inInterface)
 {
-	WebsocketConfig config = GetWebsocketConfig();
-
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd == -1)
 	{
 		cerr << "Failed to create socket, port " << Port << endl;
 	}
 
-	string interface = "eth1";
-	setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, interface.c_str(), interface.size() );
+	setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, Interface.name.c_str(), Interface.name.size() );
+	int broadcastEnable = 1;
+	setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
 	struct sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;
-	serverAddress.sin_port = htons(config.Port);
+	serverAddress.sin_port = htons(Port);
 
-	string ip = config.Server ? "0.0.0.0" : config.IP;
+	string ip = "0.0.0.0"; //accept all
 
 	if (inet_pton(AF_INET, ip.c_str(), &serverAddress.sin_addr) <= 0) {
 		cerr << "UDP ERROR : Invalid address/ Address not supported \n" << endl;
 	}
 
-	if (Server)
+	//cout << "UDP Binding socket" << endl;
+	if (bind(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == -1) 
 	{
-		//cout << "UDP Binding socket" << endl;
-		if (bind(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == -1) 
-		{
-			cerr << "UDP Can't bind to IP/port, errno " << errno << endl;
-		}
-		Connected = true;
-		//ReceiveThreadHandle = new thread(&UDPTransport::receiveThread, this);
+		cerr << "UDP Can't bind to IP/port, errno " << errno << "(" << strerror(errno) << ")" << endl;
 	}
-	else
-	{
-		// communicates with listen
-		if(connect(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == -1)
-		{
-			cerr << "UDP Failed to connect to server" << endl;
-		}
-		else
-		{
-			Connected = true;
-			//ReceiveThreadHandle = new thread(&UDPTransport::receiveThread, this);
-		}
-		
-	}
+	Connected = true;
+	//ReceiveThreadHandle = new thread(&UDPTransport::receiveThread, this);
 }
 
 UDPTransport::~UDPTransport()
@@ -75,11 +58,11 @@ UDPTransport::~UDPTransport()
 	
 }
 
-void UDPTransport::Broadcast(const void *buffer, int length)
+bool UDPTransport::Send(const void *buffer, int length, std::string client)
 {
 	if (!Connected)
 	{
-		return;
+		return false;
 	}
 
 	if (length > 1000)
@@ -88,55 +71,40 @@ void UDPTransport::Broadcast(const void *buffer, int length)
 	}
 	//cout << "Sending " << length << " bytes..." << endl;
 	//printBuffer(buffer, length);
-	if (Server)
+	shared_lock lock(listenmutex);
+	sockaddr_in connectionaddress;
+	connectionaddress.sin_port = Port;
+	connectionaddress.sin_family = AF_INET;
+	if (client == BroadcastClient)
 	{
-		shared_lock lock(listenmutex);
-		for (int i = 0; i < connectionaddresses.size(); i++)
-		{
-			int err = sendto(sockfd, buffer, length, 0, (struct sockaddr*)&connectionaddresses[i], sizeof(sockaddr_in));
-			if (err==-1 && (errno != EAGAIN && errno != EWOULDBLOCK))
-			{
-				cerr << "UDP Server failed to send data to client " << i << " : " << errno << endl;
-			}
-		}
+		client = Interface.broadcast;
 	}
-	else
+	inet_pton(AF_INET, client.c_str(), &connectionaddress.sin_addr);
+	
+	int err = sendto(sockfd, buffer, length, 0, (struct sockaddr*)&connectionaddress, sizeof(sockaddr_in));
+	if (err==-1 && (errno != EAGAIN && errno != EWOULDBLOCK))
 	{
-
-		int err = send(sockfd, buffer, length, 0);
-		if (err==-1 && (errno != EAGAIN && errno != EWOULDBLOCK))
-		{
-			cerr << "UDP Failed to send data : " << errno << endl;
-		}
+		cerr << "UDP Server failed to send data to " << client << " : " << errno << "(" << strerror(errno) << ")" << endl;
 	}
+	return true;
 }
 
-int UDPTransport::Receive(void *buffer, int maxlength, bool blocking)
+int UDPTransport::Receive(void *buffer, int maxlength, string client, bool blocking)
 {
 	int n;
-	sockaddr_in client;
-	socklen_t clientSize = sizeof(client);
-	bzero(&client, clientSize);
-	if ((n = recvfrom(sockfd, buffer, maxlength, 0, (struct sockaddr*)&client, &clientSize)) > 0)
+	sockaddr_in connectionaddress;
+	socklen_t clientSize = sizeof(connectionaddress);
+	bzero(&connectionaddress, clientSize);
+	if (client == BroadcastClient)
 	{
-		bool found = false;
-		for (int i = 0; i < connectionaddresses.size(); i++)
-		{
-			if (connectionaddresses[i].sin_addr.s_addr == client.sin_addr.s_addr)
-			{
-				found = true;
-				break;
-			}
-			
-		}
-		if (!found)
-		{
-			connectionaddresses.push_back(client);
-			char ipbuf[100];
-			inet_ntop(AF_INET, &client.sin_addr, ipbuf, clientSize);
-			cout << "UDP Client connecting from " << ipbuf << endl;
-		}
-			
+		client = "0.0.0.0";
+	}
+	inet_pton(AF_INET, client.c_str(), &connectionaddress.sin_addr);
+	if ((n = recvfrom(sockfd, buffer, maxlength, 0, (struct sockaddr*)&connectionaddress, &clientSize)) > 0)
+	{
+		char ipbuf[16];
+		inet_ntop(AF_INET, &connectionaddress.sin_addr, ipbuf, clientSize);
+		cout << "UDP Client connecting from " << ipbuf << endl;
 		return n;
 		
 	}

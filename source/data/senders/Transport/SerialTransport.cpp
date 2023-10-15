@@ -3,7 +3,7 @@
 #include <vector>
 #include <filesystem>
 
-using namespace std;
+/*using namespace std;
 namespace fs = std::filesystem;
 
 enum class SLIPenc : uint8_t
@@ -122,4 +122,4 @@ void SerialTransport::Broadcast(const void *buffer, int length)
 int SerialTransport::Receive(void *buffer, int maxlength, bool blocking)
 {
 	return -1;
-}
+}*/

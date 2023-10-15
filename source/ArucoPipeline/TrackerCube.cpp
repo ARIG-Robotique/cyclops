@@ -45,7 +45,7 @@ vector<ObjectData> TrackerCube::ToObjectData(int BaseNumeral)
 {
 	ObjectData robot;
 	robot.identity.numeral = BaseNumeral;
-	robot.identity.type = PacketType::TrackerCube;
+	robot.identity.type = PacketType::TeamTracker;
 	for (int i = 0; i < markers.size(); i++)
 	{
 		AddTypeToMetadata<uint8_t>(robot.identity.metadata, markers[i].number);

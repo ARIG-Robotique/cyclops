@@ -3,14 +3,14 @@
 #include <sstream>
 using namespace std;
 
-EncodedData TextEncoder::Encode(int64 GrabTime, vector<ObjectData> &objects)
+EncodedData TextEncoder::Encode(int64 GrabTime, const vector<ObjectData> &objects)
 {
 	ostringstream outstream;
 	int numallowed = 0;
 	outstream << "Tick " << GrabTime << endl;
 	for (size_t i = 0; i < objects.size(); i++)
 	{
-		ObjectData& object = objects[i];
+		const ObjectData& object = objects[i];
 		if (!AllowMask[object.identity.type])
 		{
 			continue;

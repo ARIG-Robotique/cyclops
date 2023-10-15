@@ -22,7 +22,7 @@ CDFRTeam GetTeamFromCameras(vector<Camera*> Cameras)
 	const static map<CDFRTeam, vector<Vec2d>> CameraPos = 
 	{
 		{CDFRTeam::Blue, {{0, ydist}, {-xdist, -ydist}, {xdist, -ydist}, {-1.622, -0.1}}},
-		{CDFRTeam::Green, {{0, -ydist}, {-xdist, ydist}, {xdist, ydist}, {-1.622, 0.1}}}
+		{CDFRTeam::Yellow, {{0, -ydist}, {-xdist, ydist}, {xdist, ydist}, {-1.622, 0.1}}}
 	};
 	map<CDFRTeam, int> TeamScores;
 	for (Camera* cam : Cameras)
@@ -93,11 +93,11 @@ void CDFRExternalMain(bool direct, bool v3d)
 		startWindowThread();
 	}
 	
-	ObjectTracker bluetracker, greentracker;
+	ObjectTracker bluetracker, yellowtracker;
 
 	unique_ptr<StaticObject> boardobj = make_unique<StaticObject>(false, "board");
 	bluetracker.RegisterTrackedObject(boardobj.get()); 
-	greentracker.RegisterTrackedObject(boardobj.get());
+	yellowtracker.RegisterTrackedObject(boardobj.get());
 	//TrackerCube* robot1 = new TrackerCube({51, 52, 54, 55}, 0.06, 0.0952, "Robot1");
 	//TrackerCube* robot2 = new TrackerCube({57, 58, 59, 61}, 0.06, 0.0952, "Robot2");
 	//bluetracker.RegisterTrackedObject(robot1);
@@ -106,13 +106,13 @@ void CDFRExternalMain(bool direct, bool v3d)
 	BoardGL OpenGLBoard;
 	unique_ptr<TrackerCube> blue1 = make_unique<TrackerCube>(vector<int>({51, 52, 53, 54, 55}), 0.05, 85.065/1000.0, "blue1");
 	unique_ptr<TrackerCube> blue2 = make_unique<TrackerCube>(vector<int>({56, 57, 58, 59, 60}), 0.05, 85.065/1000.0, "blue2");
-	unique_ptr<TrackerCube> green1 = make_unique<TrackerCube>(vector<int>({71, 72, 73, 74, 75}), 0.05, 85.065/1000.0, "green1");
-	unique_ptr<TrackerCube> green2 = make_unique<TrackerCube>(vector<int>({76, 77, 78, 79, 80}), 0.05, 85.065/1000.0, "green2");
+	unique_ptr<TrackerCube> yellow1 = make_unique<TrackerCube>(vector<int>({71, 72, 73, 74, 75}), 0.05, 85.065/1000.0, "yellow1");
+	unique_ptr<TrackerCube> yellow2 = make_unique<TrackerCube>(vector<int>({76, 77, 78, 79, 80}), 0.05, 85.065/1000.0, "yellow2");
 	bluetracker.RegisterTrackedObject(blue1.get());
 	bluetracker.RegisterTrackedObject(blue2.get());
 
-	greentracker.RegisterTrackedObject(green1.get());
-	greentracker.RegisterTrackedObject(green2.get());
+	yellowtracker.RegisterTrackedObject(yellow1.get());
+	yellowtracker.RegisterTrackedObject(yellow2.get());
 
 	vector<unique_ptr<TopTracker>> TopTrackers;
 	for (int i = 1; i < 11; i++)
@@ -120,7 +120,7 @@ void CDFRExternalMain(bool direct, bool v3d)
 		TopTracker* tt = new TopTracker(i, 0.07, "top tracker " + std::to_string(i));
 		TopTrackers.emplace_back(tt);
 		bluetracker.RegisterTrackedObject(tt);
-		greentracker.RegisterTrackedObject(tt);
+		yellowtracker.RegisterTrackedObject(tt);
 	}
 	
 	
@@ -134,36 +134,36 @@ void CDFRExternalMain(bool direct, bool v3d)
 	
 	
 	//track and untrack cameras dynamically
-	CameraMan.PostCameraConnect = [&bluetracker, &greentracker](Camera* cam) -> bool
+	CameraMan.PostCameraConnect = [&bluetracker, &yellowtracker](Camera* cam) -> bool
 	{
 		bluetracker.RegisterTrackedObject(cam);
-		greentracker.RegisterTrackedObject(cam);
+		yellowtracker.RegisterTrackedObject(cam);
 		cout << "Registering new camera @" << cam << endl;
 		return true;
 	};
-	CameraMan.OnDisconnect = [&bluetracker, &greentracker](Camera* cam) -> bool
+	CameraMan.OnDisconnect = [&bluetracker, &yellowtracker](Camera* cam) -> bool
 	{
 		bluetracker.UnregisterTrackedObject(cam);
-		greentracker.UnregisterTrackedObject(cam);
+		yellowtracker.UnregisterTrackedObject(cam);
 		cout << "Unregistering camera @" << cam << endl;
 		return true;
 	};
 
 	PositionDataSender sender;
-	PositionDataSender logger;
+	//PositionDataSender logger;
 	{
 		WebsocketConfig wscfg = GetWebsocketConfig();
 		sender.encoder = new MinimalEncoder(GetDefaultAllowMap());
-		logger.encoder = new TextEncoder(GetDefaultAllowMap());
+		//logger.encoder = new TextEncoder(GetDefaultAllowMap());
 		if (wscfg.TCP)
 		{
 			sender.transport = new TCPTransport(wscfg.Server, wscfg.IP, wscfg.Port, wscfg.Interface);
 		}
 		else
 		{
-			sender.transport = new UDPTransport(wscfg.Server, wscfg.IP, wscfg.Port, wscfg.Interface);
+			//sender.transport = new UDPTransport(wscfg.Server, wscfg.IP, wscfg.Port, wscfg.Interface);
 		}
-		logger.transport = new FileTransport("PositionLog.txt");
+		//logger.transport = new FileTransport("PositionLog.txt");
 		sender.StartReceiveThread();
 	}
 
@@ -187,9 +187,9 @@ void CDFRExternalMain(bool direct, bool v3d)
 		prof.EnterSection(ps++);
 		int64 GrabTick = getTickCount();
 		ObjectTracker* TrackerToUse = &bluetracker;
-		if (Team == CDFRTeam::Green)
+		if (Team == CDFRTeam::Yellow)
 		{
-			TrackerToUse = &greentracker;
+			TrackerToUse = &yellowtracker;
 		}
 		 
 		BufferedPipeline(vector<Camera*>(physicalCameras.begin(), physicalCameras.end()), Detector, TrackerToUse);
@@ -274,7 +274,7 @@ void CDFRExternalMain(bool direct, bool v3d)
 			sender.SendPacket(GrabTick, ObjData);
 			//this_thread::sleep_for(chrono::milliseconds(1000));
 		}
-		logger.SendPacket(GrabTick, ObjData);
+		//logger.SendPacket(GrabTick, ObjData);
 		
 		
 		prof.EnterSection(-1);

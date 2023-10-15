@@ -53,7 +53,7 @@ void PositionDataSender::SendPacket(int64 GrabTick, vector<ObjectData> &Data)
 		cerr << "PDS encoded data is invalid, no data will be sent." << endl;
 		return;
 	}
-	transport->Broadcast(encoded.buffer, encoded.length);
+	transport->Send(encoded.buffer, encoded.length, GenericTransport::BroadcastClient);
 	free(encoded.buffer);
 }
 
@@ -76,7 +76,7 @@ void PositionDataSender::ThreadRoutine()
 		}
 		char buff[1024];
 		int n;
-		while((n = transport->Receive(buff, sizeof(buff), true))>-1)
+		while((n = transport->Receive(buff, sizeof(buff), GenericTransport::BroadcastClient, true))>-1)
 		{
 			cout << "Received packet "<< i << endl;
 			i++;

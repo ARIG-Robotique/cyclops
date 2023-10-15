@@ -10,14 +10,14 @@
 enum class CDFRTeam
 {
 	Unknown,
-	Green,
+	Yellow,
 	Blue
 };
 
 const std::map<CDFRTeam, std::string> TeamNames = {
 	{CDFRTeam::Unknown, "Unknown"},
 	{CDFRTeam::Blue, "Blue"},
-	{CDFRTeam::Green, "Green"}
+	{CDFRTeam::Yellow, "Yellow"}
 };
 
 enum class PacketType : uint8_t
@@ -28,13 +28,9 @@ enum class PacketType : uint8_t
 	ReferenceRelative, //Something that doesn't move and should have a fixed location, 
 		//but we're moving (internal view), so that thing is moving relative to us, so here's the location of that thing relative to us
 	Robot               = 0b100,	//A robot. Ennemy or ally.
-	TrackerCube,					//Tracker that we put on the ennemy robot
+	TeamTracker,					//Tracker that we put on the ennemy robot
 	TopTracker,						//Tracker that's on every robot
-	Puck                = 0b1000,	//A cake or something. 
-	BrownCake,
-	YellowCake,
-	PinkCake,
-	Cherry,
+	SolarPanel,
 	Tag					= 0b10000, // Raw tag. Size in metadata, ID is numeral. For debug/inspect purposes
 	Team
 };
