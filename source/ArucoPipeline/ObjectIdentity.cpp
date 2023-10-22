@@ -3,7 +3,7 @@
 #include <map>
 #include "math3d.hpp"
 #include "metadata.hpp"
-#include "visualisation/BoardGL.hpp"
+#include "Visualisation/BoardGL.hpp"
 using namespace std;
 
 

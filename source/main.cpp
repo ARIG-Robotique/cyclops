@@ -17,13 +17,13 @@
 #include "Cameras/CameraManager.hpp"
 #include "ArucoPipeline/ObjectTracker.hpp"
 #include "Calibrate.hpp"
-#include "visualisation/BoardGL.hpp"
-#include "visualisation/ImguiWindow.hpp"
-#include "Scenarios/CDFRExternal.hpp"
-#include "Scenarios/CDFRInternal.hpp"
+#include "Visualisation/BoardGL.hpp"
+#include "Visualisation/ImguiWindow.hpp"
+#include "EntryPoints/CDFRExternal.hpp"
+#include "EntryPoints/CDFRInternal.hpp"
 #include "ArucoPipeline/mapping.hpp"
 
-#include "data/senders/AdvertiseMV.hpp"
+#include "Communication/AdvertiseMV.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>

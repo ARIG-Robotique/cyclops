@@ -60,9 +60,9 @@ set(imguifolders ${imguiroot} ${imguiroot}/backends)
 set(imguisource ${imguiroot}/imgui.cpp ${imguiroot}/imgui_tables.cpp ${imguiroot}/imgui_widgets.cpp ${imguiroot}/imgui_draw.cpp ${imguiroot}/imgui_demo.cpp)
 set(imguisource ${imguisource} ${imguiroot}/backends/imgui_impl_glfw.cpp ${imguiroot}/backends/imgui_impl_opengl3.cpp)
 
-add_compile_definitions(IMGUI_USER_CONFIG="visualisation/imguiconfig.hpp")
+add_compile_definitions(IMGUI_USER_CONFIG="Visualisation/imguiconfig.hpp")
 
-#message(STATUS "include directories : ${INCLUDES}")
+message(STATUS "include directories : ${INCLUDES}")
 
 include_directories(
 	${OPENCV_INCLUDE_DIRS}

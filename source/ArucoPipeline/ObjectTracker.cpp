@@ -189,7 +189,7 @@ void ObjectTracker::RegisterArucoRecursive(TrackedObject* object, int index)
 		int MarkerID = marker.number;
 		if (ArucoMap[MarkerID] != -1)
 		{
-			cerr << "WARNING Overwriting Marker data/owner for marker index " << MarkerID << " with object " << object->Name << endl;
+			cerr << "WARNING Overwriting Marker Misc/owner for marker index " << MarkerID << " with object " << object->Name << endl;
 		}
 		ArucoMap[MarkerID] = index;
 		ArucoSizes[MarkerID] = marker.sideLength;

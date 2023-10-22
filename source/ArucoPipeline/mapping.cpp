@@ -15,7 +15,7 @@
 #include <opencv2/sfm.hpp>
 
 #include "math3d.hpp"
-#include "data/metadata.hpp"
+#include "Misc/metadata.hpp"
 #include "Calibfile.hpp"
 #include "GlobalConf.hpp"
 #include "ArucoPipeline/TrackedObject.hpp"

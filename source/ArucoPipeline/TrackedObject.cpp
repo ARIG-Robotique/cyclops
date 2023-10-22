@@ -11,7 +11,7 @@
 #include "GlobalConf.hpp"
 #include "Cameras/Camera.hpp"
 #include "Cameras/CameraView.hpp"
-#include "visualisation/BoardGL.hpp"
+#include "Visualisation/BoardGL.hpp"
 
 using namespace cv;
 using namespace std;

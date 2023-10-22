@@ -14,7 +14,7 @@
 #include "thirdparty/serialib.h"
 
 #include "Cameras/Calibfile.hpp"
-#include "data/FrameCounter.hpp"
+#include "Misc/FrameCounter.hpp"
 #include "Cameras/CameraView.hpp"
 
 #include "ArucoPipeline/TrackedObject.hpp" //CameraView
