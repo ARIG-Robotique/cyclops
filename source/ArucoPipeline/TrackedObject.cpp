@@ -10,7 +10,6 @@
 #include "metadata.hpp"
 #include "GlobalConf.hpp"
 #include "Cameras/Camera.hpp"
-#include "Cameras/CameraView.hpp"
 #include "Visualisation/BoardGL.hpp"
 
 using namespace cv;
@@ -137,20 +136,20 @@ void TrackedObject::GetObjectPoints(vector<vector<Point3d>>& MarkerCorners, vect
 	}
 }
 
-float TrackedObject::GetSeenMarkers(const CameraArucoData& CameraData, vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform)
+float TrackedObject::GetSeenMarkers(const CameraFeatureData& CameraData, vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform)
 {
 	float surface = 0;
 	for (int i = 0; i < markers.size(); i++)
 	{
-		for (int j = 0; j < CameraData.TagIDs.size(); j++)
+		for (int j = 0; j < CameraData.ArucoIndices.size(); j++)
 		{
-			if (markers[i].number == CameraData.TagIDs[j])
+			if (markers[i].number == CameraData.ArucoIndices[j])
 			{
 				//gotcha!
 				ArucoViewCameraLocal seen;
 				seen.Marker = &markers[i];
 				seen.IndexInCameraData = j;
-				seen.CameraCornerPositions = CameraData.TagCorners[j];
+				seen.CameraCornerPositions = CameraData.ArucoCorners[j];
 				seen.AccumulatedTransform = AccumulatedTransform;
 				vector<Point3d> &cornersLocal = markers[i].ObjectPointsNoOffset;
 				Affine3d TransformToObject = AccumulatedTransform * markers[i].Pose;
@@ -159,7 +158,7 @@ float TrackedObject::GetSeenMarkers(const CameraArucoData& CameraData, vector<Ar
 					seen.LocalMarkerCorners.push_back(TransformToObject * cornersLocal[k]);
 				}
 				MarkersSeen.push_back(seen);
-				surface += contourArea(CameraData.TagCorners[j], false);
+				surface += contourArea(CameraData.ArucoCorners[j], false);
 			}
 			
 		}
@@ -173,18 +172,17 @@ float TrackedObject::GetSeenMarkers(const CameraArucoData& CameraData, vector<Ar
 	return surface;
 }
 
-float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const Mat &rvec, const Mat &tvec, const CameraArucoData &CameraData)
+float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const Mat &rvec, const Mat &tvec, 
+	const CameraFeatureData &CameraData, map<int, vector<Point2f>> &ReprojectedCorners)
 {
 	float ReprojectionError = 0;
 	for (int i = 0; i < MarkersSeen.size(); i++)
 	{
 		vector<Point2d> cornersreproj;
 		projectPoints(MarkersSeen[i].LocalMarkerCorners, rvec, tvec, CameraData.CameraMatrix, CameraData.DistanceCoefficients, cornersreproj);
-		if (CameraData.SourceCamera)
-		{
-			CameraData.SourceCamera->SetMarkerReprojection(MarkersSeen[i].IndexInCameraData, cornersreproj);
-		}
-		for (int j = 0; j < 4; j++)
+		ReprojectedCorners[MarkersSeen[i].IndexInCameraData] = vector<Point2f>(cornersreproj.begin(), cornersreproj.end());
+		
+		for (int j = 0; j < cornersreproj.size(); j++)
 		{
 			Point2f diff = MarkersSeen[i].CameraCornerPositions[j] - Point2f(cornersreproj[j]);
 			ReprojectionError += sqrt(diff.ddot(diff));
@@ -193,7 +191,8 @@ float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal
 	return ReprojectionError;
 }
 
-Affine3d TrackedObject::GetObjectTransform(const CameraArucoData& CameraData, float& Surface, float& ReprojectionError)
+Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
+	map<int, vector<Point2f>> &ReprojectedCorners)
 {
 	vector<ArucoViewCameraLocal> SeenMarkers;
 	Surface = GetSeenMarkers(CameraData, SeenMarkers, Affine3d::Identity());
@@ -238,7 +237,7 @@ Affine3d TrackedObject::GetObjectTransform(const CameraArucoData& CameraData, fl
 	const Mat &distCoeffs = CameraData.DistanceCoefficients;
 	solvePnP(flatobj, flatimg, CameraData.CameraMatrix, distCoeffs, rvec, tvec, false, flags);
 	solvePnPRefineLM(flatobj, flatimg, CameraData.CameraMatrix, distCoeffs, rvec, tvec);
-	ReprojectionError = ReprojectSeenMarkers(SeenMarkers, rvec, tvec, CameraData);
+	ReprojectionError = ReprojectSeenMarkers(SeenMarkers, rvec, tvec, CameraData, ReprojectedCorners);
 	
 	ReprojectionError /= nummarkersseen;
 	//cout << "Reprojection error : " << ReprojectionError << endl;

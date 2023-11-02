@@ -20,7 +20,10 @@ public:
 
 	void UnregisterTrackedObject(TrackedObject* object);
 
-	void SolveLocationsPerObject(const std::vector<CameraArucoData>& CameraData, unsigned long tick);
+	bool SolveCameraLocation(CameraFeatureData& CameraData);
+
+	void SolveLocationsPerObject(std::vector<CameraFeatureData>& CameraData, unsigned long tick);
+
 
 	std::vector<ObjectData> GetObjectDataVector(unsigned long Tick);
 

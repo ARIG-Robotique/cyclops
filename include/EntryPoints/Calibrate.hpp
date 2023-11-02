@@ -1,6 +1,6 @@
 #pragma once
 
-struct CameraSettings;
+struct VideoCaptureCameraSettings;
 
 //Calibration routine
-bool docalibration(CameraSettings CamSett);
+bool docalibration(VideoCaptureCameraSettings CamSett);

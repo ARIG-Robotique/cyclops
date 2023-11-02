@@ -10,7 +10,6 @@
 #include <opencv2/core/ocl.hpp> //opencl
 #include <opencv2/imgproc.hpp>
 
-#include "Cameras/CameraView.hpp"
 
 #include "GlobalConf.hpp"
 #include "Cameras/VideoCaptureCamera.hpp"
@@ -21,7 +20,7 @@
 #include "Visualisation/ImguiWindow.hpp"
 #include "EntryPoints/CDFRExternal.hpp"
 #include "EntryPoints/CDFRInternal.hpp"
-#include "ArucoPipeline/mapping.hpp"
+#include "EntryPoints/Mapping.hpp"
 
 #include "Communication/AdvertiseMV.hpp"
 
@@ -43,7 +42,6 @@ int main(int argc, char** argv )
 		"{build b        |      | print build information}"
 		"{calibrate c    |      | start camera calibration wizard}"
 		"{marker m       |      | print out markers}"
-		"{cuda           |      | print cuda info}"
 		"{opengl ogl     |      | runs opengl test}"
 		"{server s       |      | force server/client state}"
 		"{map            |      | runs object mapping, using saved images and calibration}"
@@ -64,9 +62,6 @@ int main(int argc, char** argv )
 	
 	bool nodisplay = parser.has("nodisplay");
 
-	#ifdef WITH_CUDA
-	cuda::setDevice(0);
-	#endif
 	ocl::setUseOpenCL(true);
 	#ifdef WITH_X11
 	if (nodisplay)
@@ -79,26 +74,7 @@ int main(int argc, char** argv )
 		cout << "Detected screen resolution : " << GetScreenResolution() << endl;
 		cout << "Detected screen size : " << GetScreenSize() << endl;
 	}
-	
-	
 	#endif
-	if (parser.has("cuda"))
-	{
-		#ifdef WITH_CUDA
-		int cuda_devices_number = cuda::getCudaEnabledDeviceCount();
-		cout << "CUDA Device(s) Number: "<< cuda_devices_number << endl;
-		if (cuda_devices_number > 0)
-		{
-			cuda::DeviceInfo _deviceInfo;
-			bool _is_device_compatible = _deviceInfo.isCompatible();
-			cout << "CUDA Device(s) Compatible: " << _is_device_compatible << endl;
-			cuda::printShortCudaDeviceInfo(cuda::getDevice());
-		}
-		#else
-		cout << "CUDA is not enabled or detected on this device" << endl;
-		#endif
-		exit(EXIT_SUCCESS);
-	}
 
 	
 	if (parser.has("marker"))
@@ -149,7 +125,7 @@ int main(int argc, char** argv )
 		exit(EXIT_SUCCESS);
 	}
 	
-	vector<CameraSettings> CamSett = CameraManager::autoDetectCameras(GetCaptureMethod(), GetCaptureConfig().filter, "", false);
+	vector<VideoCaptureCameraSettings> CamSett = CameraManager::autoDetectCameras(GetCaptureMethod(), GetCaptureConfig().filter, "", false);
 
 	if (CamSett.size() == 0)
 	{
@@ -157,7 +133,7 @@ int main(int argc, char** argv )
 	}
 	
 	
-	if (parser.has("calibrate"))
+	if (parser.has("calibrate") || 1)
 	{
 		cout << "Starting calibration of camera index" << parser.get<int>("calibrate") <<endl;
 		int camIndex = parser.get<int>("calibrate");
@@ -168,7 +144,7 @@ int main(int argc, char** argv )
 		}
 		else
 		{
-			docalibration(CameraSettings());
+			docalibration(VideoCaptureCameraSettings());
 			exit(EXIT_SUCCESS);
 		}
 		

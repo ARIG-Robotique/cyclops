@@ -22,7 +22,7 @@ private:
 
 public:
 
-	VideoCaptureCamera(CameraSettings InSettings)
+	VideoCaptureCamera(std::shared_ptr<VideoCaptureCameraSettings> InSettings)
 		:Camera(InSettings)
 	{
 	}

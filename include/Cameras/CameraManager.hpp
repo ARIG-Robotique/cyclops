@@ -4,6 +4,8 @@
 #include <set>
 #include <string>
 #include <iostream>
+#include <shared_mutex>
+#include <thread>
 
 #include "Cameras/Camera.hpp"
 #include "GlobalConf.hpp"
@@ -19,148 +21,59 @@ private:
 	CameraStartType Start;
 	std::string Filter;
 	bool AllowNoCalib;
-	int scanidx;
-	std::vector<std::string> paths;
-	std::set<std::string> blockedpaths;
+	//Boths paths are protected by pathmutex
+	std::set<std::string> usedpaths; //Paths used by the cameras
+	std::set<std::string> blockedpaths; //paths that have been tried but failed at some point during init, so that we don't try again
+
+	std::shared_mutex pathmutex, cammutex;
+	std::thread* scanthread;
+	bool killmutex;
+
+	std::vector<Camera*> Cameras, NewCameras; //List of cameras. NewCameras is protected by cammutex, Cameras only belongs to Tick
+
 public:
-	std::function<bool(CameraSettings)> OnConnect;
-	std::function<bool(Camera*)> PostCameraConnect, OnDisconnect;
-	std::vector<Camera*> Cameras;
+	//Function called when a new camera is to be created. Return nullptr if you want to veto that creation
+	//Will be called in a separate thread 
+	std::function<Camera*(VideoCaptureCameraSettings)> StartCamera; 
+	//When a new camera is added, called when Tick is called
+	std::function<void(Camera*)> RegisterCamera;
+	std::function<bool(Camera*)> StopCamera; //Function called before a camera is going to be deleted (as a head's up)
+
 
 	CameraManager(CameraStartType InStart, std::string InFilter, bool InAllowNoCalib = false)
-		:Start(InStart), Filter(InFilter), AllowNoCalib(InAllowNoCalib),
-		scanidx(0)
+		:Start(InStart), Filter(InFilter), AllowNoCalib(InAllowNoCalib)
 	{
-
+		scanthread = nullptr;
+		killmutex = false;
 	}
 	
 	~CameraManager()
 	{
+		killmutex = true;
+		scanthread->join();
 		for (int i = 0; i < Cameras.size(); i++)
 		{
 			delete Cameras[i];
 		}
-		
+		if (scanthread)
+		{
+			delete scanthread;
+		}
 	}
 	//Check if the name can fit the filter to blacklist or whitelist certain cameras based on name
 	static bool DeviceInFilter(v4l2::devices::DEVICE_INFO device, std::string Filter);
 
 	//Gather calibration info and start setting (fps, resolution, method...) before starting the camera
-	static CameraSettings DeviceToSettings(v4l2::devices::DEVICE_INFO device, CameraStartType Start);
+	static VideoCaptureCameraSettings DeviceToSettings(v4l2::devices::DEVICE_INFO device, CameraStartType Start);
 
-	static std::vector<CameraSettings> autoDetectCameras(CameraStartType Start, std::string Filter, std::string CalibrationFile, bool silent = true);
-
-private:
-	template<class CameraType>
-	CameraType* StartCamera(CameraSettings Settings)
-	{
-		Camera* cam = new CameraType(Settings);
-		if(!cam->StartFeed())
-		{
-			std::cerr << "ERROR! Unable to open camera " << cam->GetCameraSettings().DeviceInfo.device_description << std::endl;
-			delete cam;
-			return nullptr;
-		}
-		Cameras.push_back(cam);
-		paths.push_back(Settings.DeviceInfo.device_paths[0]);
-		
-		return (CameraType*) cam;
-	}
+	static std::vector<VideoCaptureCameraSettings> autoDetectCameras(CameraStartType Start, std::string Filter, std::string CalibrationFile, bool silent = true);
 
 public:
-	//Main function to create or remove cameras according to the rules
-	//Template class if the class of camera to create
-	template<class CameraType>
-	void Tick()
-	{
-		for (int i = 0; i < Cameras.size(); i++)
-		{
-			if (Cameras[i]->errors >= 20)
-			{
-				std::cerr << "Detaching camera @" << Cameras[i]->GetCameraSettings().DeviceInfo.device_paths[0] << std::endl;
-				std::string pathtofind = Cameras[i]->GetCameraSettings().DeviceInfo.device_paths[0];
-				if (OnDisconnect)
-				{
-					if (!OnDisconnect(Cameras[i]))
-					{
-						continue;
-					}
-				}
-				
-				auto pos = std::find(paths.begin(), paths.end(), pathtofind);
-				if (pos != paths.end())
-				{
-					paths.erase(pos);
-				}
-				delete Cameras[i];
-				Cameras.erase(std::next(Cameras.begin(), i));
-				i--;
-			}
-		}
-		if (scanidx == 0)
-		{
-			std::vector<v4l2::devices::DEVICE_INFO> devices;
-			v4l2::devices::list(devices);
-			for (int i = 0; i < devices.size(); i++)
-			{
-				auto& device = devices[i];
-				if ((device.device_paths.size() > 0) && DeviceInFilter(device, Filter))
-				{
-					std::string pathtofind = device.device_paths[0];
-					auto pos = std::find(paths.begin(), paths.end(), pathtofind);
-					if (pos == paths.end()) //new camera
-					{
-						if (blockedpaths.find(pathtofind) != blockedpaths.end())
-						{
-							continue;
-						}
-						
-						CameraSettings settings = DeviceToSettings(device, Start);
-						if (!settings.IsValid()) //no valid settings
-						{
-							std::cerr << "Failed to open camera " << device.device_description << " @" << pathtofind << " : Invalid settings" << std::endl;
-							continue;
-						}
-						bool HasCalib = settings.IsValidCalibration();
-						if (AllowNoCalib || HasCalib)
-						{
-							std::cout << "Detected camera " << device.device_description << " @" << pathtofind << std::endl;
-							if (OnConnect)
-							{
-								if (!OnConnect(settings))
-								{
-									continue;
-								}
-								
-							}
-							
-							Camera* cam = StartCamera<CameraType>(settings);
-							std::vector<InternalCameraConfig>& campos = GetInternalCameraPositionsConfig();
-							for (int j = 0; j < campos.size(); j++)
-							{
-								if (DeviceInFilter(device, campos[j].CameraName))
-								{
-									cam->SetLocation(campos[j].LocationRelative, 0);
-									std::cout << "Using stored position " << j << " for camera " << device.device_description << std::endl;
-									break;
-								}
-								
-							}
-							if (PostCameraConnect)
-							{
-								PostCameraConnect(cam);
-							}
-						}
-						else
-						{
-							std::cerr << "Did not open camera " << device.device_description << " @" << pathtofind << " : Camera has no calibration" << std::endl;
-							blockedpaths.emplace(pathtofind);
-						}
-						
-					}
-				}
-			}
-		}
-		scanidx = (scanidx + 1) & 15;
-	}
+	//Call Tick to remove misbehaving cameras and get the current cameras
+	std::vector<Camera*> Tick();
+
+	void StartScanThread();
+
+private:
+	void ScanWorker();
 };

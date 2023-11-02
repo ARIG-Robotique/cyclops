@@ -22,5 +22,5 @@ public:
 
 	virtual std::vector<ObjectData> ToObjectData(int BaseNumeral) override;
 
-	//virtual cv::Affine3d GetObjectTransform(const CameraArucoData& CameraData, float& Surface, float& ReprojectionError) override;
+	//virtual cv::Affine3d GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError) override;
 };

@@ -6,10 +6,11 @@
 #include <opencv2/core.hpp>		// Basic OpenCV structures (Mat, Scalar)
 #include <opencv2/video/tracking.hpp>
 #include "ArucoPipeline/ObjectIdentity.hpp"
+#include "Communication/ProcessedTypes.hpp"
 
 class Camera;
 class BoardViz2D;
-struct CameraArucoData;
+struct CameraFeatureData;
 
 
 struct ArucoMarker
@@ -88,12 +89,16 @@ public:
 	virtual void GetObjectPoints(std::vector<std::vector<cv::Point3d>>& MarkerCorners, std::vector<int>& MarkerIDs, cv::Affine3d rootTransform = cv::Affine3d::Identity(), std::vector<int> filter = {});
 
 	//Returns the surface area, markers that are seen by the camera that belong to this object or it's childs are stored in MarkersSeen
-	virtual float GetSeenMarkers(const CameraArucoData& CameraData, std::vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity());
+	virtual float GetSeenMarkers(const CameraFeatureData& CameraData, std::vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity());
 
-	float ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const cv::Mat &rvec, const cv::Mat &tvec, const CameraArucoData &CameraData);
+	float ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const cv::Mat &rvec, const cv::Mat &tvec, 
+		const CameraFeatureData &CameraData, std::map<int, std::vector<cv::Point2f>> &ReprojectedCorners);
+
 	//Given corners, solve this object's location using multiple tags at once
 	//Output transform is given relative to the camera
-	virtual cv::Affine3d GetObjectTransform(const CameraArucoData& CameraData, float& Surface, float& ReprojectionError);
+	//Does not touch the reprojection data in CameraData
+	virtual cv::Affine3d GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
+		std::map<int, std::vector<cv::Point2f>> &ReprojectedCorners);
 
 	virtual std::vector<ObjectData> ToObjectData(int BaseNumeral);
 

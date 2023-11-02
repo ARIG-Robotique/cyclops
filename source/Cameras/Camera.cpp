@@ -6,19 +6,12 @@
 #include <opencv2/core.hpp>
 #include <opencv2/calib3d.hpp>
 
-#ifdef WITH_CUDA
-#include <opencv2/cudacodec.hpp>
-#include <opencv2/cudaimgproc.hpp>
-#include <opencv2/cudawarping.hpp>
-#else
 #include <opencv2/imgproc.hpp>
-#endif
 
 #include "math2d.hpp"
 #include "math3d.hpp"
 
 #include "Cameras/Calibfile.hpp"
-#include "Cameras/CameraView.hpp"
 
 #include "ArucoPipeline/ObjectTracker.hpp"
 #include "GlobalConf.hpp"
@@ -36,12 +29,12 @@ void Camera::RegisterNoError()
 	errors = std::max(0, errors -1);
 }
 
-CameraSettings Camera::GetCameraSettings()
+const CameraSettings* Camera::GetCameraSettings()
 {
-	return Settings;
+	return Settings.get();
 }
 
-bool Camera::SetCameraSetting(CameraSettings InSettings)
+bool Camera::SetCameraSetting(std::shared_ptr<CameraSettings> InSettings)
 {
 	if (connected)
 	{
@@ -54,22 +47,17 @@ bool Camera::SetCameraSetting(CameraSettings InSettings)
 
 bool Camera::SetCalibrationSetting(Mat CameraMatrix, Mat DistanceCoefficients)
 {
-	Settings.CameraMatrix = CameraMatrix;
-	Settings.distanceCoeffs = DistanceCoefficients;
+	Settings->CameraMatrix = CameraMatrix;
+	Settings->distanceCoeffs = DistanceCoefficients;
 	HasUndistortionMaps = false;
 	return true;
 }
 
 void Camera::GetCameraSettingsAfterUndistortion(Mat& CameraMatrix, Mat& DistanceCoefficients)
 {
-	CameraMatrix = Settings.CameraMatrix;
+	CameraMatrix = Settings->CameraMatrix;
 	//DistanceCoefficients = Settings.distanceCoeffs; //FIXME
 	DistanceCoefficients = Mat::zeros(4,1, CV_64F);
-}
-
-BufferStatus Camera::GetStatus()
-{
-	return FrameBuffer.Status;
 }
 
 bool Camera::StartFeed()
@@ -92,59 +80,55 @@ bool Camera::Read()
 
 void Camera::Undistort()
 {
-	CameraSettings setcopy = GetCameraSettings();
+	
 	if (!HasUndistortionMaps)
 	{
-		Size cammatsz = setcopy.CameraMatrix.size();
+		Size cammatsz = Settings->CameraMatrix.size();
 		if (cammatsz.height != 3 || cammatsz.width != 3)
 		{
 			RegisterError();
-			cerr << "Asking for undistortion but camera matrix is invalid ! Camera " << setcopy.DeviceInfo.device_description << endl;
+			cerr << "Asking for undistortion but camera matrix is invalid ! Camera " << Name << endl;
 			return;
 		}
-		
-		
 		//cout << "Creating undistort map using Camera Matrix " << endl << setcopy.CameraMatrix << endl 
 		//<< " and Distance coeffs " << endl << setcopy.distanceCoeffs << endl;
-		Mat map1, map2, newCamMat;
-		float balance = 0.8;
-		//fisheye::estimateNewCameraMatrixForUndistortRectify(setcopy.CameraMatrix, setcopy.distanceCoeffs, setcopy.Resolution, Mat::eye(3, 3, CV_32F), newCamMat, balance);
-		initUndistortRectifyMap(setcopy.CameraMatrix, setcopy.distanceCoeffs, Mat::eye(3,3, CV_64F), 
-		setcopy.CameraMatrix, setcopy.Resolution, CV_32FC1, map1, map2);
-		#ifdef WITH_CUDA
-		UndistMap1.upload(map1);
-		UndistMap2.upload(map2);
-		#else
+		Mat map1, map2;
+
+		initUndistortRectifyMap(Settings->CameraMatrix, Settings->distanceCoeffs, Mat::eye(3,3, CV_64F), 
+		Settings->CameraMatrix, Settings->Resolution, CV_32FC1, map1, map2);
 		map1.copyTo(UndistMap1);
 		map2.copyTo(UndistMap2);
-		#endif
 		HasUndistortionMaps = true;
 	}
-
-	BufferedFrame& buff = FrameBuffer;
-	
-	#ifdef WITH_CUDA
-	if (!buff.FrameRaw.MakeGPUAvailable())
+	try
 	{
+		remap(LastFrameDistorted, LastFrameUndistorted, UndistMap1, UndistMap2, INTER_LINEAR);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "Camera undistort failed : " << e.what() << '\n';
 		return;
 	}
-	
-	buff.FrameUndistorted.GPUFrame = cuda::createContinuous(buff.FrameRaw.GPUFrame.size(), buff.FrameRaw.GPUFrame.type());
-	//cout << "CV_32F=" << CV_32F << " 1=" << UndistMap1.type() << " 2=" << UndistMap2.type() << endl;
-	cuda::remap(buff.FrameRaw.GPUFrame, buff.FrameUndistorted.GPUFrame, UndistMap1, UndistMap2, INTER_LINEAR);
-	buff.FrameUndistorted.HasGPU = true;
-	buff.FrameUndistorted.HasCPU = false;
-	#else
-	if (!buff.FrameRaw.MakeCPUAvailable())
-	{
-		return;
-	}
-	remap(buff.FrameRaw.CPUFrame, buff.FrameUndistorted.CPUFrame, UndistMap1, UndistMap2, INTER_LINEAR);
-	buff.FrameUndistorted.HasCPU = true;
-	#endif
 }
 
-void Camera::GetFrameUndistorted(UMat& frame)
+void Camera::GetFrame(CameraImageData& frame, bool Distorted)
+{
+	frame.Distorted = Distorted;
+	frame.CameraName = Name;
+	if (Distorted)
+	{
+		frame.CameraMatrix = Settings->CameraMatrix;
+		frame.DistanceCoefficients = Settings->distanceCoeffs;
+		frame.Image = LastFrameDistorted;
+	}
+	else
+	{
+		GetCameraSettingsAfterUndistortion(frame.CameraMatrix, frame.DistanceCoefficients);
+		frame.Image = LastFrameUndistorted;
+	}
+}
+
+/*void Camera::GetFrameUndistorted(UMat& frame)
 {
 	BufferedFrame& buff = FrameBuffer;
 	if (!buff.FrameUndistorted.MakeCPUAvailable())
@@ -154,62 +138,6 @@ void Camera::GetFrameUndistorted(UMat& frame)
 	frame = buff.FrameUndistorted.CPUFrame;
 }
 
-// Fonction de calibration permettant de calculer la matrice de la caméra et les coefficients de distorsionzae
-void Camera::Calibrate(vector<vector<Point3f>> objectPoints,
-	vector<vector<Point2f>> imagePoints, vector<string> imagePaths, Size imageSize,
-	Mat& cameraMatrix, Mat& distCoeffs,
-	vector<Mat> &rvecs, vector<Mat> &tvecs)
-{
-	int numimagesstart = objectPoints.size();
-	float threshold = GetCalibrationConfig().CalibrationThreshold;
-	for (int i = 0; i < numimagesstart; i++)
-	{
-		int numimages = objectPoints.size();
-		calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix, distCoeffs, rvecs, tvecs, 
-		CALIB_RATIONAL_MODEL, TermCriteria(TermCriteria::COUNT, 50, DBL_EPSILON));
-		vector<float> reprojectionErrors;
-		reprojectionErrors.resize(numimages);
-		int indexmosterrors = 0;
-		for (int imageidx = 0; imageidx < numimages; imageidx++)
-		{
-			vector<Point2f> reprojected;
-
-			projectPoints(objectPoints[imageidx], rvecs[imageidx], tvecs[imageidx], cameraMatrix, distCoeffs, reprojected);
-			reprojectionErrors[imageidx] = ComputeReprojectionError(imagePoints[imageidx], reprojected) / reprojected.size();
-			if (reprojectionErrors[indexmosterrors] < reprojectionErrors[imageidx])
-			{
-				indexmosterrors = imageidx;
-			}
-		}
-		if (reprojectionErrors[indexmosterrors] < threshold)
-		{
-			cout << "Calibration done, error is " << reprojectionErrors[indexmosterrors] << "px/pt at most" << endl;
-			cout << numimages << " images remain " << endl;
-			break;
-		}
-		else
-		{
-			cout << "Ejecting index " << indexmosterrors << ", stored at " << imagePaths[indexmosterrors] << " for " << reprojectionErrors[indexmosterrors] << endl;
-			objectPoints[indexmosterrors] = objectPoints[numimages-1];
-			imagePoints[indexmosterrors] = imagePoints[numimages-1];
-			imagePaths[indexmosterrors] = imagePaths[numimages-1];
-			objectPoints.resize(numimages-1);
-			imagePoints.resize(numimages-1);
-			imagePaths.resize(numimages-1);
-		}
-	}
-	for (int i = 0; i < imagePaths.size(); i++)
-	{
-		cout<< imagePaths[i] << " remains"<< endl; 
-	}
-	
-	
-}
-
-void Camera::GetFrame(UMat& OutFrame)
-{
-	FrameBuffer.FrameRaw.GetCPUFrame(OutFrame);
-}
 
 void Camera::GetOutputFrame(UMat& OutFrame, Rect window)
 {
@@ -436,4 +364,4 @@ bool Camera::GetMarkerData(CameraArucoData& CameraData)
 void Camera::SetMarkerReprojection(int MarkerIndex, const vector<cv::Point2d> &Corners)
 {
 	FrameBuffer.reprojectedCorners[MarkerIndex] = Corners;
-}
+}*/

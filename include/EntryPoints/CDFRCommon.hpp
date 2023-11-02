@@ -17,16 +17,11 @@
 #include "ArucoPipeline/ObjectTracker.hpp"
 
 #include "Misc/FrameCounter.hpp"
-#include "Cameras/CameraView.hpp"
 
 #include "Communication/DataSender.hpp"
 
 
 using namespace cv;
 using namespace std;
-
-//Camera steps pipeline
-void BufferedPipeline(vector<Camera*> Cameras, 
-	aruco::ArucoDetector& Detector, ObjectTracker* registry);
 
 map<PacketType, bool> GetDefaultAllowMap();

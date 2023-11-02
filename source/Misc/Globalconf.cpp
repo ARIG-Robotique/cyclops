@@ -1,4 +1,4 @@
-#include "GlobalConf.hpp"
+#include "Misc/GlobalConf.hpp"
 
 #include "Cameras/ImageTypes.hpp"
 
@@ -19,7 +19,7 @@ bool ConfigInitialised = false;
 Config cfg;
 
 //Default values
-CaptureConfig CaptureCfg = {(int)CameraStartType::GSTREAMER_CPU, Size(1920,1080), Rect(0,0,0,0), 1.f, 60, 1, ""};
+CaptureConfig CaptureCfg = {(int)CameraStartType::GSTREAMER_CPU, Size(1920,1080), 1.f, 60, 1, ""};
 WebsocketConfig WebsocketCfg = {"eth1", true, true, "127.0.0.1", 42069};
 vector<InternalCameraConfig> CamerasInternal;
 CalibrationConfig CamCalConf = {40, Size(6,4), 0.25, Size2d(4.96, 3.72)};
@@ -153,23 +153,11 @@ void InitConfig()
 		Setting& Resolution = EnsureExistCfg(Capture, "Resolution", Setting::TypeGroup, 0);
 		CopyDefaultCfg(Resolution, "Width", Setting::TypeInt, CaptureCfg.FrameSize.width);
 		CopyDefaultCfg(Resolution, "Height", Setting::TypeInt, CaptureCfg.FrameSize.height);
-		CopyDefaultCfg(Resolution, "CropLeft", Setting::TypeInt, CaptureCfg.CropRegion.x);
-		CopyDefaultCfg(Resolution, "CropTop", Setting::TypeInt, CaptureCfg.CropRegion.y);
-		CopyDefaultCfg(Resolution, "CropRight", Setting::TypeInt, CaptureCfg.CropRegion.width);
-		CopyDefaultCfg(Resolution, "CropBottom", Setting::TypeInt, CaptureCfg.CropRegion.height);
 		CopyDefaultCfg(Capture, "Framerate", Setting::TypeInt, CaptureCfg.CaptureFramerate);
 		CopyDefaultCfg(Capture, "FramerateDivider", Setting::TypeInt, CaptureCfg.FramerateDivider);
 		CopyDefaultCfg(Capture, "Method", Setting::TypeInt, CaptureCfg.StartType);
 		CopyDefaultCfg(Resolution, "Reduction", Setting::TypeFloat, CaptureCfg.ReductionFactor);
 		CopyDefaultCfg(Capture, "CameraFilter", Setting::TypeString, CaptureCfg.filter);
-		if (CaptureCfg.StartType != (int)CameraStartType::GSTREAMER_NVARGUS)
-		{
-			if (CaptureCfg.CropRegion != cv::Rect(0,0,0,0))
-			{
-				cerr << "WARNING : Cropping is only supported on the NVidia Jetson with GStreamer, add the needed things if you want it to work with other pipelines" << endl;
-			}
-			
-		}
 		
 	}
 
@@ -247,7 +235,7 @@ RunType GetRunType()
 	return (RunType)ProgramRunType;
 }
 
-aruco::ArucoDetector& GetArucoDetector(){
+const aruco::ArucoDetector& GetArucoDetector(){
 	if (!HasDetector)
 	{
 		auto dict = aruco::getPredefinedDictionary(aruco::DICT_4X4_100);

@@ -4,7 +4,6 @@
 
 #include "math3d.hpp"
 #include "ArucoPipeline/ObjectIdentity.hpp"
-#include "Cameras/CameraView.hpp"
 #include "Cameras/Camera.hpp"
 
 using namespace cv;
@@ -68,7 +67,7 @@ vector<ObjectData> StaticObject::ToObjectData(int BaseNumeral)
 	return {packet};
 }
 
-/*cv::Affine3d StaticObject::GetObjectTransform(const CameraArucoData& CameraData, float& Surface, float& ReprojectionError)
+/*cv::Affine3d StaticObject::GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError)
 {
 	return TrackedObject::GetObjectTransform(CameraData, Surface, ReprojectionError);
 	vector<ArucoViewCameraLocal> SeenMarkers;

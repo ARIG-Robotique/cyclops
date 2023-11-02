@@ -1,10 +1,11 @@
 #pragma once
 
-#include <vector>
+#include <map>
 #include <cstdint>
 #include <string>
 #include <chrono>
 #include <iostream>
+#include <algorithm>
 
 //Helper class to gather execution times of different parts of code and average over multiple cycles. It's a poor man's profiler.
 template<bool enabled>
@@ -14,22 +15,20 @@ class ManualProfiler
 	typedef std::chrono::time_point<profclock> proftime;
 	typedef std::chrono::duration<double> profdelta;
 private:
-	int currsection;
-	std::vector<profdelta> timings;
+	std::string currsection;
+	std::map<std::string, profdelta> timings;
 	std::string ProfilerName;
-	std::vector<std::string> names;
 	proftime lastswitchtick;
 	proftime lastprinttick;
 public:
-	ManualProfiler(std::string InProfilerName = "", std::vector<std::string> InNames = {})
-		:currsection(-1),
-		ProfilerName(InProfilerName),
-		names(InNames)
+	ManualProfiler(std::string InProfilerName = "")
+		:currsection(""),
+		ProfilerName(InProfilerName)
 	{
 		lastprinttick = profclock::now();
 	}
 
-	void EnterSection(int sectionnumber)
+	void EnterSection(std::string name)
 	{
 		if (!enabled)
 		{
@@ -37,29 +36,13 @@ public:
 		}
 		
 		proftime entertick = profclock::now();
-		if (currsection != -1)
+		if (currsection != "")
 		{
-			if (timings.size() <= currsection)
-			{
-				timings.resize(currsection +1, profdelta(0));
-			}
 			timings[currsection] += entertick - lastswitchtick;
 		}
-		currsection = sectionnumber;
-		lastswitchtick = profclock::now();
-	}
-	void NameSection(int sectionnumber, std::string name)
-	{
-		if (!enabled)
-		{
-			return;
-		}
 		
-		if (names.size() <= sectionnumber)
-		{
-			names.resize(sectionnumber +1, std::string("No Name"));
-		}
-		names[sectionnumber] = name;
+		currsection = name;
+		lastswitchtick = profclock::now();
 	}
 
 	template<bool otheren>
@@ -70,14 +53,9 @@ public:
 			return;
 		}
 		
-		if (other.timings.size() > timings.size())
+		for (auto it = other.timings.begin(); it != other.timings.end(); it++)
 		{
-			timings.resize(other.timings.size(), profdelta(0));
-		}
-		
-		for (int i = 0; i < other.timings.size(); i++)
-		{
-			timings[i] += other.timings[i];
+			timings[it->first] += it->second;
 		}
 	}
 
@@ -90,18 +68,15 @@ public:
 		
 		std::cout << "Profiling " << ProfilerName <<":" << std::endl;
 		profdelta total(0);
-		for (int i = 0; i < timings.size(); i++)
+		for (auto it = timings.begin(); it != timings.end(); it++)
 		{
-			total += timings[i];
+			total += it->second;
 		}
-		for (int i = 0; i < timings.size(); i++)
+		for (auto it = timings.begin(); it != timings.end(); it++)
 		{
-			std::string name = "No Name";
-			if (i < names.size())
-			{
-				name = names[i];
-			}
-			std::cout << "\tSection " << i << " \"" << name << "\" took " << timings[i].count() << "s, " << timings[i].count()/total.count()*100.0 << "%" << std::endl;
+			const std::string &name = it->first;
+			profdelta& timing = it->second;
+			std::cout << "\tSection " << name << "\" took " << timing.count() << "s, " << timing.count()/total.count()*100.0 << "%" << std::endl;
 		}
 		lastprinttick = profclock::now();
 	}

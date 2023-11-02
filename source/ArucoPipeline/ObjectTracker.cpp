@@ -1,20 +1,21 @@
-#include "ArucoPipeline/ObjectTracker.hpp"
-#include "Cameras/CameraView.hpp"
-#include "math3d.hpp"
-#include "ArucoPipeline/StaticObject.hpp"
+
+#include <vector>
+
+#include <math3d.hpp>
+#include <ArucoPipeline/ObjectTracker.hpp>
+#include <ArucoPipeline/StaticObject.hpp>
 
 using namespace cv;
 using namespace std;
 
 ObjectTracker::ObjectTracker(/* args */)
 {
-
-	for (int i = 0; i < 100; i++)
+	assert(sizeof(ArucoMap)/sizeof(ArucoMap[0]) == sizeof(ArucoSizes)/sizeof(ArucoSizes[0]));
+	for (int i = 0; i < sizeof(ArucoMap)/sizeof(ArucoMap[0]); i++)
 	{
 		ArucoMap[i] = -1;
 		ArucoSizes[i] = 0.05;
 	}
-	
 }
 
 ObjectTracker::~ObjectTracker()
@@ -30,8 +31,9 @@ void ObjectTracker::RegisterTrackedObject(TrackedObject* object)
 
 void ObjectTracker::UnregisterTrackedObject(TrackedObject* object)
 {
+	assert(object->markers.size() == 0 && object->childs.size() == 0);
 	auto objpos = find(objects.begin(), objects.end(), object);
-	if (objpos != objects.end() && object->markers.size() == 0)
+	if (objpos != objects.end())
 	{
 		objects.erase(objpos);
 	}
@@ -54,36 +56,72 @@ struct ResolvedLocation
 	}
 };
 
-void ObjectTracker::SolveLocationsPerObject(const vector<CameraArucoData>& CameraData, unsigned long tick)
+bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
+{
+	CameraData.CameraTransform = Affine3d::Identity();
+	float score = 0;
+	map<int, vector<Point2f>> ReprojectedCorners;
+	for (auto object : objects)
+	{
+		auto *staticobj = dynamic_cast<StaticObject*>(object);
+		if (staticobj == nullptr)
+		{
+			continue;
+		}
+		if (staticobj->IsRelative())
+		{
+			cerr << "SolveCameraLocation isn't meant for inside-out tracking !" << endl;
+			assert(0);
+		}
+		float surface, reprojectionError;
+		Affine3d NewTransform = staticobj->GetObjectTransform(CameraData, surface, reprojectionError, ReprojectedCorners);
+		float newscore = surface;
+		if (newscore <= score)
+		{
+			continue;
+		}
+		CameraData.CameraTransform = NewTransform;
+		score = newscore;
+	}
+
+	for (auto it = ReprojectedCorners.begin(); it != ReprojectedCorners.end(); it++)
+	{
+		CameraData.ArucoCornersReprojected[it->first] = it->second;
+	}
+	return score >0;
+}
+
+void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraData, unsigned long tick)
 {
 	const int NumCameras = CameraData.size();
 	const int NumObjects = objects.size();
-	vector<CameraArucoData> BaseCameraData;
+	vector<CameraFeatureData> BaseCameraData;
+	vector<map<int, vector<Point2f>>> ReprojectedCorners;
 	BaseCameraData.resize(NumCameras);
-	for (int i = 0; i < NumCameras; i++)
+	for (int i = 0; i < NumCameras; i++) //copy everything except the actual aruco data, so that each object only has the needed aruco
 	{
+		BaseCameraData[i].CameraName = CameraData[i].CameraName;
 		BaseCameraData[i].CameraMatrix = CameraData[i].CameraMatrix;
 		BaseCameraData[i].CameraTransform = CameraData[i].CameraTransform;
 		BaseCameraData[i].DistanceCoefficients = CameraData[i].DistanceCoefficients;
-		BaseCameraData[i].SourceCamera = CameraData[i].SourceCamera;
 	}
 	
-	vector<vector<CameraArucoData>> DataPerObject;
+	vector<vector<CameraFeatureData>> DataPerObject;
 	DataPerObject.resize(NumObjects, BaseCameraData);
 	
 	for (int i = 0; i < NumCameras; i++)
 	{
-		const CameraArucoData& data = CameraData[i];
-		for (int j = 0; j < data.TagIDs.size(); j++)
+		const CameraFeatureData& data = CameraData[i];
+		for (int j = 0; j < data.ArucoIndices.size(); j++)
 		{
-			int tagidx = data.TagIDs[j];
+			int tagidx = data.ArucoIndices[j];
 			int objectidx = ArucoMap[tagidx];
 			if (objectidx < 0 || objectidx >= NumObjects)
 			{
 				continue;
 			}
-			DataPerObject[objectidx][i].TagCorners.push_back(data.TagCorners[j]);
-			DataPerObject[objectidx][i].TagIDs.push_back(tagidx);
+			DataPerObject[objectidx][i].ArucoCorners.push_back(data.ArucoCorners[j]);
+			DataPerObject[objectidx][i].ArucoIndices.push_back(tagidx);
 		}
 	}
 	/*parallel_for_(Range(0, objects.size()), [&](const Range& range)
@@ -108,13 +146,14 @@ void ObjectTracker::SolveLocationsPerObject(const vector<CameraArucoData>& Camer
 			vector<ResolvedLocation> locations;
 			for (int CameraIdx = 0; CameraIdx < CameraData.size(); CameraIdx++)
 			{
-				const CameraArucoData& ThisCameraData = DataPerObject[ObjIdx][CameraIdx];
-				if (ThisCameraData.TagIDs.size() == 0) //Not seen
+				CameraFeatureData& ThisCameraData = DataPerObject[ObjIdx][CameraIdx];
+				if (ThisCameraData.ArucoCorners.size() == 0) //Not seen
 				{
 					continue;
 				}
 				float AreaThis, ReprojectionErrorThis;
-				Affine3d transformProposed = ThisCameraData.CameraTransform * objects[ObjIdx]->GetObjectTransform(ThisCameraData, AreaThis, ReprojectionErrorThis);
+				Affine3d transformProposed = ThisCameraData.CameraTransform * 
+					objects[ObjIdx]->GetObjectTransform(ThisCameraData, AreaThis, ReprojectionErrorThis, ReprojectedCorners[CameraIdx]);
 				float ScoreThis = AreaThis/(ReprojectionErrorThis + 0.1);
 				if (ScoreThis < 1 || ReprojectionErrorThis == INFINITY) //Bad solve or not seen
 				{
@@ -148,6 +187,14 @@ void ObjectTracker::SolveLocationsPerObject(const vector<CameraArucoData>& Camer
 			//cout << "Object " << object->Name << " is at location " << objects[ObjIdx]->GetLocation().translation() << " / score: " << best.score+secondbest.score << ", seen by " << locations.size() << " cameras" << endl;
 		}
 	//});
+
+	for (int CamIdx = 0; CamIdx < NumCameras; CamIdx++)
+	{
+		for (auto it = ReprojectedCorners[CamIdx].begin(); it != ReprojectedCorners[CamIdx].end(); it++)
+		{
+			CameraData[CamIdx].ArucoCornersReprojected[it->first] = it->second;
+		}
+	}
 }
 
 vector<ObjectData> ObjectTracker::GetObjectDataVector(unsigned long Tick)
@@ -187,9 +234,11 @@ void ObjectTracker::RegisterArucoRecursive(TrackedObject* object, int index)
 	{
 		const ArucoMarker& marker = object->markers[i];
 		int MarkerID = marker.number;
+		assert(MarkerID < sizeof(ArucoMap)/sizeof(ArucoMap[0]));
 		if (ArucoMap[MarkerID] != -1)
 		{
 			cerr << "WARNING Overwriting Marker Misc/owner for marker index " << MarkerID << " with object " << object->Name << endl;
+			assert(0);
 		}
 		ArucoMap[MarkerID] = index;
 		ArucoSizes[MarkerID] = marker.sideLength;

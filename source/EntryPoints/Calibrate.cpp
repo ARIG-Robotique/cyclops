@@ -16,11 +16,8 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgproc.hpp>
 
-#ifdef WITH_CUDA
-#include <opencv2/cudawarping.hpp>
-#endif
-
-#include "math2d.hpp"
+#include "Misc/math2d.hpp"
+#include "Misc/math3d.hpp"
 
 #include "Visualisation/ImguiWindow.hpp"
 #include "Visualisation/openGL/Texture.hpp"
@@ -29,7 +26,6 @@
 #include "GlobalConf.hpp"
 #include "Cameras/Camera.hpp"
 #include "Cameras/VideoCaptureCamera.hpp"
-#include "Cameras/CameraView.hpp"
 #include "Cameras/Calibfile.hpp"
 #include "Misc/FrameCounter.hpp"
 
@@ -65,11 +61,53 @@ void CameraCalibration(vector<vector<Point2f>> CheckerboardImageSpacePoints, vec
 	CameraMatrix = initCameraMatrix2D(WorldSpaceCornerPoints, CheckerboardImageSpacePoints, FrameSize);
 	cout << "Camera matrix at start : " << CameraMatrix << endl;
 	UMat undistorted;
-	CamToCalibrate->Calibrate(WorldSpaceCornerPoints, CheckerboardImageSpacePoints, ImagePaths, FrameSize, CameraMatrix, DistanceCoefficients, 
-		rVectors, tVectors);
+
+	int numimagesstart = WorldSpaceCornerPoints.size();
+	float threshold = GetCalibrationConfig().CalibrationThreshold;
+	for (int i = 0; i < numimagesstart; i++)
+	{
+		int numimages = WorldSpaceCornerPoints.size();
+		calibrateCamera(WorldSpaceCornerPoints, CheckerboardImageSpacePoints, FrameSize, CameraMatrix, DistanceCoefficients, rVectors, tVectors, 
+		CALIB_RATIONAL_MODEL, TermCriteria(TermCriteria::COUNT, 50, DBL_EPSILON));
+		vector<float> reprojectionErrors;
+		reprojectionErrors.resize(numimages);
+		int indexmosterrors = 0;
+		for (int imageidx = 0; imageidx < numimages; imageidx++)
+		{
+			vector<Point2f> reprojected;
+
+			projectPoints(WorldSpaceCornerPoints[imageidx], rVectors[imageidx], tVectors[imageidx], CameraMatrix, DistanceCoefficients, reprojected);
+			reprojectionErrors[imageidx] = ComputeReprojectionError(CheckerboardImageSpacePoints[imageidx], reprojected) / reprojected.size();
+			if (reprojectionErrors[indexmosterrors] < reprojectionErrors[imageidx])
+			{
+				indexmosterrors = imageidx;
+			}
+		}
+		if (reprojectionErrors[indexmosterrors] < threshold)
+		{
+			cout << "Calibration done, error is " << reprojectionErrors[indexmosterrors] << "px/pt at most" << endl;
+			cout << numimages << " images remain " << endl;
+			break;
+		}
+		else
+		{
+			cout << "Ejecting index " << indexmosterrors << ", stored at " << ImagePaths[indexmosterrors] << " for " << reprojectionErrors[indexmosterrors] << endl;
+			WorldSpaceCornerPoints[indexmosterrors] = WorldSpaceCornerPoints[numimages-1];
+			CheckerboardImageSpacePoints[indexmosterrors] = CheckerboardImageSpacePoints[numimages-1];
+			ImagePaths[indexmosterrors] = ImagePaths[numimages-1];
+
+			WorldSpaceCornerPoints.resize(numimages-1);
+			CheckerboardImageSpacePoints.resize(numimages-1);
+			ImagePaths.resize(numimages-1);
+		}
+	}
+	for (int i = 0; i < ImagePaths.size(); i++)
+	{
+		cout<< ImagePaths[i] << " remains"<< endl; 
+	}
 }
 
-vector<String> CalibrationImages()
+vector<String> GetPathsToCalibrationImages()
 {
 	vector<String> pathos;
 	for (const auto & entry : fs::directory_iterator(TempImgPath))
@@ -80,7 +118,7 @@ vector<String> CalibrationImages()
 	return pathos;
 }
 
-int LastIdx(vector<String> Pathes)
+int GetCalibrationImagesLastIndex(vector<String> Pathes)
 {
 	int next = -1;
 	for (int i = 0; i < Pathes.size(); i++)
@@ -105,7 +143,7 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 {
 	auto calconf = GetCalibrationConfig();
 	Size CheckerSize = calconf.NumIntersections;
-	vector<String> pathes = CalibrationImages();
+	vector<String> pathes = GetPathsToCalibrationImages();
 	size_t numpathes = pathes.size();
 	vector<vector<Point2f>> savedPoints;
 	savedPoints.resize(numpathes);
@@ -211,7 +249,7 @@ void CalibrationWorker()
 	if (CamToCalib->connected)
 	{
 		CamToCalib->SetCalibrationSetting(CameraMatrix, distanceCoefficients);
-		if (resolution != CamToCalib->GetCameraSettings().Resolution)
+		if (resolution != CamToCalib->GetCameraSettings()->Resolution)
 		{
 			cerr << "WARNING : Resolution of the stored images isn't the same as the resolution of the live camera!" <<endl;
 		}
@@ -219,35 +257,36 @@ void CalibrationWorker()
 	}
 	else
 	{
-		auto CamSett = CamToCalib->GetCameraSettings();
+		VideoCaptureCameraSettings CamSett = *dynamic_cast<const VideoCaptureCameraSettings*>(CamToCalib->GetCameraSettings());
+
 		CamSett.Resolution = resolution;
 		CamSett.CameraMatrix = CameraMatrix;
 		CamSett.distanceCoeffs = distanceCoefficients;
 		CamSett.DeviceInfo.device_description = "NoCam";
-		CamToCalib->SetCameraSetting(CamSett);
+		CamToCalib->SetCameraSetting(make_shared<VideoCaptureCameraSettings>(CamSett));
 	}
 	
 	
 	auto calconf = GetCalibrationConfig();
 	double apertureWidth = calconf.SensorSize.width, apertureHeight = calconf.SensorSize.height, fovx, fovy, focalLength, aspectRatio;
 	Point2d principalPoint;
-	calibrationMatrixValues(CameraMatrix, CamToCalib->GetCameraSettings().Resolution, apertureWidth, apertureHeight, fovx, fovy, focalLength, principalPoint, aspectRatio);
+	calibrationMatrixValues(CameraMatrix, CamToCalib->GetCameraSettings()->Resolution, apertureWidth, apertureHeight, fovx, fovy, focalLength, principalPoint, aspectRatio);
 	cout << "Computed camera parameters for sensor of size " << apertureWidth << "x" << apertureHeight <<"mm :" << endl
 	<< " fov:" << fovx << "x" << fovy << "°, focal length=" << focalLength << ", aspect ratio=" << aspectRatio << endl
 	<< "Principal point @ " << principalPoint << endl;
-	writeCameraParameters(CamToCalib->GetCameraSettings().DeviceInfo.device_description, CameraMatrix, distanceCoefficients, CamToCalib->GetCameraSettings().Resolution);
+	writeCameraParameters(CamToCalib->GetName(), CameraMatrix, distanceCoefficients, CamToCalib->GetCameraSettings()->Resolution);
 	//distanceCoefficients = Mat::zeros(8, 1, CV_64F);
 	ShowUndistorted = true;
 	Calibrating = false;
 }
 
-bool docalibration(CameraSettings CamSett)
+bool docalibration(VideoCaptureCameraSettings CamSett)
 {
 	bool HasCamera = CamSett.IsValid();
 	
 	if (HasCamera)
 	{
-		CamToCalib = new VideoCaptureCamera(CamSett);
+		CamToCalib = new VideoCaptureCamera(make_shared<VideoCaptureCameraSettings>(CamSett));
 		CamToCalib->StartFeed();
 	}
 	else
@@ -271,7 +310,7 @@ bool docalibration(CameraSettings CamSett)
 	{
 		cout << "No camera was found, calibrating from saved images" << endl;
 		CalibrationWorker();
-		vector<String> pathes = CalibrationImages();
+		vector<String> pathes = GetPathsToCalibrationImages();
 		for (int i = 0; i < pathes.size(); i++)
 		{
 			Mat image = imread(pathes[i]);
@@ -279,7 +318,8 @@ bool docalibration(CameraSettings CamSett)
 			image.copyTo(image2);
 			CamToCalib->Read();
 			CamToCalib->Undistort();
-			CamToCalib->GetFrameUndistorted(undist);
+			CameraImageData Frame;
+			CamToCalib->GetFrame(Frame, false);
 			imshow(CalibWindowName, undist);
 			waitKey(1000);
 		}
@@ -304,8 +344,8 @@ bool docalibration(CameraSettings CamSett)
 	
 	//startWindowThread();
 	
-	vector<String> pathes = CalibrationImages();
-	int nextIdx = LastIdx(pathes) +1;
+	vector<String> pathes = GetPathsToCalibrationImages();
+	int nextIdx = GetCalibrationImagesLastIndex(pathes) +1;
 	int64 lastCapture = getTickCount();
 
 	FrameCounter fps;
@@ -317,12 +357,8 @@ bool docalibration(CameraSettings CamSett)
 		imguiinst.StartFrame();
 		ImGuiIO& IO = ImGui::GetIO();
 
-		UMat frame, frameresized;
+		UMat frame;
 		bool CaptureImageThisFrame = false;
-		#ifdef WITH_CUDA
-		cuda::GpuMat gpuframe, gpuresized;
-		cuda::Stream resizestream;
-		#endif
 		
 		if (!CamToCalib->Read())
 		{
@@ -358,32 +394,13 @@ bool docalibration(CameraSettings CamSett)
 			ImGui::Checkbox("Mirror", &mirrored);
 		}
 
+		CameraImageData framedata;
 		if (ShowUndistorted)
 		{
-			UMat frameundist;
 			CamToCalib->Undistort();
-
-			CamToCalib->GetOutputFrame(frame, Rect(Point2i(0,0), CamSett.Resolution));
 		}
-		else
-		{
-			CamToCalib->GetFrame(frame);
-		}
-		
-		if (GetScreenResolution() != CamSett.Resolution && false)
-		{
-			#ifdef WITH_CUDA
-			gpuframe.upload(frame, resizestream);
-			cuda::resize(gpuframe, gpuresized, GetScreenResolution(), 0, 0, 1, resizestream);
-			gpuresized.download(frameresized);
-			#else
-			resize(frame, frameresized, GetScreenResolution());
-			#endif
-		}
-		else
-		{
-			frameresized = frame;
-		}
+		CamToCalib->GetFrame(framedata, !ShowUndistorted);
+		frame = framedata.Image;
 		
 		if (!ShowUndistorted)
 		{
@@ -455,13 +472,9 @@ bool docalibration(CameraSettings CamSett)
 		
 		ImGui::End();
 
-		#ifdef WITH_CUDA
-		resizestream.waitForCompletion();
-		#endif
-
 
 		
-		cameratex.Texture = frameresized.getMat(cv::AccessFlag::ACCESS_READ | cv::AccessFlag::ACCESS_FAST);
+		cameratex.Texture = frame.getMat(cv::AccessFlag::ACCESS_READ | cv::AccessFlag::ACCESS_FAST);
 		cameratex.Refresh();
 		cameratex.Texture = Mat();
 
@@ -480,12 +493,6 @@ bool docalibration(CameraSettings CamSett)
 			
 			background->AddImage((void*)(intptr_t)cameratex.GetTextureID(), p_min, p_max, uv_min, uv_max);
 		}
-		/*if(ImGui::Begin("Background", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration))
-		{
-			
-			ImGui::Image((void*)(intptr_t)cameratex.GetTextureID(), CamSett.Resolution);
-		}
-		ImGui::End();*/
 
 		
 		

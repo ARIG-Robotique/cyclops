@@ -18,7 +18,6 @@ struct CaptureConfig
 {
 	int StartType; //See CameraStartType in Misc/ImageTypes.hpp . Chooses method to use to start the camera
 	cv::Size FrameSize; //resolution after crop
-	cv::Rect CropRegion; //how many pixels to remove from each side ? only with nvvidconv/jetson/gstreamer
 	float ReductionFactor; //factor to downscale image before aruco detection
 	int CaptureFramerate;
 	int FramerateDivider;
@@ -27,7 +26,7 @@ struct CaptureConfig
 
 RunType GetRunType();
 
-cv::aruco::ArucoDetector& GetArucoDetector();
+const cv::aruco::ArucoDetector& GetArucoDetector();
 
 void SetNoScreen(bool value = true);
 

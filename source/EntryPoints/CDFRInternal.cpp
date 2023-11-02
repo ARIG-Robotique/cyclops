@@ -1,25 +1,18 @@
-#include "EntryPoints/CDFRInternal.hpp"
-#include "EntryPoints/CDFRCommon.hpp"
+#include <EntryPoints/CDFRInternal.hpp>
+#include <EntryPoints/CDFRCommon.hpp>
 
-#include "Visualisation/BoardGL.hpp"
-#include "Communication/Encoders/MinimalEncoder.hpp"
-#include "Communication/Transport/TCPTransport.hpp"
-#include "Communication/Transport/UDPTransport.hpp"
-#include "Communication/Transport/SerialTransport.hpp"
+#include <Visualisation/BoardGL.hpp>
+#include <Communication/Encoders/MinimalEncoder.hpp>
+#include <Communication/Transport/TCPTransport.hpp>
+#include <Communication/Transport/UDPTransport.hpp>
+#include <Communication/Transport/SerialTransport.hpp>
 
 void CDFRInternalMain(bool direct, bool v3d)
 {
-
-	CameraManager CameraMan(GetCaptureMethod(), GetCaptureConfig().filter, false);
+	assert(0);
+	/*CameraManager CameraMan(GetCaptureMethod(), GetCaptureConfig().filter, false);
 
 	auto& Detector = GetArucoDetector();
-
-	vector<Camera*> &physicalCameras = CameraMan.Cameras;
-	if (direct)
-	{
-		namedWindow("Cameras", WINDOW_NORMAL);
-		setWindowProperty("Cameras", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
-	}
 
 	BoardGL OpenGLBoard;
 	OpenGLBoard.Start();
@@ -54,7 +47,7 @@ void CDFRInternalMain(bool direct, bool v3d)
 
 		//cout << "Pipeline took " << TimePipeline << "s to run" << endl;
 		
-		vector<CameraArucoData> arucoDatas;
+		vector<CameraFeatureData> arucoDatas;
 		int NumCams = physicalCameras.size();
 		arucoDatas.resize(NumCams);
 
@@ -69,21 +62,6 @@ void CDFRInternalMain(bool direct, bool v3d)
 		
 		tracker.SolveLocationsPerObject(arucoDatas, GrabTick);
 		vector<ObjectData> ObjData = tracker.GetObjectDataVector(GrabTick);
-		
-		if (direct)
-		{
-			vector<OutputImage*> OutputTargets;
-			for (int i = 0; i < physicalCameras.size(); i++)
-			{
-				OutputTargets.push_back(physicalCameras[i]);
-			}
-			UMat image = ConcatCameras(OutputTargets, OutputTargets.size());
-			//board.GetOutputFrame(0, image, GetFrameSize());
-			//cout << "Concat OK" <<endl;
-			fps.AddFpsToImage(image, deltaTime);
-			//printf("fps : %f\n", fps);
-			imshow("Cameras", image);
-		}
 
 		if (!OpenGLBoard.Tick(ObjectData::ToGLObjects(ObjData)))
 		{
@@ -94,5 +72,5 @@ void CDFRInternalMain(bool direct, bool v3d)
 		{
 			break;
 		}
-	}
+	}*/
 }

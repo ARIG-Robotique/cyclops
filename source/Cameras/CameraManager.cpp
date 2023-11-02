@@ -24,9 +24,9 @@ bool CameraManager::DeviceInFilter(v4l2::devices::DEVICE_INFO device, std::strin
 	return (device.device_description.find(Filter) != string::npos) ^ invertedFilter;
 }
 
-CameraSettings CameraManager::DeviceToSettings(v4l2::devices::DEVICE_INFO device, CameraStartType Start)
+VideoCaptureCameraSettings CameraManager::DeviceToSettings(v4l2::devices::DEVICE_INFO device, CameraStartType Start)
 {
-	CameraSettings settings;
+	VideoCaptureCameraSettings settings;
 	CaptureConfig cfg = GetCaptureConfig();
 	settings.Resolution = cfg.FrameSize;
 	settings.Framerate = cfg.CaptureFramerate;
@@ -52,7 +52,7 @@ CameraSettings CameraManager::DeviceToSettings(v4l2::devices::DEVICE_INFO device
 	return settings;
 }
 
-vector<CameraSettings> CameraManager::autoDetectCameras(CameraStartType Start, string Filter, string CalibrationFile, bool silent)
+vector<VideoCaptureCameraSettings> CameraManager::autoDetectCameras(CameraStartType Start, string Filter, string CalibrationFile, bool silent)
 {
 	vector<v4l2::devices::DEVICE_INFO> devices;
 
@@ -68,7 +68,7 @@ vector<CameraSettings> CameraManager::autoDetectCameras(CameraStartType Start, s
 			}
 		}
 	}
-	vector<CameraSettings> detected;
+	vector<VideoCaptureCameraSettings> detected;
 	for (const auto & device : devices)
 	{
 		//v4l2-ctl --list-formats-ext
@@ -89,4 +89,109 @@ vector<CameraSettings> CameraManager::autoDetectCameras(CameraStartType Start, s
 		}
 	}
 	return detected;
+}
+
+
+vector<Camera*> CameraManager::Tick()
+{
+	for (int i = 0; i < Cameras.size(); i++)
+	{
+		if (Cameras[i]->errors >= 20)
+		{
+			std::cerr << "Detaching camera @ " << Cameras[i]->GetName() << std::endl;
+			std::string pathtofind = dynamic_cast<const VideoCaptureCameraSettings*>(Cameras[i]->GetCameraSettings())->DeviceInfo.device_paths[0];
+			StopCamera(Cameras[i]);
+			
+			unique_lock lock(pathmutex);
+			usedpaths.erase(pathtofind);
+			delete Cameras[i];
+			Cameras.erase(std::next(Cameras.begin(), i));
+			i--;
+		}
+	}
+	{
+		unique_lock lock(cammutex);
+		for (auto Camera : NewCameras)
+		{
+			RegisterCamera(Camera);
+			Cameras.push_back(Camera);
+		}
+		NewCameras.clear();
+	}
+	return Cameras;
+}
+
+void CameraManager::StartScanThread()
+{
+	if (scanthread)
+	{
+		return;
+	}
+	scanthread = new thread(&CameraManager::ScanWorker, this);
+}
+
+void CameraManager::ScanWorker()
+{
+	while (!killmutex)
+	{
+		std::vector<v4l2::devices::DEVICE_INFO> devices;
+		v4l2::devices::list(devices);
+		std::set<std::string> knownpaths, unknownpaths;
+		{
+			shared_lock lock(pathmutex);
+			std::copy(usedpaths.begin(), usedpaths.end(), std::inserter(knownpaths, knownpaths.end()));
+			std::copy(blockedpaths.begin(), blockedpaths.end(), std::inserter(knownpaths, knownpaths.end()));
+		}
+
+		for (auto &device : devices)
+		{
+			std::string pathtofind = device.device_paths[0];
+			auto pos = std::find(knownpaths.begin(), knownpaths.end(), pathtofind);
+			if (pos == knownpaths.end()) //new camera
+			{
+				continue;
+			}
+
+			VideoCaptureCameraSettings settings = DeviceToSettings(device, Start);
+			if (!settings.IsValid()) //no valid settings
+			{
+				std::cerr << "Failed to open camera " << device.device_description << " @ " << pathtofind << " : Invalid settings" << std::endl;
+				unique_lock lock(pathmutex);
+				blockedpaths.emplace(pathtofind);
+				continue;
+			}
+
+			bool HasCalib = settings.IsValidCalibration();
+			if (!AllowNoCalib && !HasCalib)
+			{
+				std::cerr << "Did not open camera " << device.device_description << " @ " << pathtofind << " : Camera has no calibration" << std::endl;
+				unique_lock lock(pathmutex);
+				blockedpaths.emplace(pathtofind);
+				continue;
+			}
+
+			Camera* cam = StartCamera(settings);
+			if (!cam)
+			{
+				std::cerr << "Did not open camera " << device.device_description << " @ " << pathtofind << " : StartCamera returned null" << std::endl;
+				unique_lock lock(pathmutex);
+				blockedpaths.emplace(pathtofind);
+				continue;
+			}
+
+			{
+				{
+					unique_lock lock(pathmutex);
+					usedpaths.emplace(pathtofind);
+				}
+				{
+					unique_lock lock(cammutex);
+					NewCameras.push_back(cam);
+				}
+				
+			}
+		}
+
+		this_thread::sleep_for(std::chrono::milliseconds(1000));
+	}
 }

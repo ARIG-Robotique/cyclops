@@ -1,4 +1,4 @@
-#include "ArucoPipeline/mapping.hpp"
+#include <EntryPoints/Mapping.hpp>
 
 #include <string>
 #include <iostream>
@@ -14,13 +14,12 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/sfm.hpp>
 
-#include "math3d.hpp"
-#include "Misc/metadata.hpp"
-#include "Calibfile.hpp"
-#include "GlobalConf.hpp"
-#include "ArucoPipeline/TrackedObject.hpp"
-#include "CameraView.hpp"
-#include "BoardGL.hpp"
+#include <math3d.hpp>
+#include <Misc/metadata.hpp>
+#include <Calibfile.hpp>
+#include <GlobalConf.hpp>
+#include <ArucoPipeline/TrackedObject.hpp>
+#include <BoardGL.hpp>
 
 using namespace std;
 using namespace cv;
@@ -44,15 +43,15 @@ struct SolvableView
 const string MappingFolderName = "SFM/";
 
 
-SolvableView GetUnseenSolvable(const CameraArucoData& ImageIDs, const TrackedObject* SolvedTags)
+SolvableView GetUnseenSolvable(const CameraFeatureData& ImageIDs, const TrackedObject* SolvedTags)
 {
 	SolvableView view;
-	for (int i = 0; i < ImageIDs.TagIDs.size(); i++)
+	for (int i = 0; i < ImageIDs.ArucoIndices.size(); i++)
 	{
 		bool AlreadySeen = false;
 		for (int j = 0; j < SolvedTags->markers.size(); j++)
 		{
-			if (SolvedTags->markers[j].number == ImageIDs.TagIDs[i])
+			if (SolvedTags->markers[j].number == ImageIDs.ArucoIndices[i])
 			{
 				AlreadySeen = true;
 				break;
@@ -110,7 +109,7 @@ void MappingSolve(void)
 		return;
 	}
 	//detect tags
-	vector<CameraArucoData> ImageData;
+	vector<CameraFeatureData> ImageData;
 	map<int, float> ArucoSizes;
 	//ArucoSizes[55] = 0.075;
 	//ArucoSizes[60] = 0.1;
@@ -124,12 +123,12 @@ void MappingSolve(void)
 		{
 			Mat imageundist;
 			undistort(images[i], imageundist, CameraMatrix, DistortionCoefficients);
-			CameraArucoData &ThisData = ImageData[i];
+			CameraFeatureData &ThisData = ImageData[i];
 			ThisData.CameraMatrix = CameraMatrix;
 			ThisData.DistanceCoefficients = Mat::zeros(4,1, CV_64F);
 			ThisData.CameraTransform = Affine3d::Identity();
-			detector.detectMarkers(imageundist, ThisData.TagCorners, ThisData.TagIDs);
-			cout << "Image " << imagenames[i] << " has " << ThisData.TagIDs.size() << " detected tags" << endl;
+			detector.detectMarkers(imageundist, ThisData.ArucoCorners, ThisData.ArucoIndices);
+			cout << "Image " << imagenames[i] << " has " << ThisData.ArucoIndices.size() << " detected tags" << endl;
 		}
 	});
 
@@ -161,14 +160,15 @@ void MappingSolve(void)
 		//detect solvable cameras/images
 		for (int j = 0; j < numim; j++)
 		{
-			CameraArucoData& image = ImageData[j];
+			CameraFeatureData& image = ImageData[j];
 			SolvableView view = GetUnseenSolvable(image, &SolvedTagsObject);
 			if (view.Seen.size() == 0 || view.Unseen.size() ==0)
 			{
 				continue;
 			}
 			float Surface, Error;
-			Affine3d CameraToObject = SolvedTagsObject.GetObjectTransform(image, Surface, Error);
+			map<int, vector<Point2f>> ReprojectedCorners;
+			Affine3d CameraToObject = SolvedTagsObject.GetObjectTransform(image, Surface, Error, ReprojectedCorners);
 			Affine3d CameraPos = CameraToObject.inv();
 			{
 				//add camera to visualizer
@@ -181,7 +181,7 @@ void MappingSolve(void)
 			for (int k = 0; k < view.Unseen.size(); k++)
 			{
 				int tagarrayindex = view.Unseen[k];
-				int tagid = image.TagIDs[tagarrayindex];
+				int tagid = image.ArucoIndices[tagarrayindex];
 				int obsindex = -1;
 				for (int l = 0; l < Observations.size(); l++)
 				{
@@ -201,7 +201,7 @@ void MappingSolve(void)
 				}
 				ObservedTag &observed = Observations[obsindex];
 				observed.CameraPositions.push_back(CameraPos);
-				observed.Observations.push_back(image.TagCorners[tagarrayindex]);
+				observed.Observations.push_back(image.ArucoCorners[tagarrayindex]);
 				observed.CameraScores.push_back(Surface/(Error+0.1));
 			}
 		}
@@ -236,15 +236,16 @@ void MappingSolve(void)
 			{
 				TrackedObject MObj;
 				MObj.markers.push_back(marker);
-				CameraArucoData data;
+				CameraFeatureData data;
 				data.CameraMatrix = CameraMatrix;
 				data.DistanceCoefficients = Mat::zeros(4,1, CV_64F);
-				data.TagCorners = observed.Observations;
-				data.TagIDs = {observed.ID};
+				data.ArucoCorners = observed.Observations;
+				data.ArucoIndices = {observed.ID};
 				data.CameraTransform = observed.CameraPositions[0];
 				float surface, error;
+				map<int, vector<Point2f>> ReprojectedCorners;
 				//roundabout way of getting a solvepnp, but at least i'm using stuff that's already made
-				TagLocation = MObj.GetObjectTransform(data, surface, error);
+				TagLocation = MObj.GetObjectTransform(data, surface, error, ReprojectedCorners);
 				cout << "\tTag " << observed.ID << " was solved with solvePNP : surface=" << surface << "px² error=" << error << "px/pt" <<endl;
 			}
 			else

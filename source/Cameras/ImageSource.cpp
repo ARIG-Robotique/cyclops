@@ -1,29 +1,23 @@
-#include "Cameras/OutputImage.hpp"
+#include "Cameras/ImageSource.hpp"
 #include "GlobalConf.hpp"
 
 using namespace cv;
 using namespace std;
 
-OutputImage::OutputImage(/* args */)
+ImageSource::ImageSource(/* args */)
 {
 }
 
-OutputImage::~OutputImage()
+ImageSource::~ImageSource()
 {
 }
 
-void OutputImage::SetFrame(UMat& InFrame)
-{
-
-}
-
-void OutputImage::GetFrame(UMat& OutFrame)
+void ImageSource::SetFrame(CameraImageData& frame, bool Distorted)
 {
 
 }
 
-
-void OutputImage::GetOutputFrame(UMat& OutFrame, Rect window)
+void ImageSource::GetFrame(CameraImageData& frame, bool Distorted)
 {
 
 }
@@ -49,7 +43,7 @@ Size findSplit(Size screensize, Size targetAspect, int numscreen)
 	return splits;
 }
 
-UMat ConcatCameras(vector<OutputImage*> Cameras, int NumCams)
+UMat ConcatCameras(vector<ImageSource*> Cameras, int NumCams)
 {
 	Size screensize = GetScreenResolution();
 	UMat concatenated(screensize, CV_8UC3, Scalar(0,0,255));
@@ -67,7 +61,7 @@ UMat ConcatCameras(vector<OutputImage*> Cameras, int NumCams)
 			{
 				continue;
 			}*/
-			Cameras[i]->GetOutputFrame(concatenated, roi);
+			//Cameras[i]->GetOutputFrame(concatenated, roi);
 			//Size offset = (Size(winWidth, winHeight) - region.size())/2;
 			//region.copyTo(concatenated(Rect(roi.x+offset.width, roi.y+offset.height, region.cols, region.rows)));
 			//region.copyTo(concatenated(roi));

@@ -1,12 +1,16 @@
-#include "EntryPoints/CDFRExternal.hpp"
-#include "EntryPoints/CDFRCommon.hpp"
-#include "Visualisation/BoardGL.hpp"
-#include "Misc/ManualProfiler.hpp"
-#include "Communication/Encoders/MinimalEncoder.hpp"
-#include "Communication/Encoders/TextEncoder.hpp"
-#include "Communication/Transport/TCPTransport.hpp"
-#include "Communication/Transport/UDPTransport.hpp"
-#include "Communication/Transport/FileTransport.hpp"
+#include <EntryPoints/CDFRCommon.hpp>
+#include <EntryPoints/CDFRExternal.hpp>
+
+#include <DetectFeatures/ArucoDetect.hpp>
+
+#include <Visualisation/BoardGL.hpp>
+#include <Misc/ManualProfiler.hpp>
+
+#include <Communication/Encoders/MinimalEncoder.hpp>
+#include <Communication/Encoders/TextEncoder.hpp>
+#include <Communication/Transport/TCPTransport.hpp>
+#include <Communication/Transport/UDPTransport.hpp>
+#include <Communication/Transport/FileTransport.hpp>
 #include <thread>
 #include <memory>
 
@@ -68,30 +72,18 @@ CDFRTeam GetTeamFromCameras(vector<Camera*> Cameras)
 	return bestTeam;
 }
 
+using ExternalProfType = ManualProfiler<false>;
+
 void CDFRExternalMain(bool direct, bool v3d)
 {
-	ManualProfiler<false> prof("frames ");
-	int ps = 0;
-	prof.NameSection(ps++, "CameraMan Tick");
-	prof.NameSection(ps++, "Camera Pipeline");
-	prof.NameSection(ps++, "3D solve setup");
-	prof.NameSection(ps++, "3D solve");
-	prof.NameSection(ps++, "Visualizer");
-	prof.NameSection(ps++, "Position packet");
+	ExternalProfType prof("External Global Profile");
+	ExternalProfType ParallelProfiler("Parallel Cameras Detail");
 	CameraManager CameraMan(GetCaptureMethod(), GetCaptureConfig().filter, false);
 
 	auto& Detector = GetArucoDetector();
 
-	vector<Camera*>& physicalCameras = CameraMan.Cameras;
-
 	//display/debug section
 	FrameCounter fps;
-	if (direct)
-	{
-		namedWindow("Cameras", WINDOW_NORMAL);
-		setWindowProperty("Cameras", WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
-		startWindowThread();
-	}
 	
 	ObjectTracker bluetracker, yellowtracker;
 
@@ -134,20 +126,33 @@ void CDFRExternalMain(bool direct, bool v3d)
 	
 	
 	//track and untrack cameras dynamically
-	CameraMan.PostCameraConnect = [&bluetracker, &yellowtracker](Camera* cam) -> bool
+	CameraMan.StartCamera = [](VideoCaptureCameraSettings settings) -> Camera*
+	{
+		Camera* cam = new VideoCaptureCamera(make_shared<VideoCaptureCameraSettings>(settings));
+		if(!cam->StartFeed())
+		{
+			cerr << "Failed to start feed @" << settings.DeviceInfo.device_description << endl;
+			delete cam;
+			return nullptr;
+		}
+		
+		return cam;
+	};
+	CameraMan.RegisterCamera = [&bluetracker, &yellowtracker](Camera* cam) -> void
 	{
 		bluetracker.RegisterTrackedObject(cam);
 		yellowtracker.RegisterTrackedObject(cam);
 		cout << "Registering new camera @" << cam << endl;
-		return true;
 	};
-	CameraMan.OnDisconnect = [&bluetracker, &yellowtracker](Camera* cam) -> bool
+	CameraMan.StopCamera = [&bluetracker, &yellowtracker](Camera* cam) -> bool
 	{
 		bluetracker.UnregisterTrackedObject(cam);
 		yellowtracker.UnregisterTrackedObject(cam);
 		cout << "Unregistering camera @" << cam << endl;
 		return true;
 	};
+
+	CameraMan.StartScanThread();
 
 	PositionDataSender sender;
 	//PositionDataSender logger;
@@ -173,70 +178,84 @@ void CDFRExternalMain(bool direct, bool v3d)
 	{
 
 		double deltaTime = fps.GetDeltaTime();
-		ps = 0;
-		prof.EnterSection(ps++);
-		CameraMan.Tick<VideoCaptureCamera>();
-		CDFRTeam Team = GetTeamFromCameras(CameraMan.Cameras);
+		prof.EnterSection("CameraManager Tick");
+		vector<Camera*> Cameras = CameraMan.Tick();
+		CDFRTeam Team = GetTeamFromCameras(Cameras);
 		if (Team != LastTeam)
 		{
 			const string teamname = TeamNames.at(Team);
 			cout << "Detected team change : to " << teamname <<endl; 
 			LastTeam = Team;
 		}
-		
-		prof.EnterSection(ps++);
-		int64 GrabTick = getTickCount();
 		ObjectTracker* TrackerToUse = &bluetracker;
 		if (Team == CDFRTeam::Yellow)
 		{
 			TrackerToUse = &yellowtracker;
 		}
-		 
-		BufferedPipeline(vector<Camera*>(physicalCameras.begin(), physicalCameras.end()), Detector, TrackerToUse);
-		prof.EnterSection(ps++);
-		int NumCams = physicalCameras.size();
-		vector<CameraArucoData> arucoDatas;
-		vector<Affine3d> cameraLocations;
+		
+		prof.EnterSection("Camera Gather Frames");
+		int64 GrabTick = getTickCount();
+		
+		for (int i = 0; i < Cameras.size(); i++)
+		{
+			Cameras[i]->Grab();
+		}
+
+		int NumCams = Cameras.size();
+		vector<CameraFeatureData> FeatureData;
 		vector<bool> CamerasWithPosition;
-		cameraLocations.resize(NumCams);
-		arucoDatas.resize(NumCams);
+		vector<ExternalProfType> ParallelProfilers;
+		FeatureData.resize(NumCams);
 		CamerasWithPosition.resize(NumCams);
+		ParallelProfilers.resize(NumCams);
+		prof.EnterSection("Parallel Cameras");
+
+		//grab frames
+		//read frames
+		//undistort
+		//detect aruco and yolo
+
+		parallel_for_(Range(0, Cameras.size()), 
+		[&Cameras, &FeatureData, &CamerasWithPosition, TrackerToUse, GrabTick, &ParallelProfilers]
+		(Range InRange)
+		{
+			for (int i = InRange.start; i < InRange.end; i++)
+			{
+				auto &thisprof = ParallelProfilers[i];
+				thisprof.EnterSection("CameraRead");
+				Camera* cam = Cameras[i];
+				cam->Read();
+				thisprof.EnterSection("CameraUndistort");
+				cam->Undistort();
+				thisprof.EnterSection("CameraGetFrame");
+				CameraImageData ImData;
+				cam->GetFrame(ImData, false);
+				thisprof.EnterSection("DetectAruco");
+				CameraFeatureData &FeatData = FeatureData[i];
+				DetectAruco(ImData, FeatData);
+				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);
+				if (CamerasWithPosition[i])
+				{
+					cam->SetLocation(FeatData.CameraTransform, GrabTick);
+				}
+				FeatData.CameraTransform = cam->GetLocation();
+			}
+		});
+
+		for (auto &pprof : ParallelProfilers)
+		{
+			ParallelProfiler += pprof;
+		}
+
 		int viewsidx = 0;
 
-		for (int i = 0; i < NumCams; i++)
-		{
-			Camera* cam = physicalCameras[i];
-			if (!cam->GetMarkerData(arucoDatas[i]))
-			{
-				continue;
-			}
-
-			bool hasposition = false;
-			float surface, reprojectionError;
-			Affine3d boardloc = boardobj->GetObjectTransform(arucoDatas[i], surface, reprojectionError);
-			if (surface > 0)
-			{
-
-				cam->SetLocation(boardloc.inv(), GrabTick);
-				hasposition = true;
-			}
-			arucoDatas[i].CameraTransform = cam->GetLocation();
-			cameraLocations[i] = cam->GetLocation();
-			CamerasWithPosition[i] = hasposition;
-			
-			//cout << "Camera " << i << " location : " << cameraLocations[i].translation() << " / Score: " << surface/(reprojectionError+0.1) << endl;
-			
-		}
-		prof.EnterSection(ps++);
-		TrackerToUse->SolveLocationsPerObject(arucoDatas, GrabTick);
+		prof.EnterSection("3D Solve");
+		TrackerToUse->SolveLocationsPerObject(FeatureData, GrabTick);
 		vector<ObjectData> ObjData = TrackerToUse->GetObjectDataVector(GrabTick);
 		ObjectData TeamPacket(ObjectIdentity(PacketType::Team, (int)Team));
 		ObjData.insert(ObjData.begin(), TeamPacket); //insert team as the first object
-		//Vec3d diff = robot1->GetLocation().translation() - robot2->GetLocation().translation(); 
-		//cout << "Robot 1 location : " << robot1->GetLocation().translation() << endl;
-		//cout << "Distance robot 1-2: " << sqrt(diff.ddot(diff)) << " m" <<endl;
 
-		prof.EnterSection(ps++);
+		prof.EnterSection("Visualisation");
 		
 		if (v3d)
 		{
@@ -245,47 +264,25 @@ void CDFRExternalMain(bool direct, bool v3d)
 				break;
 			}
 		}
-
-		if (direct)
-		{
-			vector<OutputImage*> OutputTargets;
-			OutputTargets.reserve(physicalCameras.size()+1);
-			for (int i = 0; i < physicalCameras.size(); i++)
-			{
-				OutputTargets.push_back(physicalCameras[i]);
-			}
-			//OutputTargets.push_back(board);
-			//board->DisplayData(ObjData);
-			UMat image = ConcatCameras(OutputTargets, OutputTargets.size());
-			//board.GetOutputFrame(0, image, GetFrameSize());
-			//cout << "Concat OK" <<endl;
-			fps.AddFpsToImage(image, deltaTime);
-			//printf("fps : %f\n", fps);
-			imshow("Cameras", image);
-			if (pollKey() == '\e')
-			{
-				break;
-			}
-		}
 		
-		prof.EnterSection(ps++);
+		prof.EnterSection("Send data");
 		if (GetWebsocketConfig().Server)
 		{
 			sender.SendPacket(GrabTick, ObjData);
 			//this_thread::sleep_for(chrono::milliseconds(1000));
 		}
-		//logger.SendPacket(GrabTick, ObjData);
 		
 		
-		prof.EnterSection(-1);
+		prof.EnterSection("");
 		
 		
 		
-		/*if (prof.ShouldPrint())
+		if (prof.ShouldPrint())
 		{
 			cout << fps.GetFPSString(deltaTime) << endl;
-			prof.PrintIfShould();
-		}	*/
+			prof.PrintProfile();
+			ParallelProfiler.PrintProfile();
+		}
 		
 	}
 }

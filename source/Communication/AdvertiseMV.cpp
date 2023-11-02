@@ -35,7 +35,7 @@ AdvertiseMV::AdvertiseMV(/* args */)
 AdvertiseMV::~AdvertiseMV()
 {
 	killmutex = true;
-	for (auto &&sendthread : threads)
+	for (auto sendthread : threads)
 	{
 		sendthread->join();
 	}
