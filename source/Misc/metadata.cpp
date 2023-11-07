@@ -9,7 +9,7 @@ std::string MakeTag(float SideLength, int Number)
 	return meta;
 }
 
-bool GetTag(std::string meta, float& SideLength, int Number)
+bool GetTag(std::string meta, float& SideLength, int &Number)
 {
 	if (meta.length() != sizeof(float) + sizeof(uint8_t))
 	{

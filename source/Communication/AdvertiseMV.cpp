@@ -23,7 +23,7 @@ AdvertiseMV::AdvertiseMV(/* args */)
 	for (int i=0; i<interfaces.size(); i++)
 	{
 		auto& ni = interfaces[i];
-		cout << ni.name << " @ " << ni.address << " & " << ni.mask << " * " << ni.broadcast << endl;
+		cout << "\t- " << ni.name << " / IP:" << ni.address << " / Netmask:" << ni.mask << " / Broadcast:" << ni.broadcast << endl;
 		if (ni.name != "lo")
 		{
 			thread* sendthread = new thread(&AdvertiseMV::ThreadStartPoint, this, ni);

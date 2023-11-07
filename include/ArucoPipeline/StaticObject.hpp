@@ -20,7 +20,7 @@ public:
 
 	virtual bool ShouldBeDisplayed(unsigned long Tick) override;
 
-	virtual std::vector<ObjectData> ToObjectData(int BaseNumeral) override;
+	virtual std::vector<ObjectData> ToObjectData() const override;
 
 	//virtual cv::Affine3d GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError) override;
 };

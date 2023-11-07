@@ -18,4 +18,4 @@ void AddTypeToMetadata(std::string &data, T value)
 
 std::string MakeTag(float SideLength, int Number);
 
-bool GetTag(std::string meta, float& SideLength, int Number);
+bool GetTag(std::string meta, float& SideLength, int &Number);

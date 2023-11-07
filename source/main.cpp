@@ -133,7 +133,7 @@ int main(int argc, char** argv )
 	}
 	
 	
-	if (parser.has("calibrate") || 1)
+	if (parser.has("calibrate"))
 	{
 		cout << "Starting calibration of camera index" << parser.get<int>("calibrate") <<endl;
 		int camIndex = parser.get<int>("calibrate");

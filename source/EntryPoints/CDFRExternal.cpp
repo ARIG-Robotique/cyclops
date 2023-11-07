@@ -6,11 +6,8 @@
 #include <Visualisation/BoardGL.hpp>
 #include <Misc/ManualProfiler.hpp>
 
-#include <Communication/Encoders/MinimalEncoder.hpp>
-#include <Communication/Encoders/TextEncoder.hpp>
 #include <Communication/Transport/TCPTransport.hpp>
 #include <Communication/Transport/UDPTransport.hpp>
-#include <Communication/Transport/FileTransport.hpp>
 #include <thread>
 #include <memory>
 
@@ -120,6 +117,7 @@ void CDFRExternalMain(bool direct, bool v3d)
 	if (v3d)
 	{
 		OpenGLBoard.Start();
+		OpenGLBoard.LoadTags();
 		OpenGLBoard.Tick({});
 	}
 
@@ -153,24 +151,6 @@ void CDFRExternalMain(bool direct, bool v3d)
 	};
 
 	CameraMan.StartScanThread();
-
-	PositionDataSender sender;
-	//PositionDataSender logger;
-	{
-		WebsocketConfig wscfg = GetWebsocketConfig();
-		sender.encoder = new MinimalEncoder(GetDefaultAllowMap());
-		//logger.encoder = new TextEncoder(GetDefaultAllowMap());
-		if (wscfg.TCP)
-		{
-			sender.transport = new TCPTransport(wscfg.Server, wscfg.IP, wscfg.Port, wscfg.Interface);
-		}
-		else
-		{
-			//sender.transport = new UDPTransport(wscfg.Server, wscfg.IP, wscfg.Port, wscfg.Interface);
-		}
-		//logger.transport = new FileTransport("PositionLog.txt");
-		sender.StartReceiveThread();
-	}
 
 	int lastmarker = 0;
 	CDFRTeam LastTeam = CDFRTeam::Unknown;
@@ -252,7 +232,7 @@ void CDFRExternalMain(bool direct, bool v3d)
 		prof.EnterSection("3D Solve");
 		TrackerToUse->SolveLocationsPerObject(FeatureData, GrabTick);
 		vector<ObjectData> ObjData = TrackerToUse->GetObjectDataVector(GrabTick);
-		ObjectData TeamPacket(ObjectIdentity(PacketType::Team, (int)Team));
+		ObjectData TeamPacket(ObjectType::Team, TeamNames.at(Team));
 		ObjData.insert(ObjData.begin(), TeamPacket); //insert team as the first object
 
 		prof.EnterSection("Visualisation");
@@ -268,7 +248,6 @@ void CDFRExternalMain(bool direct, bool v3d)
 		prof.EnterSection("Send data");
 		if (GetWebsocketConfig().Server)
 		{
-			sender.SendPacket(GrabTick, ObjData);
 			//this_thread::sleep_for(chrono::milliseconds(1000));
 		}
 		

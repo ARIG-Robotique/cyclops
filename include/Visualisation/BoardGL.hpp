@@ -53,7 +53,7 @@ private:
 	GLuint VertexArrayID;
 	Shader ShaderProgram;
 
-	bool MeshesLoaded = false, TagsLoaded= false;
+	bool MeshesLoaded = false, TagsLoaded= false, TagLoadWarning=false;
 	std::map<MeshNames, Mesh> Meshes;
 	std::vector<Texture> TagTextures;
 

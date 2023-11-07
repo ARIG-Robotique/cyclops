@@ -11,5 +11,5 @@ public:
 	TopTracker(int MarkerIdx, double MarkerSize, std::string InName);
 	~TopTracker();
 
-	virtual std::vector<ObjectData> ToObjectData(int BaseNumeral) override;
+	virtual std::vector<ObjectData> ToObjectData() const override;
 };

@@ -22,15 +22,12 @@ TopTracker::~TopTracker()
 {
 }
 
-vector<ObjectData> TopTracker::ToObjectData(int BaseNumeral)
+vector<ObjectData> TopTracker::ToObjectData() const
 {
 	ObjectData robot;
-	robot.identity.numeral = BaseNumeral;
-	robot.identity.type = PacketType::TopTracker;
-	for (int i = 0; i < markers.size(); i++)
-	{
-		AddTypeToMetadata<uint8_t>(robot.identity.metadata, markers[i].number);
-	}
+	robot.name = Name;
+	robot.type = ObjectType::TopTracker;
 	robot.location = Location;
+	robot.Childs = GetMarkersAndChilds();
 	return {robot};
 }

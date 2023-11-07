@@ -18,10 +18,8 @@
 
 #include "Misc/FrameCounter.hpp"
 
-#include "Communication/DataSender.hpp"
-
 
 using namespace cv;
 using namespace std;
 
-map<PacketType, bool> GetDefaultAllowMap();
+map<ObjectType, bool> GetDefaultAllowMap();

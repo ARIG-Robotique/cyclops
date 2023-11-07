@@ -2,7 +2,6 @@
 #include <EntryPoints/CDFRCommon.hpp>
 
 #include <Visualisation/BoardGL.hpp>
-#include <Communication/Encoders/MinimalEncoder.hpp>
 #include <Communication/Transport/TCPTransport.hpp>
 #include <Communication/Transport/UDPTransport.hpp>
 #include <Communication/Transport/SerialTransport.hpp>

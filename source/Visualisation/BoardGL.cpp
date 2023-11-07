@@ -170,6 +170,7 @@ void BoardGL::LoadModels()
 	{
 		return;
 	}
+	glfwMakeContextCurrent(Window);
 	string assetpath = "../assets/";
 	static const map<MeshNames, tuple<string, optional<string>>> meshpathes = 
 	{
@@ -209,8 +210,10 @@ void BoardGL::LoadModels()
 		thismesh.BindMesh();
 	}
 	MeshesLoaded = true;
+	glfwMakeContextCurrent(NULL);
 }
 	
+#include <opencv2/highgui.hpp>
 
 void BoardGL::LoadTags()
 {
@@ -226,9 +229,10 @@ void BoardGL::LoadTags()
 	for (int i = 0; i < 100; i++)
 	{
 		cv::Mat texture;
-		cv::aruco::generateImageMarker(dict, i, 60, texture, 1);
+		cv::aruco::generateImageMarker(dict, i, 128, texture, 1);
 		cv::cvtColor(texture, TagTextures[i].Texture, cv::COLOR_GRAY2BGR);
-		//TagTextures[i].Texture = texture;
+		//cv::imshow("Aruco Texture", TagTextures[i].Texture);
+		//cv::waitKey();
 		TagTextures[i].valid = true;
 		TagTextures[i].Bind();
 	}
@@ -244,10 +248,10 @@ void BoardGL::Start(string name)
 
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
-	LoadModels();
 	
 	glfwMakeContextCurrent(NULL);
 
+	LoadModels();
 	//cout << "OpenGL init done!" << endl;
 }
 
@@ -298,11 +302,24 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 			{
 				if (!TagsLoaded)
 				{
-					cerr << "WARNING Tried to display tags but tags aren't loaded" << endl;
+					if (!TagLoadWarning)
+					{
+						cerr << "WARNING Tried to display tags but tags aren't loaded" << endl;
+						TagLoadWarning = true;
+					}
 					break;
 				}
-				int number; float scale;
-				GetTag(odata.metadata, scale, number); 
+				int number = -1; float scale = 1.f;
+				if(!GetTag(odata.metadata, scale, number))
+				{
+					break;
+				}
+				if (number >= TagTextures.size() || number < 0)
+				{
+					cerr << "Tried to display tag #" << number << " !" <<endl;
+					break;
+				}
+				
 				glUniform1f(ScaleID, scale);
 				TagTextures[number].Draw();
 				Meshes[MeshNames::tag].Draw(ParameterID, true);

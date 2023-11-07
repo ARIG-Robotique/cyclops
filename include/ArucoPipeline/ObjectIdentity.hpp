@@ -20,68 +20,53 @@ const std::map<CDFRTeam, std::string> TeamNames = {
 	{CDFRTeam::Yellow, "Yellow"}
 };
 
-enum class PacketType : uint8_t
+enum class ObjectType
 {
-	Null                = 0, //Invalid data
-	Camera				= 0b1, //Object is camera
-	ReferenceAbsolute   = 0b10, //The table or the basket, something that doesn't move when we're in external view
-	ReferenceRelative, //Something that doesn't move and should have a fixed location, 
-		//but we're moving (internal view), so that thing is moving relative to us, so here's the location of that thing relative to us
-	Robot               = 0b100,	//A robot. Ennemy or ally.
-	TeamTracker,					//Tracker that we put on the ennemy robot
-	TopTracker,						//Tracker that's on every robot
+	Unknown,
+	Tag,
+	ReferenceAbsolute,
+	ReferenceRelative,
+	Camera,
+	Object,
+	Robot,
+	TopTracker,
+	TeamTracker,
+
 	SolarPanel,
-	Tag					= 0b10000, // Raw tag. Size in metadata, ID is numeral. For debug/inspect purposes
 	Team
 };
 
-struct __attribute__ ((packed)) PackedIdentity
+const std::map<ObjectType, std::string> ObjectTypeNames = 
 {
-	PacketType type;
-	uint8_t numeral;
-	uint16_t MetadataLength;
-};
+	{ObjectType::Unknown, 			"Unknown"},
+	{ObjectType::Tag, 				"Tag"},
+	{ObjectType::ReferenceAbsolute, "Reference Absolute"},
+	{ObjectType::ReferenceRelative, "Reference Relative"},
+	{ObjectType::Camera, 			"Camera"},
+	{ObjectType::Object, 			"Object"},
+	{ObjectType::Robot, 			"Robot"},
+	{ObjectType::TopTracker, 		"Top Tracker"},
+	{ObjectType::TeamTracker, 		"Team Tracker"},
 
-struct ObjectIdentity
-{
-	PacketType type;
-	uint8_t numeral;
-	std::string metadata;
-
-	ObjectIdentity()
-		:type(PacketType::Null), numeral(0), metadata("")
-	{};
-
-	ObjectIdentity(PacketType InType, uint8_t InNumeral)
-		:type(InType), numeral(InNumeral), metadata("")
-	{};
-
-	size_t GetSize() const
-	{
-		return sizeof(PackedIdentity) + metadata.length(); //uint16 is for string length
-	};
-
-	operator PackedIdentity() const
-	{
-		return {type, numeral, (uint16_t)metadata.length()};
-	};
-
-	int PackInto(char* buffer, int maxlength) const;
-
-	int UnpackFrom(const char* buffer, int maxlength);
+	{ObjectType::SolarPanel, 		"Solar Panel"},
+	{ObjectType::Team, 				"Team"}
 };
 
 struct ObjectData
 {
-	ObjectIdentity identity;
+	ObjectType type;
+	std::string name;
+	std::string metadata;
 	cv::Affine3d location;
 
-	ObjectData(ObjectIdentity InIdentity = ObjectIdentity(), cv::Affine3d InLocation = cv::Affine3d::Identity())
-		:identity(InIdentity), location(InLocation)
+	std::vector<ObjectData> Childs;
+
+	ObjectData(ObjectType InType = ObjectType::Unknown, const std::string InName = "None", cv::Affine3d InLocation = cv::Affine3d::Identity())
+		:type(InType), name(InName), location(InLocation)
 	{}
 
-	ObjectData(ObjectIdentity InIdentity, double posX, double posY, double posZ)
-		:identity(InIdentity)
+	ObjectData(ObjectType InType, const std::string InName, double posX, double posY, double posZ)
+		:type(InType), name(InName)
 	{
 		location = cv::Affine3d::Identity();
 		location.translation(cv::Vec3d(posX, posY, posZ));

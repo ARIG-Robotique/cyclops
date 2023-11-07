@@ -228,7 +228,7 @@ vector<ObjectData> Camera::ToObjectData(int BaseNumeral)
 {
 	ObjectData robot;
 	robot.identity.numeral = BaseNumeral;
-	robot.identity.type = PacketType::Camera;
+	robot.identity.type = ObjectType::Camera;
 	robot.location = Location;
 	return {robot};
 }

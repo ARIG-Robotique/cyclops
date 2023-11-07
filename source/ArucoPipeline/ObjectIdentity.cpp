@@ -6,45 +6,20 @@
 #include "Visualisation/BoardGL.hpp"
 using namespace std;
 
-
-
-int ObjectIdentity::PackInto(char* buffer, int maxlength) const
-{
-	int size = GetSize();
-	assert(size <= maxlength);
-	
-	PackedIdentity ph(*this);
-	memcpy(buffer, &ph, sizeof(ph));
-	buffer += sizeof(ph);
-	memcpy(buffer, metadata.data(), metadata.size());
-	return size;
-}
-
-int ObjectIdentity::UnpackFrom(const char* buffer, int maxlength)
-{
-	assert(maxlength >= sizeof(PackedIdentity));
-	const PackedIdentity* pi = reinterpret_cast<const PackedIdentity*>(buffer);
-	numeral = pi->numeral;
-	type = pi->type;
-	assert(maxlength >= sizeof(PackedIdentity) + pi->MetadataLength);
-	metadata = string(buffer + sizeof(PackedIdentity), pi->MetadataLength);
-	return sizeof(PackedIdentity) + pi->MetadataLength;
-}
-
 std::optional<GLObject> ObjectData::ToGLObject() const
 {
-	static const map<enum PacketType, enum MeshNames> PacketToMesh = 
+	static const map<ObjectType, MeshNames> PacketToMesh = 
 	{
-		{PacketType::Robot, MeshNames::robot},
-		{PacketType::Camera, MeshNames::brio},
-		{PacketType::ReferenceAbsolute, MeshNames::arena},
-		{PacketType::ReferenceRelative, MeshNames::arena},
-		{PacketType::Tag, MeshNames::tag},
-		{PacketType::TopTracker, MeshNames::toptracker},
-		{PacketType::TeamTracker, MeshNames::trackercube}
+		{ObjectType::Robot, MeshNames::robot},
+		{ObjectType::Camera, MeshNames::brio},
+		{ObjectType::ReferenceAbsolute, MeshNames::arena},
+		{ObjectType::ReferenceRelative, MeshNames::arena},
+		{ObjectType::Tag, MeshNames::tag},
+		{ObjectType::TopTracker, MeshNames::toptracker},
+		{ObjectType::TeamTracker, MeshNames::trackercube}
 	};
 
-	auto foundmesh = PacketToMesh.find(identity.type);
+	auto foundmesh = PacketToMesh.find(type);
 	if (foundmesh == PacketToMesh.end())
 	{
 		return nullopt;
@@ -53,7 +28,7 @@ std::optional<GLObject> ObjectData::ToGLObject() const
 	GLObject obj;
 	obj.type = foundmesh->second;
 	obj.location = Affine3DToGLM(location);
-	obj.metadata = identity.metadata;
+	obj.metadata = metadata;
 	return obj;
 }
 
@@ -64,10 +39,17 @@ vector<GLObject> ObjectData::ToGLObjects(const vector<ObjectData>& data)
 	for (int i = 0; i < data.size(); i++)
 	{
 		auto obj = data[i].ToGLObject();
-		if (obj.has_value())
+		if (!obj.has_value())
 		{
-			outobj.push_back(obj.value());
+			continue;
 		}
+		outobj.push_back(obj.value());
+		vector<GLObject> childs = ObjectData::ToGLObjects(data[i].Childs);
+		for (int i = 0; i < childs.size(); i++)
+		{
+			childs[i].location = obj.value().location * childs[i].location; //apply parent transform to child
+		}
+		outobj.insert(outobj.end(), childs.begin(), childs.end());
 	}
 	return outobj;
 }

@@ -100,7 +100,9 @@ public:
 	virtual cv::Affine3d GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
 		std::map<int, std::vector<cv::Point2f>> &ReprojectedCorners);
 
-	virtual std::vector<ObjectData> ToObjectData(int BaseNumeral);
+	virtual std::vector<ObjectData> GetMarkersAndChilds() const;
+
+	virtual std::vector<ObjectData> ToObjectData() const;
 
 	void Inspect();
 };

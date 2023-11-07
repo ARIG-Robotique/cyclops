@@ -50,6 +50,8 @@ public:
 	virtual bool Send(const void* buffer, int length, std::string client) override;
 
 	std::vector<std::string> AcceptNewConnections();
+
+	void DisconnectClient(std::string client);
 	
 	void receiveThread();
 };

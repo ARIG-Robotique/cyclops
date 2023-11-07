@@ -41,15 +41,12 @@ TrackerCube::~TrackerCube()
 {
 }
 
-vector<ObjectData> TrackerCube::ToObjectData(int BaseNumeral)
+vector<ObjectData> TrackerCube::ToObjectData() const
 {
 	ObjectData robot;
-	robot.identity.numeral = BaseNumeral;
-	robot.identity.type = PacketType::TeamTracker;
-	for (int i = 0; i < markers.size(); i++)
-	{
-		AddTypeToMetadata<uint8_t>(robot.identity.metadata, markers[i].number);
-	}
+	robot.name = Name;
+	robot.type = ObjectType::TeamTracker;
 	robot.location = Location;
+	robot.Childs = GetMarkersAndChilds();
 	return {robot};
 }

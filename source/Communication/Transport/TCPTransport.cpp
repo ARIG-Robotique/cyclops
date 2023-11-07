@@ -173,8 +173,8 @@ vector<string> TCPTransport::GetClients() const
 int TCPTransport::Receive(void *buffer, int maxlength, string client, bool blocking)
 {
 	int n = -1;
-	memset(buffer, '0' , maxlength);
-	int flags = blocking ? 0 : MSG_DONTWAIT;
+	//memset(buffer, '0' , maxlength);
+	int flags = blocking && (client != GenericTransport::BroadcastClient) ? 0 : MSG_DONTWAIT;
 
 	if (Server)
 	{
@@ -185,7 +185,7 @@ int TCPTransport::Receive(void *buffer, int maxlength, string client, bool block
 			{
 				continue;
 			}
-			if ((n = recv(connections[i].filedescriptor, buffer, maxlength, MSG_DONTWAIT)) > 0) //cannot wait because server
+			if ((n = recv(connections[i].filedescriptor, buffer, maxlength, flags)) > 0)
 			{
 				//cout << "Received " << n << " bytes..." << endl;
 				//printBuffer(dataReceived, n);
@@ -234,13 +234,12 @@ bool TCPTransport::Send(const void* buffer, int length, string client)
 			{
 				if (errnocp == EPIPE)
 				{
-					cout << "TCP Client " << connections[i].name << " disconnected." <<endl;
-					ServerDeleteSocket(i);
+					DisconnectClient(connections[i].name);
 					i--;
 				}
 				else
 				{
-					cerr << "TCP Server failed to send data to client " << connections[i].name << " : " << errnocp << "(" << strerror(errnocp) << ")" << endl;
+					cerr << "TCP Server failed to send data to client " << connections[i].name << " : " << errnocp << " (" << strerror(errnocp) << ")" << endl;
 					failed = true;
 				}
 				
@@ -313,6 +312,21 @@ vector<string> TCPTransport::AcceptNewConnections()
 		}
 	}
 	return newconnections;
+}
+
+void TCPTransport::DisconnectClient(std::string client)
+{
+	unique_lock lock(listenmutex);
+	for (int i = 0; i < connections.size(); i++)
+	{
+		if (client != connections[i].name && client != BroadcastClient)
+		{
+			continue;
+		}
+		cout << "TCP Client " << connections[i].name << " disconnected." <<endl;
+		ServerDeleteSocket(i);
+		i--;
+	}
 }
 
 void TCPTransport::receiveThread()

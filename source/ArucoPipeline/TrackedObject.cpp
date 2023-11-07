@@ -250,7 +250,28 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 	
 }
 
-vector<ObjectData> TrackedObject::ToObjectData(int BaseNumeral)
+vector<ObjectData> TrackedObject::GetMarkersAndChilds() const
+{
+	vector<ObjectData> datas;
+	for (auto child : childs)
+	{
+		vector<ObjectData> thisdata = child->ToObjectData();
+		datas.insert(datas.end(), thisdata.begin(), thisdata.end());
+	}
+	for (size_t i = 0; i < markers.size(); i++)
+	{
+		const ArucoMarker &m = markers[i];
+		ObjectData d;
+		d.name = m.number;
+		d.type = ObjectType::Tag;
+		d.metadata = MakeTag(m.sideLength, m.number);
+		d.location = m.Pose;
+		datas.push_back(d);
+	}
+	return datas;
+}
+
+vector<ObjectData> TrackedObject::ToObjectData() const
 {
 	cerr << "WARNING: Call to base TrackedObject::ToObjectData function. That function is uninplemented. Override it." <<endl;
 	return {};
@@ -263,17 +284,7 @@ void TrackedObject::Inspect()
 
 	board.LoadTags();
 
-	vector<ObjectData> datas = ToObjectData(0);
-	for (size_t i = 0; i < markers.size(); i++)
-	{
-		ArucoMarker &m = markers[i];
-		ObjectData d;
-		d.identity.numeral = m.number;
-		d.identity.type = PacketType::Tag;
-		d.identity.metadata = MakeTag(m.sideLength, m.number);
-		d.location = m.Pose;
-		datas.push_back(d);
-	}
+	vector<ObjectData> datas = ToObjectData();
 	while (board.Tick(ObjectData::ToGLObjects(datas)));
 }
 

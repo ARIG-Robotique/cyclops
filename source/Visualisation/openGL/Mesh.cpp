@@ -152,50 +152,46 @@ void Mesh::Draw(GLuint ParamHandle, bool forceTexture)
 	glEnableVertexAttribArray(i);
 	glBindBuffer(GL_ARRAY_BUFFER, PositionBuffer);
 	glVertexAttribPointer(
-	i,                   // attribute 0. No particular reason for 0, but must match the layout in the shader.
+	i++,                   // attribute 0. No particular reason for 0, but must match the layout in the shader.
 	3,                   // size
 	GL_FLOAT,            // type
 	GL_FALSE,            // normalized?
 	0,                   // stride
 	(void*)0             // array buffer offset
 	);
-	i++;
 
 	glEnableVertexAttribArray(i);
 	glBindBuffer(GL_ARRAY_BUFFER, NormalBuffer);
 	glVertexAttribPointer(
-		i,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		i++,                                // attribute. No particular reason for 1, but must match the layout in the shader.
 		3,                                // size
 		GL_FLOAT,                         // type
 		GL_FALSE,                         // normalized?
 		0,                                // stride
 		(void*)0                          // array buffer offset
 	);
-	i++;
 
 	glEnableVertexAttribArray(i);
 	glBindBuffer(GL_ARRAY_BUFFER, UVBuffer);
 	glVertexAttribPointer(
-		i,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		i++,                                // attribute. No particular reason for 1, but must match the layout in the shader.
 		2,                                // size
 		GL_FLOAT,                         // type
 		GL_FALSE,                         // normalized?
 		0,                                // stride
 		(void*)0                          // array buffer offset
 	);
-	i++;
 
 	glEnableVertexAttribArray(i);
 	glBindBuffer(GL_ARRAY_BUFFER, ColorBuffer);
 	glVertexAttribPointer(
-		i,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		i++,                                // attribute. No particular reason for 1, but must match the layout in the shader.
 		3,                                // size
 		GL_FLOAT,                         // type
 		GL_FALSE,                         // normalized?
 		0,                                // stride
 		(void*)0                          // array buffer offset
 	);
-	i++;
 	
 	if (texture.valid)
 	{
@@ -216,7 +212,7 @@ void Mesh::Draw(GLuint ParamHandle, bool forceTexture)
 		(void*)0           // element array buffer offset
 	);
 
-	for (; i >= 0; i--)
+	for (i--; i >= 0; i--)
 	{
 		glDisableVertexAttribArray(i);
 	}

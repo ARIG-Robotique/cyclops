@@ -209,7 +209,7 @@ vector<ObjectData> ObjectTracker::GetObjectDataVector(unsigned long Tick)
 			continue;
 		}
 		
-		vector<ObjectData> lp = objects[i]->ToObjectData(i);
+		vector<ObjectData> lp = objects[i]->ToObjectData();
 		for (int j = 0; j < lp.size(); j++)
 		{
 			ObjectDatas.push_back(lp[j]);

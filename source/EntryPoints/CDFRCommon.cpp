@@ -1,18 +1,18 @@
 #include "EntryPoints/CDFRCommon.hpp"
 #include "Misc/ManualProfiler.hpp"
 
-map<PacketType, bool> GetDefaultAllowMap()
+map<ObjectType, bool> GetDefaultAllowMap()
 {
-	map<PacketType, bool> allowmap = {
-		{PacketType::Null, false},
-		{PacketType::Camera, false},
-		{PacketType::ReferenceAbsolute, false},
-		{PacketType::ReferenceRelative, true},
-		{PacketType::Robot, true},
-		{PacketType::TeamTracker, true},
-		{PacketType::TopTracker, true},
-		{PacketType::Tag, false},
-		{PacketType::Team, true}
+	map<ObjectType, bool> allowmap = {
+		{ObjectType::Unknown, false},
+		{ObjectType::Camera, false},
+		{ObjectType::ReferenceAbsolute, false},
+		{ObjectType::ReferenceRelative, true},
+		{ObjectType::Robot, true},
+		{ObjectType::TeamTracker, true},
+		{ObjectType::TopTracker, true},
+		{ObjectType::Tag, false},
+		{ObjectType::Team, true}
 	};
 	return allowmap;
 }

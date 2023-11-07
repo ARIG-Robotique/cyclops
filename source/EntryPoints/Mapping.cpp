@@ -144,9 +144,9 @@ void MappingSolve(void)
 		ArucoMarker referenceMarker(refsize, refid);
 		SolvedTagsObject.markers.push_back(referenceMarker);
 		ObjectData d;
-		d.identity.type = PacketType::Tag;
-		d.identity.numeral = referenceMarker.number;
-		d.identity.metadata = MakeTag(referenceMarker.sideLength, referenceMarker.number);
+		d.type = ObjectType::Tag;
+		d.name = referenceMarker.number;
+		d.metadata = MakeTag(referenceMarker.sideLength, referenceMarker.number);
 		d.location = referenceMarker.Pose;
 		vizdata.push_back(d);
 	}
@@ -173,8 +173,8 @@ void MappingSolve(void)
 			{
 				//add camera to visualizer
 				ObjectData camdata;
-				camdata.identity.type = PacketType::Camera;
-				camdata.identity.numeral = j;
+				camdata.type = ObjectType::Camera;
+				camdata.name = j;
 				camdata.location = CameraPos;
 				vizdata.push_back(camdata);
 			}
@@ -342,9 +342,9 @@ void MappingSolve(void)
 			}
 			SolvedTagsObject.markers.push_back(marker);
 			ObjectData d;
-			d.identity.type = PacketType::Tag;
-			d.identity.numeral = marker.number;
-			d.identity.metadata = MakeTag(marker.sideLength, marker.number);
+			d.type = ObjectType::Tag;
+			d.name = marker.number;
+			d.metadata = MakeTag(marker.sideLength, marker.number);
 			d.location = marker.Pose;
 			vizdata.push_back(d);
 		}
