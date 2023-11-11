@@ -32,4 +32,4 @@ git checkout 4.8.0
 sudo -v
 cd ..
 cd $STARTDIR
-./InstallOpenCV.sh
+time ./InstallOpenCV.sh
