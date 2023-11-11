@@ -38,5 +38,6 @@ AdvertiseMV::~AdvertiseMV()
 	for (auto sendthread : threads)
 	{
 		sendthread->join();
+		delete sendthread;
 	}
 }

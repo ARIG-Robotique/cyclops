@@ -23,15 +23,23 @@ class JsonListener
 private:
 	std::thread *ListenThread = nullptr;
 	bool killed = false;
-	std::stringstream ReceiveBuffer;
+	std::vector<char> ReceiveBuffer;
 public:
 	TCPTransport *Transport;
 	std::string ClientName;
 
-	void StartListenThread();
+	JsonListener(TCPTransport* InTransport, std::string InClientName);
 
 	~JsonListener();
 
+	bool IsKilled() const
+	{
+		return killed;
+	}
+
 private:
+
+	void HandleJson(const std::string &command);
+
 	void ThreadEntryPoint();
 };
