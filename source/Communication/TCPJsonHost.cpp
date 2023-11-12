@@ -9,7 +9,7 @@ using namespace std;
 
 void TCPJsonHost::ThreadEntryPoint(GenericTransport::NetworkInterface interface)
 {
-	unique_ptr<TCPTransport> Transport = make_unique<TCPTransport>(true, "0.0.0.0", Port, interface);
+	unique_ptr<TCPTransport> Transport = make_unique<TCPTransport>(true, "0.0.0.0", Port, interface.name);
 	set<unique_ptr<JsonListener>> Listeners;
 	while (!killed)
 	{
