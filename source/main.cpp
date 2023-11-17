@@ -34,6 +34,34 @@
 using namespace std;
 using namespace cv;
 
+void ConfigureOpenCL()
+{
+	ocl::setUseOpenCL(true);
+
+	if (!ocl::haveOpenCL())
+	{
+		cerr << "OpenCL is not available..." << endl;
+		return;
+	}
+
+	ocl::Context context;
+	if (!context.create(ocl::Device::TYPE_ALL))
+	{
+		cerr << "Failed creating the context..." << endl;
+		return;
+	}
+
+	cout << context.ndevices() << " OpenCL devices detected." << endl; //This bit provides an overview of the OpenCL devices you have in your computer
+	for (int i = 0; i < context.ndevices(); i++)
+	{
+		ocl::Device device = context.device(i);
+		cout << "\tname:              " << device.name() << endl;
+		cout << "\tavailable:         " << device.available() << endl;
+		cout << "\timageSupport:      " << device.imageSupport() << endl;
+		cout << "\tOpenCL_C_Version:  " << device.OpenCL_C_Version() << endl;
+	}
+}
+
 int main(int argc, char** argv )
 {
 	const string keys = 
@@ -62,7 +90,8 @@ int main(int argc, char** argv )
 	
 	bool nodisplay = parser.has("nodisplay");
 
-	ocl::setUseOpenCL(true);
+	ConfigureOpenCL();
+
 	#ifdef WITH_X11
 	if (nodisplay)
 	{
@@ -81,7 +110,7 @@ int main(int argc, char** argv )
 	{
 		auto& detector = GetArucoDetector();
 		auto& dictionary = detector.getDictionary();
-		std::filesystem::create_directory("../markers");
+		filesystem::create_directory("../markers");
 		//mkdir("../markers", 0777);
 		for (int i = 0; i < 100; i++)
 		{

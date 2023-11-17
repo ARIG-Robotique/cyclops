@@ -363,6 +363,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 		if (!CamToCalib->Read())
 		{
 			//cout<< "read fail" <<endl;
+			imguiinst.EndFrame();
 			failed++;
 			if (failed >10)
 			{
