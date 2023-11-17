@@ -8,8 +8,8 @@
 #include <opencv2/core/affine.hpp>
 
 
-#include "Cameras/Camera.hpp"
-#include "Cameras/ImageTypes.hpp"
+#include <Cameras/Camera.hpp>
+#include <Cameras/ImageTypes.hpp>
 
 
 class VideoCaptureCamera : public Camera

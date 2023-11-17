@@ -1,6 +1,7 @@
 #include "Misc/GlobalConf.hpp"
 
-#include "Cameras/ImageTypes.hpp"
+#include <Misc/ArucoDictSize.hpp>
+#include <Cameras/ImageTypes.hpp>
 
 #include <iostream>
 #include <libconfig.h++>
@@ -19,8 +20,7 @@ bool ConfigInitialised = false;
 Config cfg;
 
 //Default values
-CaptureConfig CaptureCfg = {(int)CameraStartType::GSTREAMER_CPU, Size(1920,1080), 1.f, 60, 1, ""};
-WebsocketConfig WebsocketCfg = {"eth1", true, true, "127.0.0.1", 42069};
+CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, Size(1920,1080), 1.f, 30, 1, ""};
 vector<InternalCameraConfig> CamerasInternal;
 CalibrationConfig CamCalConf = {40, Size(6,4), 0.25, Size2d(4.96, 3.72)};
 
@@ -160,17 +160,6 @@ void InitConfig()
 		CopyDefaultCfg(Capture, "CameraFilter", Setting::TypeString, CaptureCfg.filter);
 		
 	}
-
-	Setting& Websocket = EnsureExistCfg(root, "Websocket", Setting::Type::TypeGroup, 0);
-	{
-		CopyDefaultCfg(Websocket, "Interface", Setting::TypeString, WebsocketCfg.Interface);
-		CopyDefaultCfg(Websocket, "TCP", Setting::TypeBoolean, WebsocketCfg.TCP);
-		CopyDefaultCfg(Websocket, "Server", Setting::TypeBoolean, WebsocketCfg.Server);
-
-		CopyDefaultCfg(Websocket, "IP", Setting::TypeString, WebsocketCfg.IP);
-		CopyDefaultCfg(Websocket, "Port", Setting::TypeInt, WebsocketCfg.Port);
-	}
-
 
 	Setting& CamerasSett = EnsureExistCfg(root, "InternalCameras", Setting::Type::TypeList, 0);
 	{
@@ -342,9 +331,9 @@ Size GetArucoReduction()
 
 UMat& GetArucoImage(int id)
 {
-	if (MarkerImages.size() != 100)
+	if (MarkerImages.size() != ARUCO_DICT_SIZE)
 	{
-		MarkerImages.resize(100);
+		MarkerImages.resize(ARUCO_DICT_SIZE);
 	}
 	if (MarkerImages[id].empty())
 	{
@@ -353,12 +342,6 @@ UMat& GetArucoImage(int id)
 		aruco::generateImageMarker(dict, id, 256, MarkerImages[id], 1);
 	}
 	return MarkerImages[id];
-}
-
-WebsocketConfig& GetWebsocketConfig()
-{
-	InitConfig();
-	return WebsocketCfg;
 }
 
 vector<InternalCameraConfig>& GetInternalCameraPositionsConfig()

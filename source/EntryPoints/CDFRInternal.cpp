@@ -1,4 +1,4 @@
-#include <EntryPoints/CDFRInternal.hpp>
+#include "EntryPoints/CDFRInternal.hpp"
 #include <EntryPoints/CDFRCommon.hpp>
 
 #include <Visualisation/BoardGL.hpp>

@@ -1,5 +1,5 @@
 
-#include "Calibrate.hpp"
+#include "EntryPoints/Calibrate.hpp"
 
 #include <iostream> // for standard I/O
 #include <string>   // for strings
@@ -16,18 +16,18 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "Misc/math2d.hpp"
-#include "Misc/math3d.hpp"
+#include <Misc/math2d.hpp>
+#include <Misc/math3d.hpp>
 
-#include "Visualisation/ImguiWindow.hpp"
-#include "Visualisation/openGL/Texture.hpp"
+#include <Visualisation/ImguiWindow.hpp>
+#include <Visualisation/openGL/Texture.hpp>
 
-#include "thirdparty/serialib.h"
-#include "GlobalConf.hpp"
-#include "Cameras/Camera.hpp"
-#include "Cameras/VideoCaptureCamera.hpp"
-#include "Cameras/Calibfile.hpp"
-#include "Misc/FrameCounter.hpp"
+#include <thirdparty/serialib.h>
+#include <GlobalConf.hpp>
+#include <Cameras/Camera.hpp>
+#include <Cameras/VideoCaptureCamera.hpp>
+#include <Cameras/Calibfile.hpp>
+#include <Misc/FrameCounter.hpp>
 
 using namespace std;
 using namespace cv;

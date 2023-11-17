@@ -5,7 +5,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 
-#include "thirdparty/list-devices.hpp"
+#include <thirdparty/list-devices.hpp>
 
 //All the settings needed to start a camera, in the palm of your hand...
 struct CameraSettings

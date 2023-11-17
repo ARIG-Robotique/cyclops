@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Communication/Transport/GenericTransport.hpp"
+#include <Communication/Transport/GenericTransport.hpp>
 
 #include <vector>
 #include <cstring>

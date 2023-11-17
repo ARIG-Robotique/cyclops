@@ -1,8 +1,9 @@
+#include "ArucoPipeline/ObjectTracker.hpp"
+
 
 #include <vector>
 
 #include <math3d.hpp>
-#include <ArucoPipeline/ObjectTracker.hpp>
 #include <ArucoPipeline/StaticObject.hpp>
 
 using namespace cv;

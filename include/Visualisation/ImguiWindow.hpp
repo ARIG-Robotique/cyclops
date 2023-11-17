@@ -1,7 +1,7 @@
 #pragma once
 
-#include "imgui.h"
-#include "Visualisation/GLWindow.hpp"
+#include <imgui.h>
+#include <Visualisation/GLWindow.hpp>
 
 class ImguiWindow : public GLWindow
 {

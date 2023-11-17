@@ -8,13 +8,13 @@
 
 #include <opencv2/imgproc.hpp>
 
-#include "math2d.hpp"
-#include "math3d.hpp"
+#include <math2d.hpp>
+#include <math3d.hpp>
 
-#include "Cameras/Calibfile.hpp"
+#include <Cameras/Calibfile.hpp>
 
-#include "ArucoPipeline/ObjectTracker.hpp"
-#include "GlobalConf.hpp"
+#include <ArucoPipeline/ObjectTracker.hpp>
+#include <GlobalConf.hpp>
 
 using namespace cv;
 using namespace std;

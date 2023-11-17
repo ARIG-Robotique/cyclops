@@ -1,9 +1,9 @@
 #include "ArucoPipeline/ObjectIdentity.hpp"
+#include <math3d.hpp>
+#include <metadata.hpp>
+#include <Visualisation/BoardGL.hpp>
 #include <cassert>
 #include <map>
-#include "math3d.hpp"
-#include "metadata.hpp"
-#include "Visualisation/BoardGL.hpp"
 using namespace std;
 
 std::optional<GLObject> ObjectData::ToGLObject() const

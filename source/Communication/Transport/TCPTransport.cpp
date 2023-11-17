@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -13,7 +12,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "GlobalConf.hpp"
+#include <mutex>
 
 using namespace std;
 
@@ -60,11 +59,11 @@ void TCPTransport::CreateSocket()
 		cerr << "TCP Failed to create socket, port " << Port << endl;
 	}
 	
-	/*if(setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, Interface.c_str(), Interface.size()))
+	if(setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, Interface.c_str(), Interface.size()))
 	{
-		cerr << "TCP Failed to bind to interface : " << errno << endl;
-	}*/
-	LowerLatency(sockfd);
+		cerr << "TCP Failed to bind to interface : " << strerror(errno) << endl;
+	}
+	//LowerLatency(sockfd);
 	
 }
 
@@ -85,7 +84,7 @@ bool TCPTransport::Connect()
 		//cout << "TCP Binding socket..." << endl;
 		if (bind(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == -1) 
 		{
-			cerr << "TCP Can't bind to IP/port, errno " << errno << "(" << strerror(errno) << ")" << endl;
+			cerr << "TCP Can't bind to IP/port, " << strerror(errno) << endl;
 		}
 		//cout << "TCP Marking socket for listening" << endl;
 		if (listen(sockfd, SOMAXCONN) == -1)

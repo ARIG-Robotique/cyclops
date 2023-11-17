@@ -5,8 +5,8 @@
 #include <sstream>  // string to number conversion
 #include <opencv2/core.hpp>		// Basic OpenCV structures (Mat, Scalar)
 #include <opencv2/video/tracking.hpp>
-#include "ArucoPipeline/ObjectIdentity.hpp"
-#include "Communication/ProcessedTypes.hpp"
+#include <ArucoPipeline/ObjectIdentity.hpp>
+#include <Communication/ProcessedTypes.hpp>
 
 class Camera;
 class BoardViz2D;

@@ -9,24 +9,22 @@
 #include <opencv2/core.hpp>     // Basic OpenCV structures (Mat, Scalar)
 #include <opencv2/core/ocl.hpp> //opencl
 #include <opencv2/imgproc.hpp>
-
-
-#include "GlobalConf.hpp"
-#include "Cameras/VideoCaptureCamera.hpp"
-#include "Cameras/CameraManager.hpp"
-#include "ArucoPipeline/ObjectTracker.hpp"
-#include "Calibrate.hpp"
-#include "Visualisation/BoardGL.hpp"
-#include "Visualisation/ImguiWindow.hpp"
-#include "EntryPoints/CDFRExternal.hpp"
-#include "EntryPoints/CDFRInternal.hpp"
-#include "EntryPoints/Mapping.hpp"
-
-#include "Communication/AdvertiseMV.hpp"
-
-#include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
-#include <iostream>
+
+
+#include <GlobalConf.hpp>
+#include <Cameras/VideoCaptureCamera.hpp>
+#include <Cameras/CameraManager.hpp>
+#include <ArucoPipeline/ObjectTracker.hpp>
+#include <Calibrate.hpp>
+#include <Visualisation/BoardGL.hpp>
+#include <Visualisation/ImguiWindow.hpp>
+#include <EntryPoints/CDFRExternal.hpp>
+#include <EntryPoints/CDFRInternal.hpp>
+#include <EntryPoints/Mapping.hpp>
+
+#include <Communication/AdvertiseMV.hpp>
+
 #ifdef WITH_X11
 #include <X11/Xlib.h>
 #endif
@@ -111,8 +109,7 @@ int main(int argc, char** argv )
 		auto& detector = GetArucoDetector();
 		auto& dictionary = detector.getDictionary();
 		filesystem::create_directory("../markers");
-		//mkdir("../markers", 0777);
-		for (int i = 0; i < 100; i++)
+		for (int i = 0; i < ARUCO_DICT_SIZE; i++)
 		{
 			UMat markerImage;
 			aruco::generateImageMarker(dictionary, i, 1024, markerImage, 1);
@@ -120,37 +117,6 @@ int main(int argc, char** argv )
 			snprintf(buffer, sizeof(buffer)/sizeof(char), "../markers/marker%d.png", i);
 			imwrite(buffer, markerImage);
 		}
-		Mat gigaimage;
-		const int PixelsPerMM = 20;
-		const int MarkerSizeMM = 50;
-		const int MarkerSizeWhiteBorderMM = 55;
-		const int SeparationMM = 1;
-		const int MarkerSizePx = MarkerSizeMM * PixelsPerMM;
-		const int MarkerSizeWhiteBorderPx = MarkerSizeWhiteBorderMM * PixelsPerMM;
-		const int SeparationPixels = 10;
-		const Size GridMarkers(8,5);
-		gigaimage = Mat(GridMarkers*MarkerSizeWhiteBorderPx + (GridMarkers+Size(1,1))*SeparationPixels, CV_8UC1, Scalar(0));
-		cout << "Combined image should be scaled to " << (float)gigaimage.cols/PixelsPerMM << "x" << (float)gigaimage.rows/PixelsPerMM << "mm" << endl;
-		int markeridx = 51;
-		const int endmarker = markeridx + GridMarkers.height*GridMarkers.width;
-		for (int j = 0; j < GridMarkers.height; j++)
-		{
-			for (int i = 0; i < GridMarkers.width; i++)
-			{
-				if (markeridx >= 100)
-				{
-					break;
-				}
-				
-				Point markerwhitestart(SeparationPixels + (SeparationPixels+MarkerSizeWhiteBorderPx)*i, SeparationPixels + (SeparationPixels+MarkerSizeWhiteBorderPx)*j);
-				rectangle(gigaimage, markerwhitestart, markerwhitestart + Point(MarkerSizeWhiteBorderPx-1, MarkerSizeWhiteBorderPx-1), Scalar(255), FILLED);
-				Point markerStart = markerwhitestart + Point(1,1) * ((MarkerSizeWhiteBorderPx-MarkerSizePx)/2);
-				aruco::generateImageMarker(dictionary, markeridx, MarkerSizePx, gigaimage(Rect(markerStart, Size(MarkerSizePx, MarkerSizePx))), 1);
-				markeridx++;
-			}
-			
-		}
-		imwrite("../markers/combined.png", gigaimage);
 		exit(EXIT_SUCCESS);
 	}
 	
@@ -183,19 +149,6 @@ int main(int argc, char** argv )
 
 	bool direct = parser.has("direct");
 	bool opengl = !parser.has("nodisplay");
-
-	if(parser.has("server"))
-	{
-		GetWebsocketConfig().Server = parser.get<bool>("server");
-		if (GetWebsocketConfig().Server)
-		{
-			cout << "Disregarding config, will be acting as server" <<endl;
-		}
-		else
-		{
-			cout << "Disregarding config, will be acting as client" <<endl;
-		}
-	}
 	
 	if (parser.has("map"))
 	{

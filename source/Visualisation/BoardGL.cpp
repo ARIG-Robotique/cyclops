@@ -15,9 +15,10 @@
 #include <glm/gtx/transform.hpp>
 #include <assimp/Importer.hpp>
 
-#include "GlobalConf.hpp"
-#include "Misc/metadata.hpp"
-#include "Visualisation/openGL/Mesh.hpp"
+#include <GlobalConf.hpp>
+#include <Misc/metadata.hpp>
+#include <Misc/ArucoDictSize.hpp>
+#include <Visualisation/openGL/Mesh.hpp>
 
 using namespace std;
 
@@ -223,10 +224,10 @@ void BoardGL::LoadTags()
 	}
 	glfwMakeContextCurrent(Window);
 
-	TagTextures.resize(100);
+	TagTextures.resize(ARUCO_DICT_SIZE);
 	auto& det = GetArucoDetector();
 	auto& dict = det.getDictionary();
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < ARUCO_DICT_SIZE; i++)
 	{
 		cv::Mat texture;
 		cv::aruco::generateImageMarker(dict, i, 128, texture, 1);

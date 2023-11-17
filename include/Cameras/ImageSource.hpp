@@ -1,7 +1,7 @@
 #pragma once
 
 #include <opencv2/core.hpp>
-#include "Cameras/ImageTypes.hpp"
+#include <Cameras/ImageTypes.hpp>
 
 
 //Father class to represent any object capable of outputting a 2D image

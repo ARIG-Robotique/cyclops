@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -12,8 +11,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-
-#include "GlobalConf.hpp"
 
 using namespace std;
 

@@ -17,7 +17,7 @@ enum class RunType
 struct CaptureConfig
 {
 	int StartType; //See CameraStartType in Misc/ImageTypes.hpp . Chooses method to use to start the camera
-	cv::Size FrameSize; //resolution after crop
+	cv::Size FrameSize; //resolution
 	float ReductionFactor; //factor to downscale image before aruco detection
 	int CaptureFramerate;
 	int FramerateDivider;
@@ -50,17 +50,6 @@ float GetReductionFactor();
 cv::Size GetArucoReduction();
 
 cv::UMat& GetArucoImage(int id);
-
-struct WebsocketConfig
-{
-	std::string Interface;
-	bool TCP;
-	bool Server;
-	std::string IP;
-	int Port; 
-};
-
-WebsocketConfig& GetWebsocketConfig();
 
 struct InternalCameraConfig
 {

@@ -1,9 +1,9 @@
 #include "ArucoPipeline/TrackerCube.hpp"
 
-#include "ArucoPipeline/ObjectIdentity.hpp"
+#include <ArucoPipeline/ObjectIdentity.hpp>
 
-#include "math3d.hpp"
-#include "metadata.hpp"
+#include <math3d.hpp>
+#include <metadata.hpp>
 
 using namespace cv;
 using namespace std;

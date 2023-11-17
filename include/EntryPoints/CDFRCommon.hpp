@@ -7,16 +7,16 @@
 #include <opencv2/core.hpp>
 
 
-#include "GlobalConf.hpp"
+#include <GlobalConf.hpp>
 
-#include "Cameras/VideoCaptureCamera.hpp"
-#include "Cameras/CameraManager.hpp"
-#include "ArucoPipeline/TrackerCube.hpp"
-#include "ArucoPipeline/TopTracker.hpp"
-#include "ArucoPipeline/StaticObject.hpp"
-#include "ArucoPipeline/ObjectTracker.hpp"
+#include <Cameras/VideoCaptureCamera.hpp>
+#include <Cameras/CameraManager.hpp>
+#include <ArucoPipeline/TrackerCube.hpp>
+#include <ArucoPipeline/TopTracker.hpp>
+#include <ArucoPipeline/StaticObject.hpp>
+#include <ArucoPipeline/ObjectTracker.hpp>
 
-#include "Misc/FrameCounter.hpp"
+#include <Misc/FrameCounter.hpp>
 
 
 using namespace cv;

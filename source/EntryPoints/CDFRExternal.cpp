@@ -1,5 +1,6 @@
+
+#include "EntryPoints/CDFRExternal.hpp"
 #include <EntryPoints/CDFRCommon.hpp>
-#include <EntryPoints/CDFRExternal.hpp>
 
 #include <DetectFeatures/ArucoDetect.hpp>
 
@@ -246,10 +247,6 @@ void CDFRExternalMain(bool direct, bool v3d)
 		}
 		
 		prof.EnterSection("Send data");
-		if (GetWebsocketConfig().Server)
-		{
-			//this_thread::sleep_for(chrono::milliseconds(1000));
-		}
 		
 		
 		prof.EnterSection("");

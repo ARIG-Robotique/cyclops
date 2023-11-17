@@ -10,15 +10,15 @@
 
 #include <opencv2/calib3d.hpp>
 
-#include "thirdparty/list-devices.hpp"
-#include "thirdparty/serialib.h"
+#include <thirdparty/list-devices.hpp>
+#include <thirdparty/serialib.h>
 
-#include "Cameras/Calibfile.hpp"
-#include "Misc/FrameCounter.hpp"
+#include <Cameras/Calibfile.hpp>
+#include <Misc/FrameCounter.hpp>
 
-#include "ArucoPipeline/TrackedObject.hpp" //CameraView
-#include "ArucoPipeline/ObjectTracker.hpp"
-#include "GlobalConf.hpp"
+#include <ArucoPipeline/TrackedObject.hpp> //CameraView
+#include <ArucoPipeline/ObjectTracker.hpp>
+#include <GlobalConf.hpp>
 
 using namespace cv;
 using namespace std;

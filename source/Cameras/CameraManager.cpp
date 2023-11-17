@@ -1,7 +1,7 @@
 #include "Cameras/CameraManager.hpp"
 
-#include "GlobalConf.hpp"
-#include "Cameras/Calibfile.hpp"
+#include <GlobalConf.hpp>
+#include <Cameras/Calibfile.hpp>
 
 #include <filesystem>
 

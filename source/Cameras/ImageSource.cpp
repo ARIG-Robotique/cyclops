@@ -1,5 +1,5 @@
 #include "Cameras/ImageSource.hpp"
-#include "GlobalConf.hpp"
+#include <GlobalConf.hpp>
 
 using namespace cv;
 using namespace std;

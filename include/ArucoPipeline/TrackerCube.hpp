@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ArucoPipeline/TrackedObject.hpp"
+#include <ArucoPipeline/TrackedObject.hpp>
 
 //A cube with 4 tags, one on each side
 class TrackerCube : public TrackedObject

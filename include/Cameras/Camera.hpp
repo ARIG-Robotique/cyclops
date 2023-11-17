@@ -10,9 +10,9 @@
 #include <opencv2/aruco.hpp>
 #include <opencv2/core/affine.hpp>
 
-#include "Cameras/ImageSource.hpp"
-#include "Cameras/ImageTypes.hpp"
-#include "ArucoPipeline/TrackedObject.hpp"
+#include <Cameras/ImageSource.hpp>
+#include <Cameras/ImageTypes.hpp>
+#include <ArucoPipeline/TrackedObject.hpp>
 
 class Camera;
 struct CameraImageData;

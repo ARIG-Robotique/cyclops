@@ -6,7 +6,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
-#include "Visualisation/openGL/Texture.hpp"
+#include <Visualisation/openGL/Texture.hpp>
 
 //A 3D model
 struct Mesh

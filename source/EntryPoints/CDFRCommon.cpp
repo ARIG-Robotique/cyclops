@@ -1,5 +1,5 @@
 #include "EntryPoints/CDFRCommon.hpp"
-#include "Misc/ManualProfiler.hpp"
+#include <Misc/ManualProfiler.hpp>
 
 map<ObjectType, bool> GetDefaultAllowMap()
 {

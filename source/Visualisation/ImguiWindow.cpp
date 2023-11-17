@@ -1,15 +1,15 @@
 
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui.h"
+#include "Visualisation/ImguiWindow.hpp"
+
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "Visualisation/ImguiWindow.hpp"
 #include <string>
 
 using namespace std;
 
-static string shaderfolder = "../source/Visualisation/openGL/";
 ImguiWindow::ImguiWindow()
 {
 	GLCreateWindow(1280, 720, "ImGUI");

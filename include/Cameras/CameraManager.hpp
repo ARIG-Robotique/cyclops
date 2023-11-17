@@ -7,8 +7,8 @@
 #include <shared_mutex>
 #include <thread>
 
-#include "Cameras/Camera.hpp"
-#include "GlobalConf.hpp"
+#include <Cameras/Camera.hpp>
+#include <GlobalConf.hpp>
 
 
 //Overseer class for the cameras

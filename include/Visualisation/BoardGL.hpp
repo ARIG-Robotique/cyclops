@@ -5,9 +5,9 @@
 #include <string>
 #include <glm/glm.hpp>
 
-#include "Visualisation/GLWindow.hpp"
-#include "Visualisation/openGL/Mesh.hpp"
-#include "Visualisation/openGL/Shader.hpp"
+#include <Visualisation/GLWindow.hpp>
+#include <Visualisation/openGL/Mesh.hpp>
+#include <Visualisation/openGL/Shader.hpp>
 
 class GLFWwindow;
 class TrackedObject;

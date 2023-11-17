@@ -1,16 +1,16 @@
 #include "ArucoPipeline/TrackedObject.hpp"
-#include "ArucoPipeline/TrackerCube.hpp" // for the test env
+#include <ArucoPipeline/TrackerCube.hpp> // for the test end
 #include <opencv2/core.hpp>
 #include <opencv2/core/affine.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgproc.hpp>
 
 
-#include "math3d.hpp"
-#include "metadata.hpp"
-#include "GlobalConf.hpp"
-#include "Cameras/Camera.hpp"
-#include "Visualisation/BoardGL.hpp"
+#include <math3d.hpp>
+#include <metadata.hpp>
+#include <GlobalConf.hpp>
+#include <Cameras/Camera.hpp>
+#include <Visualisation/BoardGL.hpp>
 
 using namespace cv;
 using namespace std;
