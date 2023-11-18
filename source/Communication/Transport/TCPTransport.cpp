@@ -28,7 +28,9 @@ TCPTransport::TCPTransport(bool inServer, string inIP, int inPort, string inInte
 	CreateSocket();
 	Connect();
 
-	ReceiveThreadHandle = new thread(&TCPTransport::receiveThread, this);
+	//ReceiveThreadHandle = new thread(&TCPTransport::receiveThread, this);
+
+	cout << "Created TCP transport " << IP << ":" << Port << " @ " << Interface <<endl;
 }
 
 TCPTransport::~TCPTransport()
@@ -52,7 +54,7 @@ void TCPTransport::CreateSocket()
 	{
 		return;
 	}
-	int type = Server ? SOCK_STREAM : SOCK_STREAM | SOCK_NONBLOCK;
+	int type = Server ? SOCK_STREAM | SOCK_NONBLOCK : SOCK_STREAM;
 	sockfd = socket(AF_INET, type, 0);
 	if (sockfd == -1)
 	{
@@ -301,10 +303,10 @@ vector<string> TCPTransport::AcceptNewConnections()
 			switch (errno)
 			{
 			case EAGAIN:
-				break;
+				return newconnections;
 			
 			default:
-				cerr << "TCP Unhandled error on accept: " << errno << "(" << strerror(errno) << ")" << endl;
+				cerr << "TCP Unhandled error on accept: " << strerror(errno) << endl;
 				break;
 			}
 			break;

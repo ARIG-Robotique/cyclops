@@ -40,7 +40,7 @@ UDPTransport::UDPTransport(int inPort, NetworkInterface inInterface)
 	//cout << "UDP Binding socket" << endl;
 	if (bind(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == -1) 
 	{
-		cerr << "UDP Can't bind to IP/port, errno " << errno << "(" << strerror(errno) << ")" << endl;
+		cerr << "UDP Can't bind to IP/port, " << strerror(errno) << endl;
 	}
 	Connected = true;
 	//ReceiveThreadHandle = new thread(&UDPTransport::receiveThread, this);

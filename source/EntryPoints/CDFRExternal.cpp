@@ -12,19 +12,19 @@
 #include <thread>
 #include <memory>
 
-CDFRTeam GetTeamFromCameras(vector<Camera*> Cameras)
+CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 {
 	if (Cameras.size() == 0)
 	{
 		return CDFRTeam::Unknown;
 	}
 	int blues = 0, greens = 0;
-	const static double ydist = 1.1;
-	const static double xdist = 1.45;
+	const static double ydist = 0.95;
+	const static double xdist = 1.594;
 	const static map<CDFRTeam, vector<Vec2d>> CameraPos = 
 	{
-		{CDFRTeam::Blue, {{0, ydist}, {-xdist, -ydist}, {xdist, -ydist}, {-1.622, -0.1}}},
-		{CDFRTeam::Yellow, {{0, -ydist}, {-xdist, ydist}, {xdist, ydist}, {-1.622, 0.1}}}
+		{CDFRTeam::Blue, {{0, -ydist}, {-xdist, ydist}, {-xdist, -ydist}, {-0.225, 1.122}}},
+		{CDFRTeam::Yellow, {{0, ydist}, {xdist, ydist}, {xdist, -ydist}, {0.225, 1.122}}}
 	};
 	map<CDFRTeam, int> TeamScores;
 	for (Camera* cam : Cameras)
@@ -72,7 +72,7 @@ CDFRTeam GetTeamFromCameras(vector<Camera*> Cameras)
 
 using ExternalProfType = ManualProfiler<false>;
 
-void CDFRExternalMain(bool direct, bool v3d)
+void CDFRExternal::ThreadEntryPoint()
 {
 	ExternalProfType prof("External Global Profile");
 	ExternalProfType ParallelProfiler("Parallel Cameras Detail");
@@ -155,13 +155,17 @@ void CDFRExternalMain(bool direct, bool v3d)
 
 	int lastmarker = 0;
 	CDFRTeam LastTeam = CDFRTeam::Unknown;
-	for (;;)
+	while (!killed)
 	{
-
+		if(Idle)
+		{
+			this_thread::sleep_for(chrono::milliseconds(10));
+			continue;
+		}
 		double deltaTime = fps.GetDeltaTime();
 		prof.EnterSection("CameraManager Tick");
 		vector<Camera*> Cameras = CameraMan.Tick();
-		CDFRTeam Team = GetTeamFromCameras(Cameras);
+		CDFRTeam Team = GetTeamFromCameraPosition(Cameras);
 		if (Team != LastTeam)
 		{
 			const string teamname = TeamNames.at(Team);
@@ -183,10 +187,10 @@ void CDFRExternalMain(bool direct, bool v3d)
 		}
 
 		int NumCams = Cameras.size();
-		vector<CameraFeatureData> FeatureData;
+		vector<CameraFeatureData> &FeatureDataLocal = FeatureData[BufferIndex];
 		vector<bool> CamerasWithPosition;
 		vector<ExternalProfType> ParallelProfilers;
-		FeatureData.resize(NumCams);
+		FeatureDataLocal.resize(NumCams);
 		CamerasWithPosition.resize(NumCams);
 		ParallelProfilers.resize(NumCams);
 		prof.EnterSection("Parallel Cameras");
@@ -197,7 +201,7 @@ void CDFRExternalMain(bool direct, bool v3d)
 		//detect aruco and yolo
 
 		parallel_for_(Range(0, Cameras.size()), 
-		[&Cameras, &FeatureData, &CamerasWithPosition, TrackerToUse, GrabTick, &ParallelProfilers]
+		[&Cameras, &FeatureDataLocal, &CamerasWithPosition, TrackerToUse, GrabTick, &ParallelProfilers]
 		(Range InRange)
 		{
 			for (int i = InRange.start; i < InRange.end; i++)
@@ -212,7 +216,7 @@ void CDFRExternalMain(bool direct, bool v3d)
 				CameraImageData ImData;
 				cam->GetFrame(ImData, false);
 				thisprof.EnterSection("DetectAruco");
-				CameraFeatureData &FeatData = FeatureData[i];
+				CameraFeatureData &FeatData = FeatureDataLocal[i];
 				DetectAruco(ImData, FeatData);
 				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);
 				if (CamerasWithPosition[i])
@@ -231,22 +235,22 @@ void CDFRExternalMain(bool direct, bool v3d)
 		int viewsidx = 0;
 
 		prof.EnterSection("3D Solve");
-		TrackerToUse->SolveLocationsPerObject(FeatureData, GrabTick);
-		vector<ObjectData> ObjData = TrackerToUse->GetObjectDataVector(GrabTick);
+		TrackerToUse->SolveLocationsPerObject(FeatureDataLocal, GrabTick);
+		vector<ObjectData> &ObjDataLocal = ObjData[BufferIndex]; 
+		ObjDataLocal = TrackerToUse->GetObjectDataVector(GrabTick);
 		ObjectData TeamPacket(ObjectType::Team, TeamNames.at(Team));
-		ObjData.insert(ObjData.begin(), TeamPacket); //insert team as the first object
+		ObjDataLocal.insert(ObjDataLocal.begin(), TeamPacket); //insert team as the first object
 
 		prof.EnterSection("Visualisation");
 		
 		if (v3d)
 		{
-			if(!OpenGLBoard.Tick(ObjectData::ToGLObjects(ObjData)))
+			if(!OpenGLBoard.Tick(ObjectData::ToGLObjects(ObjDataLocal)))
 			{
-				break;
+				killed = true;
+				return;
 			}
 		}
-		
-		prof.EnterSection("Send data");
 		
 		
 		prof.EnterSection("");
@@ -259,6 +263,31 @@ void CDFRExternalMain(bool direct, bool v3d)
 			prof.PrintProfile();
 			ParallelProfiler.PrintProfile();
 		}
-		
+		BufferIndex = (BufferIndex+1)%ObjData.size();
+	}
+}
+
+void CDFRExternal::GetData(std::vector<CameraFeatureData> &OutFeatureData, std::vector<ObjectData> &OutObjectData)
+{
+	int SelectedBuffer = (BufferIndex+FeatureData.size()-1)%FeatureData.size();
+	OutFeatureData = FeatureData[SelectedBuffer];
+	OutObjectData = ObjData[SelectedBuffer];
+}
+
+CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
+	:direct(InDirect), v3d(InV3D)
+{
+	ThreadHandle = new thread(&CDFRExternal::ThreadEntryPoint, this);
+	assert(ObjData.size() == FeatureData.size());
+	assert(FeatureData.size() > 0);
+}
+
+CDFRExternal::~CDFRExternal()
+{
+	killed = true;
+	if (ThreadHandle)
+	{
+		ThreadHandle->join();
+		delete ThreadHandle;
 	}
 }

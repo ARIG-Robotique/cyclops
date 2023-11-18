@@ -24,6 +24,7 @@
 #include <EntryPoints/Mapping.hpp>
 
 #include <Communication/AdvertiseMV.hpp>
+#include <Communication/TCPJsonHost.hpp>
 
 #ifdef WITH_X11
 #include <X11/Xlib.h>
@@ -88,7 +89,7 @@ int main(int argc, char** argv )
 	
 	bool nodisplay = parser.has("nodisplay");
 
-	ConfigureOpenCL();
+	//ConfigureOpenCL();
 
 	#ifdef WITH_X11
 	if (nodisplay)
@@ -156,25 +157,15 @@ int main(int argc, char** argv )
 		exit(EXIT_SUCCESS);
 	}
 	
-	AdvertiseMV advertiser;
+	//AdvertiseMV advertiser;
+	TCPJsonHost JsonHost(50667);
 	
-	switch (GetRunType())
+	CDFRExternal ExternalCameraHost(direct, opengl);
+
+	while (!ExternalCameraHost.IsKilled() && !JsonHost.IsKilled())
 	{
-	case RunType::CameraExternal :
-		cout << "Starting external camera program" <<endl;
-		CDFRExternalMain(direct, opengl);
-		break;
-	case RunType::CameraInternal :
-		cout << "Starting internal camera program" <<endl;
-		CDFRInternalMain(direct, opengl);
-		break;
-	default:
-		cerr << "Run type unknown, nothing started" << endl;
-		break;
+		this_thread::sleep_for(chrono::milliseconds(10));
 	}
-	
-	
-	
 	
 	// the camera will be deinitialized automatically in VideoCapture destructor
 	return 0;

@@ -3,6 +3,7 @@
 #include <Communication/Transport/GenericTransport.hpp>
 
 #include <thread>
+#include <memory>
 #include <shared_mutex>
 #include <vector>
 #include <netinet/in.h>
@@ -25,7 +26,7 @@ private:
 	int Port;
 	int sockfd;
 	bool Connected;
-	std::thread* ReceiveThreadHandle;
+	std::unique_ptr<std::thread> ReceiveThreadHandle;
 	mutable std::shared_mutex listenmutex;
 	std::vector<TCPConnection> connections;
 public:
