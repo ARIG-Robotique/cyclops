@@ -26,6 +26,8 @@
 #include <Communication/AdvertiseMV.hpp>
 #include <Communication/TCPJsonHost.hpp>
 
+#include <stdlib.h> //env vars
+
 #ifdef WITH_X11
 #include <X11/Xlib.h>
 #endif
@@ -33,9 +35,15 @@
 using namespace std;
 using namespace cv;
 
-void ConfigureOpenCL()
+void ConfigureOpenCL(bool enable)
 {
-	ocl::setUseOpenCL(true);
+	ocl::setUseOpenCL(enable);
+
+	if (!enable)
+	{
+		return;
+	}
+	
 
 	if (!ocl::haveOpenCL())
 	{
@@ -89,7 +97,10 @@ int main(int argc, char** argv )
 	
 	bool nodisplay = parser.has("nodisplay");
 
-	//ConfigureOpenCL();
+
+	//putenv("GST_DEBUG=jpegdec:4"); //enable gstreamer debug
+	
+	ConfigureOpenCL(false);
 
 	#ifdef WITH_X11
 	if (nodisplay)

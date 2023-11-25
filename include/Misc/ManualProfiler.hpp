@@ -76,7 +76,7 @@ public:
 		{
 			const std::string &name = it->first;
 			profdelta& timing = it->second;
-			std::cout << "\tSection " << name << "\" took " << timing.count() << "s, " << timing.count()/total.count()*100.0 << "%" << std::endl;
+			std::cout << "\tSection \"" << name << "\" took " << timing.count() << "s, " << timing.count()/total.count()*100.0 << "%" << std::endl;
 		}
 		lastprinttick = profclock::now();
 	}

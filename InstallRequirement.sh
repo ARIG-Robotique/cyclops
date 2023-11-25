@@ -22,7 +22,8 @@ sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libswscale-dev lib
 #ffmpeg + cuda
 #sudo apt-get install -y libffmpeg-nvenc-dev
 #gstreamer
-sudo apt-get install -y gstreamer1.0-tools libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev libgstreamer-plugins-bad1.0-dev
+sudo apt-get install -y gstreamer1.0-tools libgstreamer-plugins-base1.0-dev 
+sudo apt-get install -y libgstreamer-plugins-good1.0-dev libgstreamer-plugins-bad1.0-dev
 #math
 sudo apt-get install -y libopenblas-dev libatlas-base-dev libblas-dev
 sudo apt-get install -y liblapack-dev liblapacke-dev libeigen3-dev gfortran

@@ -45,14 +45,15 @@ bool VideoCaptureCamera::StartFeed()
 	case CameraStartType::GSTREAMER_CPU:
 		{
 			ostringstream capnamestream;
-			capnamestream << "v4l2src device=" << pathtodevice << " io-mode=4 ! image/jpeg, width=" 
+			capnamestream << "v4l2src device=" << pathtodevice << " io-mode=0 ! image/jpeg, width=" 
 			<< Settings->Resolution.width << ", height=" << Settings->Resolution.height << ", framerate="
-			<< (int)Settings->Framerate << "/" << (int)Settings->FramerateDivider << ", num-buffers=1 ! ";
+			<< (int)Settings->Framerate << "/" << (int)Settings->FramerateDivider << " ! ";
 			if (Settingscast->StartType == CameraStartType::GSTREAMER_CPU)
 			{
-				capnamestream << "jpegdec ! videoconvert";
+				capnamestream << "jpegdec ! videoconvert ! ";
 			}
-			capnamestream << " ! video/x-raw, format=BGR ! appsink drop=1";
+			capnamestream << "video/x-raw, format=BGR ! ";
+			capnamestream << "appsink drop=1";
 			Settingscast->StartPath = capnamestream.str();
 			Settingscast->ApiID = CAP_GSTREAMER;
 		}

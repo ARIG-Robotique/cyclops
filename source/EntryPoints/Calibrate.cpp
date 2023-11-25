@@ -15,6 +15,7 @@
 #include <opencv2/aruco.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/cvconfig.h>
 
 #include <Misc/math2d.hpp>
 #include <Misc/math3d.hpp>
@@ -28,6 +29,8 @@
 #include <Cameras/VideoCaptureCamera.hpp>
 #include <Cameras/Calibfile.hpp>
 #include <Misc/FrameCounter.hpp>
+#include <Misc/ManualProfiler.hpp>
+
 
 using namespace std;
 using namespace cv;
@@ -221,7 +224,6 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 	else
 	{
 		cerr << "ERROR : " << sizes.size() << " different resolutions were used in the calibration. That's fixable but fuck you." << endl;
-		cerr << "-Cordialement, le trez 2021/2022 Robotronik (Gabriel Zerbib)" << endl;
 		for (size_t i = 0; i < sizes.size(); i++)
 		{
 			cerr << "@" << sizes[i] <<endl;
@@ -282,6 +284,7 @@ void CalibrationWorker()
 
 bool docalibration(VideoCaptureCameraSettings CamSett)
 {
+	ManualProfiler<false> prof;
 	bool HasCamera = CamSett.IsValid();
 	
 	if (HasCamera)
@@ -354,12 +357,13 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 	bool mirrored = true;
 	while (true)
 	{
+		prof.EnterSection("StartFrame");
 		imguiinst.StartFrame();
 		ImGuiIO& IO = ImGui::GetIO();
 
 		UMat frame;
 		bool CaptureImageThisFrame = false;
-		
+		prof.EnterSection("Read frame");
 		if (!CamToCalib->Read())
 		{
 			//cout<< "read fail" <<endl;
@@ -372,23 +376,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 			
 			continue;
 		}
-		//cout << "read success" << endl;
-		//drawChessboardCorners(drawToFrame, CheckerSize, foundPoints, found);
-		//char character = waitKey(1);
-		/*#ifdef IMGUI_HAS_VIEWPORT
-		ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(viewport->GetWorkPos());
-		ImGui::SetNextWindowSize(viewport->GetWorkSize());
-		ImGui::SetNextWindowViewport(viewport->ID);
-		#else 
-		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-		ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-		#endif
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-		ImGui::Begin("Background", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus);
-		ImGui::End();
-		ImGui::PopStyleVar(1);*/
-
+		prof.EnterSection("Controls");
 		if (ImGui::Begin("Controls"))
 		{
 			ImGui::Text("FPS : %f", 1/fps.GetDeltaTime());
@@ -398,7 +386,9 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 		CameraImageData framedata;
 		if (ShowUndistorted)
 		{
+			prof.EnterSection("Undistort");
 			CamToCalib->Undistort();
+			prof.EnterSection("Controls");
 		}
 		CamToCalib->GetFrame(framedata, !ShowUndistorted);
 		frame = framedata.Image;
@@ -427,13 +417,16 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 			{
 				AutoCapture = false;
 			}
-			if (ShowUndistorted)
-			{
-				ShowUndistorted = false;
-			}
 			else
 			{
-				CalibrationThread = new thread(CalibrationWorker);
+				if (ShowUndistorted)
+				{
+					ShowUndistorted = false;
+				}
+				else
+				{
+					CalibrationThread = new thread(CalibrationWorker);
+				}
 			}
 		}
 
@@ -449,13 +442,15 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 		}
 		if (CaptureImageThisFrame && !Calibrating && !ShowUndistorted)
 		{
-			vector<Point2f> foundPoints;
-			UMat grayscale;
-			cvtColor(frame, grayscale, COLOR_BGR2GRAY);
+			//vector<Point2f> foundPoints;
+			//UMat grayscale;
+			//cvtColor(frame, grayscale, COLOR_BGR2GRAY);
 			//bool found = checkChessboard(grayscale, CheckerSize);
+			prof.EnterSection("Save");
 			imwrite(TempImgPath + "/" + to_string(nextIdx++) + ".png", frame);
 			lastCapture = getTickCount() + getTickFrequency();
 			CapturedImageLastFrame = true;
+			prof.EnterSection("Controls");
 		}
 		else
 		{
@@ -474,10 +469,11 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 		ImGui::End();
 
 
-		
+		prof.EnterSection("Upload frame");
 		cameratex.Texture = frame.getMat(cv::AccessFlag::ACCESS_READ | cv::AccessFlag::ACCESS_FAST);
 		cameratex.Refresh();
 		cameratex.Texture = Mat();
+		prof.EnterSection("Background");
 
 
 		ImDrawList* background = ImGui::GetBackgroundDrawList();
@@ -495,12 +491,13 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 			background->AddImage((void*)(intptr_t)cameratex.GetTextureID(), p_min, p_max, uv_min, uv_max);
 		}
 
-		
-		
+		prof.EnterSection("End Frame");
 		if(!imguiinst.EndFrame())
 		{
 			return true;
 		}
+		prof.EnterSection("");
+		prof.PrintIfShould();
 		//fps.AddFpsToImage(frameresized, fps.GetDeltaTime());
 		//imshow(CalibWindowName, frameresized);
 	}
