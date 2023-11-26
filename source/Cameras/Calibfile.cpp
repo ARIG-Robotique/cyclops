@@ -8,9 +8,36 @@ using namespace cv;
 
 static set<string> missingcalibs;
 
-
-bool readCameraParameters(string filename, Mat& camMatrix, Mat& distCoeffs, Size Resolution)
+string GetCalibrationFileName(string description)
 {
+	string outstring;
+	outstring.reserve(description.size());
+	for (auto it = description.begin(); it < description.end(); it++)
+	{
+		switch (*it)
+		{
+		case '<':
+		case '>':
+		case ':':
+		case '"':
+		case '/':
+		case '\\':
+		case '|':
+		case '?':
+		case '*':
+			break;
+		
+		default:
+			outstring.push_back(*it);
+			break;
+		}
+	}
+	return outstring;
+}
+
+bool readCameraParameters(string description, Mat& camMatrix, Mat& distCoeffs, Size Resolution)
+{
+	string filename = GetCalibrationFileName(description);
 	auto abspath = filesystem::absolute(filename+".yaml");
 	if (!filesystem::exists(abspath))
 	{
@@ -58,8 +85,9 @@ bool readCameraParameters(string filename, Mat& camMatrix, Mat& distCoeffs, Size
 	return (camMatrix.size() == Size(3,3));
 }
 
-void writeCameraParameters(string filename, Mat camMatrix, Mat distCoeffs, Size Resolution)
+void writeCameraParameters(string description, Mat camMatrix, Mat distCoeffs, Size Resolution)
 {
+	string filename = GetCalibrationFileName(description);
 	FileStorage fs(filename + ".yaml", FileStorage::WRITE);
 	if (!fs.isOpened())
 	{

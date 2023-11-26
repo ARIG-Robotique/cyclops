@@ -100,7 +100,7 @@ int main(int argc, char** argv )
 
 	//putenv("GST_DEBUG=jpegdec:4"); //enable gstreamer debug
 	
-	ConfigureOpenCL(false);
+	ConfigureOpenCL(true);
 
 	#ifdef WITH_X11
 	if (nodisplay)

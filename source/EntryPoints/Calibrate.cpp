@@ -28,6 +28,7 @@
 #include <Cameras/Camera.hpp>
 #include <Cameras/VideoCaptureCamera.hpp>
 #include <Cameras/Calibfile.hpp>
+#include <Cameras/ImageTypes.hpp>
 #include <Misc/FrameCounter.hpp>
 #include <Misc/ManualProfiler.hpp>
 
@@ -276,7 +277,16 @@ void CalibrationWorker()
 	cout << "Computed camera parameters for sensor of size " << apertureWidth << "x" << apertureHeight <<"mm :" << endl
 	<< " fov:" << fovx << "x" << fovy << "°, focal length=" << focalLength << ", aspect ratio=" << aspectRatio << endl
 	<< "Principal point @ " << principalPoint << endl;
-	writeCameraParameters(CamToCalib->GetName(), CameraMatrix, distanceCoefficients, CamToCalib->GetCameraSettings()->Resolution);
+	const CameraSettings* CamSett = CamToCalib->GetCameraSettings();
+	string filename = "noname";
+	const VideoCaptureCameraSettings* VCCamSett = dynamic_cast<const VideoCaptureCameraSettings*>(CamSett);
+	if (VCCamSett)
+	{
+		filename = VCCamSett->DeviceInfo.device_description;
+	}
+	
+
+	writeCameraParameters(filename, CameraMatrix, distanceCoefficients, CamSett->Resolution);
 	//distanceCoefficients = Mat::zeros(8, 1, CV_64F);
 	ShowUndistorted = true;
 	Calibrating = false;
@@ -354,7 +364,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 	FrameCounter fps;
 	int failed = 0;
 	bool CapturedImageLastFrame = false;
-	bool mirrored = true;
+	bool mirrored = false;
 	while (true)
 	{
 		prof.EnterSection("StartFrame");
