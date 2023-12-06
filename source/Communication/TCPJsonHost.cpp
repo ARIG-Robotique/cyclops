@@ -4,6 +4,7 @@
 
 #include <Communication/JsonListener.hpp>
 #include <Communication/Transport/TCPTransport.hpp>
+#include <EntryPoints/CDFRExternal.hpp>
 
 using namespace std;
 
@@ -16,7 +17,7 @@ void TCPJsonHost::ThreadEntryPoint(GenericTransport::NetworkInterface interface)
 		auto newconnections = Transport->AcceptNewConnections();
 		for (auto &&connection : newconnections)
 		{
-			JsonListener* listener = new JsonListener(Transport.get(), connection);
+			JsonListener* listener = new JsonListener(Transport.get(), connection, this);
 			Listeners.emplace(listener);
 		}
 		for (auto it = Listeners.begin(); it != Listeners.end();)

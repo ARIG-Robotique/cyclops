@@ -217,6 +217,7 @@ void CDFRExternal::ThreadEntryPoint()
 				cam->GetFrame(ImData, false);
 				thisprof.EnterSection("DetectAruco");
 				CameraFeatureData &FeatData = FeatureDataLocal[i];
+				FeatData.CopyEssentials(ImData);
 				DetectAruco(ImData, FeatData);
 				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);
 				if (CamerasWithPosition[i])

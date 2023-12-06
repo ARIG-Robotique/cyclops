@@ -12,6 +12,7 @@ private:
 	int Port;
 	bool killed;
 public:
+	class CDFRExternal* ExternalRunner;
 	TCPJsonHost(int InPort);
 	~TCPJsonHost();
 

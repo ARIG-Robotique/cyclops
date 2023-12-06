@@ -5,6 +5,8 @@
 #include <vector>
 #include <cstdint>
 #include <sstream>
+#include <opencv2/core/affine.hpp>
+#include <nlohmann/json.hpp>
 
 class TCPTransport;
 
@@ -18,6 +20,8 @@ class TCPTransport;
 //	-2D simplified
 //	-stated
 
+class TCPJsonHost;
+
 class JsonListener
 {
 private:
@@ -25,10 +29,19 @@ private:
 	bool killed = false;
 	std::vector<char> ReceiveBuffer;
 public:
-	TCPTransport *Transport;
-	std::string ClientName;
+	TCPTransport *Transport = nullptr;
+	std::string ClientName = "none";
+	TCPJsonHost *Parent = nullptr; 
+	enum class TransformMode
+	{
+		Float2D,
+		Millimeter2D,
+		Float3D
+	};
+	TransformMode ObjectMode = TransformMode::Millimeter2D;
 
-	JsonListener(TCPTransport* InTransport, std::string InClientName);
+
+	JsonListener(TCPTransport* InTransport, std::string InClientName, class TCPJsonHost* InParent);
 
 	~JsonListener();
 
@@ -38,6 +51,11 @@ public:
 	}
 
 private:
+
+	nlohmann::json ObjectToJson(const ObjectData& Object);
+
+	//Get data from external monitor
+	nlohmann::json GetData(nlohmann::json filter);
 
 	void HandleJson(const std::string &command);
 
