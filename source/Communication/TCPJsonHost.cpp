@@ -55,10 +55,9 @@ TCPJsonHost::TCPJsonHost(int InPort)
 TCPJsonHost::~TCPJsonHost()
 {
 	killed = true;
-	for (auto thread : ThreadHandles)
+	for (auto &thread : ThreadHandles)
 	{
 		thread->join();
-		delete thread;
 	}
 	
 }

@@ -3,15 +3,22 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include <mutex>
+#include <set>
 
 //Generic class to send data to other programs
 class GenericTransport
 {
 private:
-	/* data */
+	static std::mutex TransportListMutex;
+	static std::set<GenericTransport*> ActiveTransportList;
 public:
 
-	virtual ~GenericTransport() {};
+	GenericTransport();
+
+	virtual ~GenericTransport();
+
+	static void DeleteAllTransports();
 
 	static const std::string BroadcastClient;
 

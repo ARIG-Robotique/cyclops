@@ -9,7 +9,7 @@ class AdvertiseMV
 {
 private:
 	bool killmutex = false;
-	std::vector<std::thread*> threads;
+	std::vector<std::unique_ptr<std::thread>> threads;
 	void ThreadStartPoint(GenericTransport::NetworkInterface interface);
 public:
 	AdvertiseMV();

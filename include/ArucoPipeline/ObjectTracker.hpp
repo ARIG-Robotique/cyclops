@@ -3,6 +3,7 @@
 #include <opencv2/core.hpp>
 #include <ArucoPipeline/TrackedObject.hpp>
 #include <Misc/ArucoDictSize.hpp>
+#include <array>
 
 //Class that handles the objects, and holds information about each tag's size
 //Registered objects will have their locations solved and turned into a vector of ObjectData for display and data sending
@@ -10,8 +11,8 @@ class ObjectTracker
 {
 private:
 	std::vector<TrackedObject*> objects;
-	int ArucoMap[ARUCO_DICT_SIZE]; //Which object owns the tag at index i ? objects[ArucoMap[TagID]]
-	float ArucoSizes[ARUCO_DICT_SIZE]; //Size of the aruco tag
+	std::array<int, ARUCO_DICT_SIZE> ArucoMap; //Which object owns the tag at index i ? objects[ArucoMap[TagID]]
+	std::array<float, ARUCO_DICT_SIZE> ArucoSizes; //Size of the aruco tag
 
 public:
 	ObjectTracker(/* args */);

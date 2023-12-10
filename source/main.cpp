@@ -1,7 +1,6 @@
 #include <iostream> // for standard I/O
 #include <string>   // for strings
 #include <sstream>  // string to number conversion
-#include <math.h>
 
 #include <thread>
 #include <filesystem>
@@ -25,7 +24,11 @@
 
 #include <Communication/AdvertiseMV.hpp>
 #include <Communication/TCPJsonHost.hpp>
+#include <Communication/Transport/GenericTransport.hpp>
 
+#include <signal.h>
+#include <unistd.h>
+#include <stdio.h>
 #include <stdlib.h> //env vars
 
 #ifdef WITH_X11
@@ -69,8 +72,38 @@ void ConfigureOpenCL(bool enable)
 	}
 }
 
+bool killrequest = false;
+
+void signal_handler(int s)
+{
+	cout << "SIGINT received, cleaning up..." << endl;
+	//GenericTransport::DeleteAllTransports();
+	//exit(EXIT_SUCCESS);
+	killrequest = true;
+}
+
+void setup_signal_handler()
+{
+	if (1)
+	{
+		struct sigaction sigIntHandler;
+
+		sigIntHandler.sa_handler = signal_handler;
+		sigemptyset(&sigIntHandler.sa_mask);
+		sigIntHandler.sa_flags = 0;
+
+		sigaction(SIGINT, &sigIntHandler, NULL);
+	}
+	else
+	{
+		signal(SIGINT, signal_handler);
+	}
+}
+
 int main(int argc, char** argv )
 {
+	setup_signal_handler();
+
 	const string keys = 
 		"{help h usage ? |      | print this message}"
 		"{direct d       |      | show direct camera output}"
@@ -173,11 +206,10 @@ int main(int argc, char** argv )
 	
 	CDFRExternal ExternalCameraHost(direct, opengl);
 
-	while (!ExternalCameraHost.IsKilled() && !JsonHost.IsKilled())
+	while (!ExternalCameraHost.IsKilled() && !JsonHost.IsKilled() && !killrequest)
 	{
 		this_thread::sleep_for(chrono::milliseconds(10));
 	}
-	
-	// the camera will be deinitialized automatically in VideoCapture destructor
+
 	return 0;
 }

@@ -52,7 +52,6 @@ UDPTransport::~UDPTransport()
 	{
 		close(sockfd);
 	}
-	
 }
 
 bool UDPTransport::Send(const void *buffer, int length, std::string client)

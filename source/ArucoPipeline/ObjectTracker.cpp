@@ -11,8 +11,8 @@ using namespace std;
 
 ObjectTracker::ObjectTracker(/* args */)
 {
-	assert(sizeof(ArucoMap)/sizeof(ArucoMap[0]) == sizeof(ArucoSizes)/sizeof(ArucoSizes[0]));
-	for (int i = 0; i < sizeof(ArucoMap)/sizeof(ArucoMap[0]); i++)
+	assert(ArucoMap.size() == ArucoSizes.size());
+	for (int i = 0; i < ArucoMap.size(); i++)
 	{
 		ArucoMap[i] = -1;
 		ArucoSizes[i] = 0.05;

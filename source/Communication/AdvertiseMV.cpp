@@ -27,7 +27,7 @@ AdvertiseMV::AdvertiseMV(/* args */)
 		if (ni.name != "lo")
 		{
 			thread* sendthread = new thread(&AdvertiseMV::ThreadStartPoint, this, ni);
-			threads.push_back(sendthread);
+			threads.emplace_back(sendthread);
 		}
 	}
 }
@@ -35,9 +35,8 @@ AdvertiseMV::AdvertiseMV(/* args */)
 AdvertiseMV::~AdvertiseMV()
 {
 	killmutex = true;
-	for (auto sendthread : threads)
+	for (auto &sendthread : threads)
 	{
 		sendthread->join();
-		delete sendthread;
 	}
 }

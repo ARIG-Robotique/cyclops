@@ -26,7 +26,7 @@ class TCPJsonHost;
 class JsonListener
 {
 private:
-	std::thread *ListenThread = nullptr;
+	std::unique_ptr<std::thread> ListenThread = nullptr;
 	bool killed = false;
 	std::vector<char> ReceiveBuffer;
 public:

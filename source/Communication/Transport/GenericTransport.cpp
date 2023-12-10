@@ -7,6 +7,29 @@
 using namespace std;
 
 const string GenericTransport::BroadcastClient = "all";
+std::mutex GenericTransport::TransportListMutex;
+std::set<GenericTransport*> GenericTransport::ActiveTransportList = {};
+
+GenericTransport::GenericTransport()
+{
+	unique_lock mutlock(TransportListMutex);
+	ActiveTransportList.emplace(this);
+}
+
+GenericTransport::~GenericTransport()
+{
+	unique_lock mutlock(TransportListMutex);
+	ActiveTransportList.erase(this);
+}
+
+void GenericTransport::DeleteAllTransports()
+{
+	while (ActiveTransportList.size() > 0)
+	{
+		cout << "Removing transport " << *ActiveTransportList.begin() << endl;
+		delete *ActiveTransportList.begin();
+	}
+}
 
 void GenericTransport::printBuffer(const void* buffer, int length)
 {

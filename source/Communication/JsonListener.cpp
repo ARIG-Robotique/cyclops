@@ -20,19 +20,18 @@ JsonListener::JsonListener(TCPTransport* InTransport, string InClientName, TCPJs
 	{
 		return;
 	}
-	ListenThread = new thread(&JsonListener::ThreadEntryPoint, this);
+	ListenThread = make_unique<thread>(&JsonListener::ThreadEntryPoint, this);
 	cout << "Json listen thread for " << ClientName << " started" << endl;
 }
 
 JsonListener::~JsonListener()
 {
-	cout << "Json listen thread for " << ClientName << " stoppped" << endl;
 	killed = true;
 	if (ListenThread)
 	{
 		ListenThread->join();
-		delete ListenThread;
 	}
+	cout << "Json listen thread for " << ClientName << " stoppped" << endl;
 }
 
 json JsonListener::ObjectToJson(const ObjectData& Object)

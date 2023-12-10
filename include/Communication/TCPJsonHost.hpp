@@ -8,7 +8,7 @@
 class TCPJsonHost
 {
 private:
-	std::set<std::thread*> ThreadHandles;
+	std::set<std::unique_ptr<std::thread>> ThreadHandles;
 	int Port;
 	bool killed;
 public:
