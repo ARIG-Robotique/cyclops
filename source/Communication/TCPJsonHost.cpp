@@ -23,9 +23,10 @@ void TCPJsonHost::ThreadEntryPoint(GenericTransport::NetworkInterface interface)
 		for (auto it = Listeners.begin(); it != Listeners.end();)
 		{
 			shared_ptr<JsonListener> lptr = *it;
-			if ((*it)->IsKilled())
+			if (lptr->IsKilled())
 			{
 				cout << "Client at " << lptr->ClientName << " is killed, cleaning..." << endl;
+				Transport->DisconnectClient(lptr->ClientName);
 				it=Listeners.erase(it);
 			}
 			else

@@ -44,8 +44,14 @@ TrackedObject::TrackedObject()
 	cv::setIdentity(LocationFilter.errorCovPost, cv::Scalar::all(1));
 };
 
-bool TrackedObject::SetLocation(Affine3d InLocation, unsigned long tick)
+bool TrackedObject::SetLocation(Affine3d InLocation, uint64_t tick)
 {
+	if (tick == UINT64_MAX)
+	{
+		Location = InLocation;
+		return true;
+	}
+	
 	double dt = (tick - LastSeenTick);
 	dt /= getTickFrequency();
 	LocationFilter.transitionMatrix = Mat::eye(9,9, CV_64F);

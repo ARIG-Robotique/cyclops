@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdint>
 #include <sstream>
+#include <chrono>
 #include <opencv2/core/affine.hpp>
 #include <nlohmann/json.hpp>
 
@@ -31,7 +32,9 @@ private:
 public:
 	TCPTransport *Transport = nullptr;
 	std::string ClientName = "none";
-	TCPJsonHost *Parent = nullptr; 
+	TCPJsonHost *Parent = nullptr;
+	uint64 sendIndex = 0;
+	std::chrono::steady_clock::time_point LastAliveSent, LastAliveReceived;
 	enum class TransformMode
 	{
 		Float2D,
@@ -52,12 +55,22 @@ public:
 
 private:
 
-	nlohmann::json ObjectToJson(const ObjectData& Object);
+	nlohmann::json ObjectToJson(const struct ObjectData& Object);
 
 	//Get data from external monitor
 	nlohmann::json GetData(nlohmann::json filter);
 
+	void HandleQuery(const nlohmann::json &Query);
+
+	void HandleResponse(const nlohmann::json &Response);
+
+	bool IsQuery(const nlohmann::json &object);
+
 	void HandleJson(const std::string &command);
+
+	void SendJson(const nlohmann::json &object);
+
+	void CheckAlive();
 
 	void ThreadEntryPoint();
 };

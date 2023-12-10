@@ -14,6 +14,8 @@ using namespace nlohmann;
 JsonListener::JsonListener(TCPTransport* InTransport, string InClientName, TCPJsonHost* InParent)
 	:Transport(InTransport), ClientName(InClientName), Parent(InParent)
 {
+	LastAliveSent = chrono::steady_clock::now();
+	LastAliveReceived = LastAliveSent;
 	if (ListenThread)
 	{
 		return;
@@ -161,6 +163,86 @@ json JsonListener::GetData(json filter)
 		JsonResponse["2D Data"] = jsonfeaturearray;
 	}
 	
+	return JsonResponse;
+}
+
+void JsonListener::HandleQuery(const json &Query)
+{
+	const string &Command = Query.value("query", "invalid");
+	int index = Query.value("index", -1);
+	json Response;
+	Response["index"] = index;
+
+	if (Command == "alive")
+	{
+		Response["response"] = true;
+	}
+	else if (Command == "config") //idk, do something ?
+	{
+		if (Query.contains("mode"))
+		{
+			string mode = Query.value("mode", "none");
+			Response["response"]["mode"] = "mode accepted";
+			if (mode == "Millimeter2D")
+			{
+				ObjectMode = TransformMode::Millimeter2D;
+			}
+			else if (mode == "Float2D")
+			{
+				ObjectMode = TransformMode::Float2D;
+			}
+			else if (mode == "Float3D")
+			{
+				ObjectMode = TransformMode::Float3D;
+			}
+			else
+			{
+				Response["response"]["mode"] = "unknown mode";
+			}
+			
+		}
+	}
+	else if (Command == "status") //How are the cameras doing ?
+	{
+		
+	}
+	else if (Command == "data") //2D or 3D data
+	{
+		if (Query.contains("filter") && Query.at("filter").is_array())
+		{
+			Response += GetData(Query["filter"]);
+		}
+		else
+		{
+			Response["response"] = "wrong or missing filter, must be an array";
+		}
+		
+	}
+	else if (Command == "processing") //oh no, homework !
+	{
+
+	}
+	else if (Command == "seppuku" || Command == "kill")
+	{
+		killed = true;
+		Response["response"] = "aight, imma commit seppuku";
+	}
+	else
+	{
+		Response["response"] = "you ok there bud ?";
+	}
+	
+	SendJson(Response);
+}
+
+void JsonListener::HandleResponse(const json &Response)
+{
+
+}
+
+bool JsonListener::IsQuery(const json &object)
+{
+	return object.contains("query");
 }
 
 void JsonListener::HandleJson(const string &command)
@@ -181,72 +263,20 @@ void JsonListener::HandleJson(const string &command)
 	{
 		return;
 	}
-	
-	const string &query = parsed.value("query", "invalid");
-	int index = parsed.value("index", -1);
-	json response;
-	response["index"] = index;
-
-	if (query == "alive")
+	LastAliveReceived = chrono::steady_clock::now();
+	if (IsQuery(parsed))
 	{
-		response["response"] = true;
-	}
-	else if (query == "config") //idk, do something ?
-	{
-		if (parsed.contains("mode"))
-		{
-			string mode = parsed.value("mode", "none");
-			response["response"]["mode"] = "mode accepted";
-			if (mode == "Millimeter2D")
-			{
-				ObjectMode = TransformMode::Millimeter2D;
-			}
-			else if (mode == "Float2D")
-			{
-				ObjectMode = TransformMode::Float2D;
-			}
-			else if (mode == "Float3D")
-			{
-				ObjectMode = TransformMode::Float3D;
-			}
-			else
-			{
-				response["response"]["mode"] = "unknown mode";
-			}
-			
-		}
-	}
-	else if (query == "status") //How are the cameras doing ?
-	{
-		
-	}
-	else if (query == "data") //2D or 3D data
-	{
-		if (parsed.contains("filter") && parsed.at("filter").is_array())
-		{
-			response += GetData(parsed["filter"]);
-		}
-		else
-		{
-			response["response"] = "wrong or missing filter, must be an array";
-		}
-		
-	}
-	else if (query == "processing") //oh no, homework !
-	{
-
-	}
-	else if (query == "seppuku")
-	{
-		killed = true;
-		response["response"] = "aight, imma commit seppuku";
+		HandleQuery(parsed);
 	}
 	else
 	{
-		response["response"] = "you ok there bud ?";
+		HandleResponse(parsed);
 	}
-	
-	string SendBuffer = response.dump() + "\n";
+}
+
+void JsonListener::SendJson(const json &object)
+{
+	string SendBuffer = object.dump() + "\n";
 
 	if(!Transport->Send(SendBuffer.data(), SendBuffer.length(), ClientName))
 	{
@@ -254,10 +284,34 @@ void JsonListener::HandleJson(const string &command)
 	}
 }
 
+void JsonListener::CheckAlive()
+{
+	chrono::duration<double> TimeSinceLastAliveReceived = chrono::steady_clock::now() - LastAliveReceived;
+	chrono::duration<double> TimeSinceLastAliveSent = chrono::steady_clock::now() - LastAliveSent;
+	if (TimeSinceLastAliveReceived.count() > 3.0)
+	{
+		cout << "Got no activity from " << ClientName << ", closing..." << endl;
+		killed = true;
+		return;
+	}
+	
+	if (TimeSinceLastAliveReceived.count() > 1.0 && TimeSinceLastAliveSent.count() > 1.0)
+	{
+		cout << "Asking " << ClientName << " if it's alive..." << endl;
+		LastAliveSent = chrono::steady_clock::now();
+		json query;
+		query["query"] = "alive";
+		query["index"] = sendIndex++;
+		SendJson(query);
+	}
+}
+
 void JsonListener::ThreadEntryPoint()
 {
 	while (!killed)
 	{
+		CheckAlive();
+		
 		char bufferraw[1024];
 		int numreceived = Transport->Receive(bufferraw, sizeof(bufferraw), ClientName, false);
 		if (numreceived <= 0)

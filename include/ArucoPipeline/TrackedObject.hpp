@@ -76,7 +76,8 @@ public:
 
 	TrackedObject();
 
-	virtual bool SetLocation(cv::Affine3d InLocation, unsigned long tick);
+	//Set location. Bypass kalman filter if tick is UINT64_MAX
+	virtual bool SetLocation(cv::Affine3d InLocation, uint64_t tick);
 	unsigned long GetLastSeenTick() { return LastSeenTick; }
 
 	virtual bool ShouldBeDisplayed(unsigned long Tick);
