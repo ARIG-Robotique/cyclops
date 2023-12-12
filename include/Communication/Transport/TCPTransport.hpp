@@ -27,7 +27,7 @@ private:
 	int sockfd;
 	bool Connected;
 	std::unique_ptr<std::thread> ReceiveThreadHandle;
-	mutable std::shared_mutex listenmutex;
+	mutable std::shared_mutex listenmutex; //protects connections
 	std::vector<TCPConnection> connections;
 public:
 

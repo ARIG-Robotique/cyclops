@@ -179,29 +179,52 @@ int TCPTransport::Receive(void *buffer, int maxlength, string client, bool block
 
 	if (Server)
 	{
-		shared_lock lock(listenmutex);
-		for (int i = 0; i < connections.size(); i++)
+		set<string> DisconnectedClients;
 		{
-			if (client != connections[i].name && client != BroadcastClient)
+			shared_lock lock(listenmutex);
+			for (int i = 0; i < connections.size(); i++)
 			{
-				continue;
+				if (client != connections[i].name && client != BroadcastClient)
+				{
+					continue;
+				}
+				//errno = 0;
+				n = recv(connections[i].filedescriptor, buffer, maxlength, flags);
+				if (n > 0/*|| errno == EWOULDBLOCK || errno == EAGAIN*/)
+				{
+					//cout << "Received " << n << " bytes..." << endl;
+					//printBuffer(dataReceived, n);
+					return n;
+				}
+				/*else
+				{
+					DisconnectedClients.emplace(connections[i].name);
+				}*/
 			}
-			if ((n = recv(connections[i].filedescriptor, buffer, maxlength, flags)) > 0)
-			{
-				//cout << "Received " << n << " bytes..." << endl;
-				//printBuffer(dataReceived, n);
-				return n;
-			}
+		}
+		for (auto & client : DisconnectedClients) //Disconnection must be done outside of loop because the listenmutex is taken
+		{
+			DisconnectClient(client);
 		}
 	}
 	else
 	{
-		if ((n = recv(sockfd, buffer, maxlength, flags)) > 0)
+		//errno = 0;
+		n = recv(sockfd, buffer, maxlength, flags);
+		if (n > 0/*|| errno == EWOULDBLOCK || errno == EAGAIN*/)
 		{
 			//cout << "Received " << n << " bytes..." << endl;
 			//printBuffer(dataReceived, n);
 			return n;
 		}
+		/*else
+		{
+			cout << "TCP Server has disconnected" << endl;
+			DeleteSocket(sockfd);
+			sockfd = -1;
+			Connected = false;
+		}*/
+		
 	}
 	return -1;
 }
@@ -221,31 +244,38 @@ bool TCPTransport::Send(const void* buffer, int length, string client)
 
 	if (Server)
 	{
-		shared_lock lock(listenmutex);
+		set<string> DisconnectedClients;
 		bool failed = false;
-		for (int i = 0; i < connections.size(); i++)
 		{
-			if (client != connections[i].name && client != BroadcastClient)
+			shared_lock lock(listenmutex);
+			for (int i = 0; i < connections.size(); i++)
 			{
-				continue;
-			}
-			int err = send(connections[i].filedescriptor, buffer, length, MSG_NOSIGNAL);
-			int errnocp = errno;
-			if (err ==-1 && (errnocp != EAGAIN && errnocp != EWOULDBLOCK))
-			{
-				if (errnocp == EPIPE)
+				if (client != connections[i].name && client != BroadcastClient)
 				{
-					DisconnectClient(connections[i].name);
-					i--;
+					continue;
 				}
-				else
+				int err = send(connections[i].filedescriptor, buffer, length, MSG_NOSIGNAL);
+				int errnocp = errno;
+				if (err ==-1 && (errnocp != EAGAIN && errnocp != EWOULDBLOCK))
 				{
-					cerr << "TCP Server failed to send data to client " << connections[i].name << " : " << errnocp << " (" << strerror(errnocp) << ")" << endl;
-					failed = true;
+					if (errnocp == EPIPE)
+					{
+						DisconnectedClients.emplace(connections[i].name);
+					}
+					else
+					{
+						cerr << "TCP Server failed to send data to client " << connections[i].name << " : " << errnocp << " (" << strerror(errnocp) << ")" << endl;
+						failed = true;
+					}
+					
 				}
-				
 			}
 		}
+		for (auto & client : DisconnectedClients) //Disconnection must be done outside of loop because the listenmutex is taken
+		{
+			DisconnectClient(client);
+		}
+		
 		return !failed;
 	}
 	else
