@@ -68,7 +68,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	return objectified;
 }
 
-bool JsonListener::GetData(json filter, json &Response)
+bool JsonListener::GetData(const json &filter, json &Response)
 {
 	if (!Parent)
 	{

@@ -58,7 +58,7 @@ private:
 	nlohmann::json ObjectToJson(const struct ObjectData& Object);
 
 	//Get data from external monitor
-	bool GetData(nlohmann::json filter, nlohmann::json &Response);
+	bool GetData(const nlohmann::json &filter, nlohmann::json &Response);
 
 	void HandleQuery(const nlohmann::json &Query);
 
