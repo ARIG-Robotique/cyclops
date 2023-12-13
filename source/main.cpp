@@ -206,6 +206,8 @@ int main(int argc, char** argv )
 	
 	CDFRExternal ExternalCameraHost(direct, opengl);
 
+	JsonHost.ExternalRunner = &ExternalCameraHost;
+
 	while (!ExternalCameraHost.IsKilled() && !JsonHost.IsKilled() && !killrequest)
 	{
 		this_thread::sleep_for(chrono::milliseconds(10));

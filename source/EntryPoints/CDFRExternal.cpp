@@ -271,6 +271,7 @@ void CDFRExternal::ThreadEntryPoint()
 void CDFRExternal::GetData(std::vector<CameraFeatureData> &OutFeatureData, std::vector<ObjectData> &OutObjectData)
 {
 	int SelectedBuffer = (BufferIndex+FeatureData.size()-1)%FeatureData.size();
+	cout << "Copying " << FeatureData[SelectedBuffer].size() << " features and " << ObjData[SelectedBuffer].size() << " objects" << endl;
 	OutFeatureData = FeatureData[SelectedBuffer];
 	OutObjectData = ObjData[SelectedBuffer];
 }

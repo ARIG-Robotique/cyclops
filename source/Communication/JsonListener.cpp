@@ -7,6 +7,7 @@
 
 #include <nlohmann/json.hpp>
 #include <iostream>
+#include <set>
 
 using namespace std;
 using namespace nlohmann;
@@ -67,25 +68,32 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	return objectified;
 }
 
-json JsonListener::GetData(json filter)
+bool JsonListener::GetData(json filter, json &Response)
 {
 	if (!Parent)
 	{
-		return "[]";
+		return false;
 	}
 	if (!Parent->ExternalRunner)
 	{
-		return "[]";
+		return false;
 	}
 	vector<CameraFeatureData> FeatureData; vector<ObjectData> ObjData;
 	Parent->ExternalRunner->GetData(FeatureData, ObjData);
 	set<ObjectType> AllowedTypes;
-	bool hasall = filter.contains("all");
-	json JsonResponse;
+	set<string> filterStrings;
+	for (auto &elem : filter)
+	{
+		filterStrings.emplace(elem);
+	}
+	bool hasall = filterStrings.find("all") != filterStrings.end();
+
+	auto has_filter = [&filterStrings, hasall](string match){return filterStrings.find(match) != filterStrings.end() || hasall;};
+	
 	json jsondataarray = json::array({});
 	for (auto& [type,name] : ObjectTypeNames)
 	{
-		if (filter.contains(name) || hasall)
+		if (has_filter(name))
 		{
 			AllowedTypes.insert(type);
 		}
@@ -103,7 +111,7 @@ json JsonListener::GetData(json filter)
 	}
 	if (Has3DData)
 	{
-		JsonResponse["3D Data"] = jsondataarray;
+		Response["3dData"] = jsondataarray;
 	}
 	
 	bool Has2DData = false;
@@ -118,7 +126,7 @@ json JsonListener::GetData(json filter)
 		cv::Size2d fov = GetCameraFOV(data.FrameSize, data.CameraMatrix);
 		cameradata["xfov"] = fov.width;
 		cameradata["yfov"] = fov.height;
-		if (filter.contains("Aruco") || hasall)
+		if (has_filter("aruco"))
 		{
 			cameradata["arucos"] = json::array();
 			for (int i = 0; i < data.ArucoIndices.size(); i++)
@@ -135,7 +143,7 @@ json JsonListener::GetData(json filter)
 				CameraDetected = true;
 			}
 		}
-		if (filter.contains("Yolo") || hasall)
+		if (has_filter("yolo"))
 		{
 			cameradata["yolo"] = json::array();
 			for (int i = 0; i < data.YoloIndices.size(); i++)
@@ -159,10 +167,10 @@ json JsonListener::GetData(json filter)
 	}
 	if (Has2DData)
 	{
-		JsonResponse["2D Data"] = jsonfeaturearray;
+		Response["2dData"] = jsonfeaturearray;
 	}
 	
-	return JsonResponse;
+	return true;
 }
 
 void JsonListener::HandleQuery(const json &Query)
@@ -209,7 +217,7 @@ void JsonListener::HandleQuery(const json &Query)
 	{
 		if (Query.contains("filter") && Query.at("filter").is_array())
 		{
-			Response += GetData(Query["filter"]);
+			GetData(Query["filter"], Response);
 		}
 		else
 		{
@@ -265,6 +273,7 @@ void JsonListener::HandleJson(const string &command)
 	LastAliveReceived = chrono::steady_clock::now();
 	if (IsQuery(parsed))
 	{
+		cout << "Received query : " << command << endl;
 		HandleQuery(parsed);
 	}
 	else
@@ -296,7 +305,7 @@ void JsonListener::CheckAlive()
 	
 	if (TimeSinceLastAliveReceived.count() > 1.0 && TimeSinceLastAliveSent.count() > 1.0)
 	{
-		cout << "Asking " << ClientName << " if it's alive..." << endl;
+		//cout << "Asking " << ClientName << " if it's alive..." << endl;
 		LastAliveSent = chrono::steady_clock::now();
 		json query;
 		query["query"] = "alive";
