@@ -175,68 +175,71 @@ bool JsonListener::GetData(const json &filter, json &Response)
 
 void JsonListener::HandleQuery(const json &Query)
 {
-	const string &Command = Query.value("query", "invalid");
-	int index = Query.value("index", -1);
+	const string &ActionStr = Query.value("action", "invalid");
 	json Response;
-	Response["index"] = index;
-
-	if (Command == "alive")
+	Response["action"] = ActionStr;
+	if (Query.contains("index"))
 	{
-		Response["response"] = true;
+		Response["index"] = Query["index"];
 	}
-	else if (Command == "config") //idk, do something ?
+	if (ActionStr == "ALIVE")
+	{
+		Response["status"] = true;
+	}
+	else if (ActionStr == "CONFIG") //idk, do something ?
 	{
 		if (Query.contains("mode"))
 		{
 			string mode = Query.value("mode", "none");
-			Response["response"]["mode"] = "mode accepted";
-			if (mode == "Millimeter2D")
+			Response["status"]["mode"] = "OK";
+			if (mode == "millimeter2D")
 			{
 				ObjectMode = TransformMode::Millimeter2D;
 			}
-			else if (mode == "Float2D")
+			else if (mode == "float2D")
 			{
 				ObjectMode = TransformMode::Float2D;
 			}
-			else if (mode == "Float3D")
+			else if (mode == "float3D")
 			{
 				ObjectMode = TransformMode::Float3D;
 			}
 			else
 			{
-				Response["response"]["mode"] = "unknown mode";
+				Response["status"]["mode"] = "unknown mode";
 			}
 			
 		}
 	}
-	else if (Command == "status") //How are the cameras doing ?
+	else if (ActionStr == "STATUS") //How are the cameras doing ?
 	{
 		
 	}
-	else if (Command == "data") //2D or 3D data
+	else if (ActionStr == "DATA") //2D or 3D data
 	{
 		if (Query.contains("filter") && Query.at("filter").is_array())
 		{
 			GetData(Query["filter"], Response);
+			Response["status"] = "OK";
 		}
 		else
 		{
-			Response["response"] = "wrong or missing filter, must be an array";
+			Response["status"] = "wrong or missing filter, must be an array";
 		}
 		
 	}
-	else if (Command == "processing") //oh no, homework !
+	else if (ActionStr == "PROCESS") //oh no, homework !
 	{
 
 	}
-	else if (Command == "seppuku" || Command == "kill")
+	else if (ActionStr == "EXIT")
 	{
 		killed = true;
-		Response["response"] = "aight, imma commit seppuku";
+		Response["status"] = "OK, COMMITTING SEPPUKU !";
 	}
 	else
 	{
-		Response["response"] = "you ok there bud ?";
+		Response["status"] = "you ok there bud ?";
 	}
 	
 	SendJson(Response);
@@ -249,7 +252,7 @@ void JsonListener::HandleResponse(const json &Response)
 
 bool JsonListener::IsQuery(const json &object)
 {
-	return object.contains("query");
+	return object.contains("action") && !object.contains("status");
 }
 
 void JsonListener::HandleJson(const string &command)
@@ -273,7 +276,7 @@ void JsonListener::HandleJson(const string &command)
 	LastAliveReceived = chrono::steady_clock::now();
 	if (IsQuery(parsed))
 	{
-		cout << "Received query : " << command << endl;
+		cout << "Received action : " << command << endl;
 		HandleQuery(parsed);
 	}
 	else
@@ -308,7 +311,7 @@ void JsonListener::CheckAlive()
 		//cout << "Asking " << ClientName << " if it's alive..." << endl;
 		LastAliveSent = chrono::steady_clock::now();
 		json query;
-		query["query"] = "alive";
+		query["action"] = "alive";
 		query["index"] = sendIndex++;
 		SendJson(query);
 	}
