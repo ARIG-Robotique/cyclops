@@ -20,11 +20,14 @@ string GetCalibrationFileName(string description)
 		case '>':
 		case ':':
 		case '"':
-		case '/':
 		case '\\':
 		case '|':
 		case '?':
 		case '*':
+			break;
+
+		case ' ':
+			outstring.push_back('_');
 			break;
 		
 		default:
@@ -44,7 +47,7 @@ bool readCameraParameters(string description, Mat& camMatrix, Mat& distCoeffs, S
 		if (missingcalibs.find(filename) == missingcalibs.end())
 		{
 			missingcalibs.emplace(filename);
-			cerr << "Failed to read camera parameters for " << filename << endl;
+			cerr << "Failed to read camera parameters for " << filename << ".yaml" << endl;
 		}
 		
 		return false;

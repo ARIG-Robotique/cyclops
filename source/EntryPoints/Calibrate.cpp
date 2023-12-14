@@ -52,63 +52,149 @@ void CreateKnownBoardPos(Size BoardSize, float squareEdgeLength, vector<Point3f>
 	}
 }
 
-void CameraCalibration(vector<vector<Point2f>> CheckerboardImageSpacePoints, vector<string> ImagePaths, Size BoardSize, Size resolution, float SquareEdgeLength, Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamToCalibrate)
+struct CameraCalibrationSourceData
 {
-	vector<vector<Point3f>> WorldSpaceCornerPoints(1);
-	CreateKnownBoardPos(BoardSize, SquareEdgeLength, WorldSpaceCornerPoints[0]);
-	WorldSpaceCornerPoints.resize(CheckerboardImageSpacePoints.size(), WorldSpaceCornerPoints[0]);
-
-	Size FrameSize = resolution;
-	vector<Mat> rVectors, tVectors;
-	CameraMatrix = Mat::eye(3, 3, CV_64F);
-	DistanceCoefficients = Mat::zeros(Size(4,1), CV_64F);
-	CameraMatrix = initCameraMatrix2D(WorldSpaceCornerPoints, CheckerboardImageSpacePoints, FrameSize);
-	cout << "Camera matrix at start : " << CameraMatrix << endl;
-	UMat undistorted;
-
-	int numimagesstart = WorldSpaceCornerPoints.size();
-	float threshold = GetCalibrationConfig().CalibrationThreshold;
-	for (int i = 0; i < numimagesstart; i++)
+	struct CalibrationImageData
 	{
-		int numimages = WorldSpaceCornerPoints.size();
-		calibrateCamera(WorldSpaceCornerPoints, CheckerboardImageSpacePoints, FrameSize, CameraMatrix, DistanceCoefficients, rVectors, tVectors, 
-		CALIB_RATIONAL_MODEL, TermCriteria(TermCriteria::COUNT, 50, DBL_EPSILON));
-		vector<float> reprojectionErrors;
-		reprojectionErrors.resize(numimages);
-		int indexmosterrors = 0;
-		for (int imageidx = 0; imageidx < numimages; imageidx++)
-		{
-			vector<Point2f> reprojected;
+		vector<Point2f> CheckerboardImageSpacePoints;
+		vector<Point3f> CheckerboardWorldSpacePoints;
+		string ImagePath = "none";
+		bool Use = true;
+	};
+	vector<CalibrationImageData> Images;
+	Camera* CamToCalibrate;
+	Size FrameSize;
+};
 
-			projectPoints(WorldSpaceCornerPoints[imageidx], rVectors[imageidx], tVectors[imageidx], CameraMatrix, DistanceCoefficients, reprojected);
-			reprojectionErrors[imageidx] = ComputeReprojectionError(CheckerboardImageSpacePoints[imageidx], reprojected) / reprojected.size();
-			if (reprojectionErrors[indexmosterrors] < reprojectionErrors[imageidx])
-			{
-				indexmosterrors = imageidx;
-			}
-		}
-		if (reprojectionErrors[indexmosterrors] < threshold)
+struct CameraCalibrationOutputData
+{
+	Mat CameraMatrix; 
+	Mat DistanceCoefficients;
+	vector<bool> KeptImages;
+	float ReprojectionError;
+	float Score; //num images / reprojection error
+};
+
+
+CameraCalibrationOutputData ExploreCalibrationWith(const CameraCalibrationSourceData &SourceData)
+{
+	vector<vector<Point2f>> ImageSpacePoints;
+	vector<vector<Point3f>> WorldSpacePoints;
+	int numimages = 0;
+	for (auto &&i : SourceData.Images)
+	{
+		if (i.Use)
 		{
-			cout << "Calibration done, error is " << reprojectionErrors[indexmosterrors] << "px/pt at most" << endl;
-			cout << numimages << " images remain " << endl;
-			break;
+			ImageSpacePoints.push_back(i.CheckerboardImageSpacePoints);
+			WorldSpacePoints.push_back(i.CheckerboardWorldSpacePoints);
+			numimages++;
+		}
+	}
+	CameraCalibrationOutputData OutputData;
+
+	vector<Mat> rVectors, tVectors;
+	OutputData.CameraMatrix = Mat::eye(3, 3, CV_64F);
+	OutputData.DistanceCoefficients = Mat::zeros(Size(4,1), CV_64F);
+
+	OutputData.CameraMatrix = initCameraMatrix2D(WorldSpacePoints, ImageSpacePoints, SourceData.FrameSize);
+
+	calibrateCamera(WorldSpacePoints, ImageSpacePoints, SourceData.FrameSize, 
+		OutputData.CameraMatrix, OutputData.DistanceCoefficients, rVectors, tVectors, 
+		CALIB_RATIONAL_MODEL, TermCriteria(TermCriteria::COUNT, 50, DBL_EPSILON));
+	vector<float> reprojectionErrors;
+	float reprojectionErrorTotal = 0;
+	reprojectionErrors.resize(numimages);
+	int imageidx = 0;
+	for (auto &&i : SourceData.Images)
+	{
+		OutputData.KeptImages.push_back(i.Use);
+		if (!i.Use)
+		{
+			continue;
+		}
+		vector<Point2f> reprojected;
+
+		projectPoints(i.CheckerboardWorldSpacePoints, rVectors[imageidx], tVectors[imageidx], OutputData.CameraMatrix, OutputData.DistanceCoefficients, reprojected);
+		reprojectionErrors[imageidx] = ComputeReprojectionError(i.CheckerboardImageSpacePoints, reprojected) / reprojected.size();
+		reprojectionErrorTotal += reprojectionErrors[imageidx];
+		imageidx++;
+	}
+	OutputData.ReprojectionError = reprojectionErrorTotal;
+	OutputData.Score = pow(numimages, 1.5) / (reprojectionErrorTotal+0.5);
+	return OutputData;
+}
+
+CameraCalibrationOutputData CameraCalibration(CameraCalibrationSourceData &SourceData)
+{
+	CameraCalibrationOutputData BestOutputData;
+	BestOutputData.Score = 0;
+
+	int numimages = SourceData.Images.size();
+	
+	//disable all images
+	for (auto &&image : SourceData.Images)
+	{
+		image.Use = true;
+		BestOutputData.KeptImages.push_back(true);
+	}
+	uint64_t iteration = 0;
+	BestOutputData = ExploreCalibrationWith(SourceData);
+	while (1)
+	{
+		CameraCalibrationOutputData CurrentBest = BestOutputData;
+		cout << "Iteration " << iteration << " | Score : " << BestOutputData.Score 
+			<< " (Reprojection error is " << BestOutputData.ReprojectionError/BestOutputData.KeptImages.size() << "px/pt)" << endl;
+		iteration++;
+		for (int i = 0; i < numimages; i++)
+		{
+			SourceData.Images[i].Use = CurrentBest.KeptImages[i];
+		}
+
+		for (auto &&image : SourceData.Images)
+		{
+			if (!image.Use)
+			{
+				continue;
+			}
+			image.Use = false;
+			auto OutputData = ExploreCalibrationWith(SourceData);
+			if (OutputData.Score > CurrentBest.Score)
+			{
+				CurrentBest = OutputData;
+			}
+			image.Use = true;
+		}
+
+		if (CurrentBest.Score > BestOutputData.Score)
+		{
+			for (int i = 0; i < numimages; i++)
+			{
+				if (CurrentBest.KeptImages[i] != BestOutputData.KeptImages[i])
+				{
+					cout << "Iteration " << iteration << " ejected image " << SourceData.Images[i].ImagePath << endl;
+				}
+			}
+			BestOutputData = CurrentBest;
 		}
 		else
 		{
-			cout << "Ejecting index " << indexmosterrors << ", stored at " << ImagePaths[indexmosterrors] << " for " << reprojectionErrors[indexmosterrors] << endl;
-			WorldSpaceCornerPoints[indexmosterrors] = WorldSpaceCornerPoints[numimages-1];
-			CheckerboardImageSpacePoints[indexmosterrors] = CheckerboardImageSpacePoints[numimages-1];
-			ImagePaths[indexmosterrors] = ImagePaths[numimages-1];
+			break;
+		}
+		
+	}
 
-			WorldSpaceCornerPoints.resize(numimages-1);
-			CheckerboardImageSpacePoints.resize(numimages-1);
-			ImagePaths.resize(numimages-1);
+	cout << "Best calibration done with :" << endl;
+	for (int i = 0; i < numimages; i++)
+	{
+		if (BestOutputData.KeptImages[i])
+		{
+			cout << "\t- " << SourceData.Images[i].ImagePath << endl;
 		}
 	}
-	for (int i = 0; i < ImagePaths.size(); i++)
-	{
-		cout<< ImagePaths[i] << " remains"<< endl; 
-	}
+	cout << "Score : " << BestOutputData.Score 
+		<< " (Reprojection error is " << BestOutputData.ReprojectionError/BestOutputData.KeptImages.size() << "px/pt)" << endl;
+
+	return BestOutputData;
 }
 
 vector<String> GetPathsToCalibrationImages()
@@ -149,17 +235,22 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 	Size CheckerSize = calconf.NumIntersections;
 	vector<String> pathes = GetPathsToCalibrationImages();
 	size_t numpathes = pathes.size();
-	vector<vector<Point2f>> savedPoints;
-	savedPoints.resize(numpathes);
+
+	CameraCalibrationSourceData SourceData;
+	SourceData.CamToCalibrate = CamToCalibrate;
+	SourceData.Images.resize(numpathes);
+
 	vector<Size> resolutions;
 	resolutions.resize(numpathes);
-	vector<bool> valids;
-	valids.resize(numpathes);
+
 	parallel_for_(Range(0, numpathes), [&](const Range InRange)
 	{
+	//Range InRange(0, numpathes);
 		for (size_t i = InRange.start; i < InRange.end; i++)
 		{
-			Mat frame = imread(pathes[i], IMREAD_GRAYSCALE);
+			auto &ThisImageData = SourceData.Images[i];
+			ThisImageData.ImagePath = pathes[i];
+			Mat frame = imread(ThisImageData.ImagePath, IMREAD_GRAYSCALE);
 			resolutions[i] = frame.size();
 			vector<Point2f> foundPoints;
 			bool found = findChessboardCorners(frame, CheckerSize, foundPoints, CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE);
@@ -168,33 +259,33 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 				TermCriteria criteria(TermCriteria::COUNT | TermCriteria::EPS, 100, 0.001);
 				cornerSubPix(frame, foundPoints, Size(4,4), Size(-1,-1), criteria);
 				//Scalar sharpness = estimateChessboardSharpness(frame, CheckerSize, foundPoints);
-				savedPoints[i] = foundPoints;
-				valids[i] = true;
+				ThisImageData.CheckerboardImageSpacePoints = foundPoints;
+				CreateKnownBoardPos(CheckerSize, calconf.SquareSideLength/1000.f, ThisImageData.CheckerboardWorldSpacePoints);
+				ThisImageData.Use = true;
 			}
 			else
 			{
-				valids[i] =false;
-				cout << "Failed to find chessboard in image " << pathes[i] << " index " << i << endl;
+				ThisImageData.Use = false;
+				cout << "Failed to find chessboard in image " << ThisImageData.ImagePath << " index " << i << endl;
 			}
 			
 		}
 	});
 
 	cout << "Images are done loading, starting calibration..." <<endl;
-	for (int i = numpathes - 1; i >= 0; i--)
+	for (int i = SourceData.Images.size() - 1; i >= 0; i--)
 	{
-		if (!valids[i])
+		auto &ThisImageData = SourceData.Images[i];
+		if (!ThisImageData.Use)
 		{
 			resolutions.erase(resolutions.begin() + i);
-			savedPoints.erase(savedPoints.begin() + i);
-			valids.erase(valids.begin() + i);
-			pathes.erase(pathes.begin() + i);
+			SourceData.Images.erase(SourceData.Images.begin() + i);
 		}
 	}
 	
 	bool multires = false;
 	vector<Size> sizes;
-	for (size_t i = 0; i < numpathes; i++)
+	for (size_t i = 0; i < SourceData.Images.size(); i++)
 	{
 		bool hasres = false;
 		for (size_t j = 0; j < sizes.size(); j++)
@@ -213,8 +304,10 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 	
 	if (sizes.size() == 1)
 	{
-		UMat image = imread(pathes[0], IMREAD_COLOR).getUMat(AccessFlag::ACCESS_READ);
-		CameraCalibration(savedPoints, pathes, CheckerSize, sizes[0], calconf.SquareSideLength/1000.f, CameraMatrix, DistanceCoefficients, CamToCalibrate);
+		SourceData.FrameSize = sizes[0];
+		auto OutputData = CameraCalibration(SourceData);
+		CameraMatrix = OutputData.CameraMatrix;
+		DistanceCoefficients = OutputData.DistanceCoefficients;
 		cout << "Calibration done ! Matrix : " << CameraMatrix << " / Distance Coefficients : " << DistanceCoefficients << endl;
 		return sizes[0];
 	}

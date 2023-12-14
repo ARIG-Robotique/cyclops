@@ -39,6 +39,12 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 {
 	json objectified;
 	objectified["type"] = ObjectTypeNames.at(Object.type);
+	objectified["name"] = Object.name;
+	if (Object.metadata.size() > 0)
+	{
+		objectified["meta"] = Object.metadata;
+	}
+	
 	switch (ObjectMode)
 	{
 	case TransformMode::Float2D:
