@@ -92,13 +92,14 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 	return score >0;
 }
 
-void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraData, unsigned long tick)
+void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraData, uint64_t Tick)
 {
 	const int NumCameras = CameraData.size();
 	const int NumObjects = objects.size();
 	vector<CameraFeatureData> BaseCameraData;
-	vector<map<int, vector<Point2f>>> ReprojectedCorners;
 	BaseCameraData.resize(NumCameras);
+	vector<map<int, vector<Point2f>>> ReprojectedCorners;
+	ReprojectedCorners.resize(NumCameras);
 	for (int i = 0; i < NumCameras; i++) //copy everything except the actual aruco data, so that each object only has the needed aruco
 	{
 		BaseCameraData[i].CameraName = CameraData[i].CameraName;
@@ -168,7 +169,7 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 			}
 			if (locations.size() == 1)
 			{
-				object->SetLocation(locations[0].AbsLoc, tick);
+				object->SetLocation(locations[0].AbsLoc, Tick);
 				//cout << "Object " << object->Name << " is at location " << objects[ObjIdx]->GetLocation().translation() << " / score: " << locations[0].score << ", seen by 1 camera" << endl;
 				continue;
 			}
@@ -184,7 +185,7 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 			Vec3d locfinal = (l1i*best.score+l2i*secondbest.score)/(best.score + secondbest.score);
 			Affine3d combinedloc = best.AbsLoc;
 			combinedloc.translation(locfinal);
-			object->SetLocation(combinedloc, tick);
+			object->SetLocation(combinedloc, Tick);
 			//cout << "Object " << object->Name << " is at location " << objects[ObjIdx]->GetLocation().translation() << " / score: " << best.score+secondbest.score << ", seen by " << locations.size() << " cameras" << endl;
 		}
 	//});
@@ -198,7 +199,7 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 	}
 }
 
-vector<ObjectData> ObjectTracker::GetObjectDataVector(unsigned long Tick)
+vector<ObjectData> ObjectTracker::GetObjectDataVector(uint64_t Tick)
 {
 	vector<ObjectData> ObjectDatas;
 	ObjectDatas.reserve(objects.size()*2);

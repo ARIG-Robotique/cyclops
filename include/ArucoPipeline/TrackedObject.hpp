@@ -77,10 +77,10 @@ public:
 	TrackedObject();
 
 	//Set location. Bypass kalman filter if tick is UINT64_MAX
-	virtual bool SetLocation(cv::Affine3d InLocation, uint64_t tick);
+	virtual bool SetLocation(cv::Affine3d InLocation, uint64_t Tick);
 	unsigned long GetLastSeenTick() { return LastSeenTick; }
 
-	virtual bool ShouldBeDisplayed(unsigned long Tick);
+	virtual bool ShouldBeDisplayed(uint64_t Tick);
 	virtual cv::Affine3d GetLocation();
 
 	//Find the parameters and the accumulated transform of the tag in the component and it's childs

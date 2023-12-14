@@ -6,6 +6,7 @@
 #include <iostream>
 #include <shared_mutex>
 #include <thread>
+#include <memory>
 
 #include <Cameras/Camera.hpp>
 #include <GlobalConf.hpp>
@@ -26,10 +27,10 @@ private:
 	std::set<std::string> blockedpaths; //paths that have been tried but failed at some point during init, so that we don't try again
 
 	std::shared_mutex pathmutex, cammutex;
-	std::thread* scanthread;
+	std::unique_ptr<std::thread> scanthread;
 	bool killmutex;
 
-	std::vector<Camera*> Cameras, NewCameras; //List of cameras. NewCameras is protected by cammutex, Cameras only belongs to Tick
+	std::vector<std::shared_ptr<Camera>> Cameras, NewCameras; //List of cameras. NewCameras is protected by cammutex, Cameras only belongs to Tick
 
 public:
 	//Function called when a new camera is to be created. Return nullptr if you want to veto that creation
@@ -51,14 +52,6 @@ public:
 	{
 		killmutex = true;
 		scanthread->join();
-		for (int i = 0; i < Cameras.size(); i++)
-		{
-			delete Cameras[i];
-		}
-		if (scanthread)
-		{
-			delete scanthread;
-		}
 	}
 	//Check if the name can fit the filter to blacklist or whitelist certain cameras based on name
 	static bool DeviceInFilter(v4l2::devices::DEVICE_INFO device, std::string Filter);

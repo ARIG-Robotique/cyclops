@@ -36,18 +36,18 @@ StaticObject::~StaticObject()
 {
 }
 
-bool StaticObject::SetLocation(Affine3d InLocation, uint64_t tick)
+bool StaticObject::SetLocation(Affine3d InLocation, uint64_t Tick)
 {
 	if (Relative)
 	{
-		return TrackedObject::SetLocation(InLocation, tick);
+		return TrackedObject::SetLocation(InLocation, Tick);
 	}
 	
 	Location = Affine3d::Identity();
 	return false;
 }
 
-bool StaticObject::ShouldBeDisplayed(unsigned long Tick)
+bool StaticObject::ShouldBeDisplayed(uint64_t Tick)
 {
 	if (Relative)
 	{

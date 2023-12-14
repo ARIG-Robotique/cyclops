@@ -22,7 +22,8 @@ int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData)
 	Size rescaled = GetArucoReduction();
 
 	UMat GrayFrame;
-	switch (InData.Image.depth())
+	int numchannels = InData.Image.channels();
+	switch (numchannels)
 	{
 	case 3:
 		cvtColor(InData.Image, GrayFrame, COLOR_BGR2GRAY);
@@ -32,6 +33,7 @@ int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData)
 		break;
 	
 	default:
+		cout << "depth " << numchannels << endl; 
 		assert(false);
 		break;
 	}

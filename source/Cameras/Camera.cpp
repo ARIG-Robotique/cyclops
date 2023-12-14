@@ -128,6 +128,15 @@ void Camera::GetFrame(CameraImageData& frame, bool Distorted)
 	}
 }
 
+vector<ObjectData> Camera::ToObjectData() const
+{
+	ObjectData camera;
+	camera.name = Name;
+	camera.type = ObjectType::Camera;
+	camera.location = Location;
+	return {camera};
+}
+
 /*void Camera::GetFrameUndistorted(UMat& frame)
 {
 	BufferedFrame& buff = FrameBuffer;
@@ -224,14 +233,7 @@ void Camera::GetOutputFrame(UMat& OutFrame, Rect window)
 	}
 }
 
-vector<ObjectData> Camera::ToObjectData(int BaseNumeral)
-{
-	ObjectData robot;
-	robot.identity.numeral = BaseNumeral;
-	robot.identity.type = ObjectType::Camera;
-	robot.location = Location;
-	return {robot};
-}
+
 
 Affine3d Camera::GetObjectTransform(const CameraArucoData& CameraData, float& Surface, float& ReprojectionError)
 {

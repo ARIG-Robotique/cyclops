@@ -100,25 +100,30 @@ vector<Camera*> CameraManager::Tick()
 		{
 			std::cerr << "Detaching camera @ " << Cameras[i]->GetName() << std::endl;
 			std::string pathtofind = dynamic_cast<const VideoCaptureCameraSettings*>(Cameras[i]->GetCameraSettings())->DeviceInfo.device_paths[0];
-			StopCamera(Cameras[i]);
+			StopCamera(Cameras[i].get());
 			
 			unique_lock lock(pathmutex);
 			usedpaths.erase(pathtofind);
-			delete Cameras[i];
 			Cameras.erase(std::next(Cameras.begin(), i));
 			i--;
 		}
 	}
 	{
 		unique_lock lock(cammutex);
-		for (auto Camera : NewCameras)
+		for (auto &Camera : NewCameras)
 		{
-			RegisterCamera(Camera);
-			Cameras.push_back(Camera);
+			RegisterCamera(Camera.get());
+			Cameras.emplace_back(Camera);
 		}
 		NewCameras.clear();
 	}
-	return Cameras;
+	vector<Camera*> OutCams;
+	OutCams.reserve(Cameras.size());
+	for (auto &cam : Cameras)
+	{
+		OutCams.push_back(cam.get());
+	}
+	return OutCams;
 }
 
 void CameraManager::StartScanThread()
@@ -127,7 +132,7 @@ void CameraManager::StartScanThread()
 	{
 		return;
 	}
-	scanthread = new thread(&CameraManager::ScanWorker, this);
+	scanthread = make_unique<thread>(&CameraManager::ScanWorker, this);
 }
 
 void CameraManager::ScanWorker()
@@ -147,7 +152,7 @@ void CameraManager::ScanWorker()
 		{
 			std::string pathtofind = device.device_paths[0];
 			auto pos = std::find(knownpaths.begin(), knownpaths.end(), pathtofind);
-			if (pos == knownpaths.end()) //new camera
+			if (pos != knownpaths.end()) //new camera
 			{
 				continue;
 			}
@@ -186,7 +191,7 @@ void CameraManager::ScanWorker()
 				}
 				{
 					unique_lock lock(cammutex);
-					NewCameras.push_back(cam);
+					NewCameras.emplace_back(cam);
 				}
 				
 			}
