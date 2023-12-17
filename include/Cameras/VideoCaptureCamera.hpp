@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>   // for strings
+#include <memory>
 #include <opencv2/core.hpp>		// Basic OpenCV structures (Mat, Scalar)
 #include <opencv2/highgui.hpp>  // OpenCV window I/O
 #include <opencv2/aruco.hpp>
@@ -18,7 +19,7 @@ class VideoCaptureCamera : public Camera
 
 private:
 	//capture using classic api
-	cv::VideoCapture* feed;
+	std::unique_ptr<cv::VideoCapture> feed;
 
 public:
 
@@ -29,10 +30,7 @@ public:
 
 	~VideoCaptureCamera()
 	{
-		if (connected)
-		{
-			delete feed;
-		}
+		
 	}
 
 	//Start the camera

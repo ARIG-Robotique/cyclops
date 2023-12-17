@@ -231,8 +231,8 @@ void BoardGL::LoadTags()
 	{
 		cv::Mat texture;
 		cv::aruco::generateImageMarker(dict, i, 128, texture, 1);
-		cv::cvtColor(texture, TagTextures[i].Texture, cv::COLOR_GRAY2BGR);
-		//cv::imshow("Aruco Texture", TagTextures[i].Texture);
+		cv::cvtColor(texture, TagTextures[i].SourceImage, cv::COLOR_GRAY2BGR);
+		//cv::imshow("Aruco SourceImage", TagTextures[i].Texture);
 		//cv::waitKey();
 		TagTextures[i].valid = true;
 		TagTextures[i].Bind();

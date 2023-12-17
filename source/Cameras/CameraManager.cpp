@@ -48,11 +48,11 @@ VideoCaptureCameraSettings CameraManager::DeviceToSettings(v4l2::devices::DEVICE
 	
 
 	readCameraParameters(CalibrationPath, settings.CameraMatrix, settings.distanceCoeffs, settings.Resolution);
-	//cout << "Camera matrix : " << cam->CameraMatrix << " / Distance coeffs : " << cam->distanceCoeffs << endl;
+	//cout << "Camera matrix : " << settings.CameraMatrix << " / Distance coeffs : " << settings.distanceCoeffs << endl;
 	return settings;
 }
 
-vector<VideoCaptureCameraSettings> CameraManager::autoDetectCameras(CameraStartType Start, string Filter, string CalibrationFile, bool silent)
+vector<VideoCaptureCameraSettings> CameraManager::autoDetectCameras(CameraStartType Start, string Filter, bool silent)
 {
 	vector<v4l2::devices::DEVICE_INFO> devices;
 
@@ -174,7 +174,7 @@ void CameraManager::ScanWorker()
 				blockedpaths.emplace(pathtofind);
 				continue;
 			}
-
+			//cout << "Camera matrix : " << settings.CameraMatrix << " / Distance coeffs : " << settings.distanceCoeffs << endl;
 			Camera* cam = StartCamera(settings);
 			if (!cam)
 			{

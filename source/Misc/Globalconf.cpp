@@ -11,7 +11,7 @@ using namespace std;
 using namespace cv;
 using namespace libconfig;
 
-int ProgramRunType = (int)RunType::CameraExternal;
+int ProgramRunType = (int)RunType::Normal;
 aruco::ArucoDetector ArucoDet;
 bool HasDetector = false;
 vector<UMat> MarkerImages;
@@ -22,7 +22,7 @@ Config cfg;
 //Default values
 CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, Size(1920,1080), 1.f, 30, 1, ""};
 vector<InternalCameraConfig> CamerasInternal;
-CalibrationConfig CamCalConf = {40, Size(6,4), 0.25, Size2d(4.96, 3.72)};
+CalibrationConfig CamCalConf = {40, Size(6,4), 0.5, 1.5, Size2d(4.96, 3.72)};
 
 bool HasScreenData = false;
 Size screenresolution(-1,-1);
@@ -206,7 +206,8 @@ void InitConfig()
 		CopyDefaultCfg(CalibSett, "EdgeSize", Setting::TypeFloat, CamCalConf.SquareSideLength);
 		CopyDefaultCfg(CalibSett, "NumIntersectionsX", Setting::TypeInt, CamCalConf.NumIntersections.width);
 		CopyDefaultCfg(CalibSett, "NumIntersectionsY", Setting::TypeInt, CamCalConf.NumIntersections.height);
-		CopyDefaultCfg(CalibSett, "ReprojectionErrorThreshold", Setting::TypeFloat, CamCalConf.CalibrationThreshold);
+		CopyDefaultCfg(CalibSett, "ReprojectionErrorOffset", Setting::TypeFloat, CamCalConf.ReprojectionErrorOffset);
+		CopyDefaultCfg(CalibSett, "NumImagePower", Setting::TypeFloat, CamCalConf.NumImagePower);
 
 		CopyDefaultCfg(CalibSett, "SensorSizeX", Setting::TypeFloat, CamCalConf.SensorSize.width);
 		CopyDefaultCfg(CalibSett, "SensorSizeY", Setting::TypeFloat, CamCalConf.SensorSize.height);
@@ -350,7 +351,7 @@ vector<InternalCameraConfig>& GetInternalCameraPositionsConfig()
 	return CamerasInternal;
 }
 
-CalibrationConfig& GetCalibrationConfig()
+const CalibrationConfig& GetCalibrationConfig()
 {
 	InitConfig();
 	return CamCalConf;

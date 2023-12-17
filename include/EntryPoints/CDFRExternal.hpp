@@ -3,6 +3,7 @@
 #include <thread>
 #include <vector>
 #include <array>
+#include <memory>
 
 #include <Communication/ProcessedTypes.hpp>
 #include <ArucoPipeline/ObjectIdentity.hpp>
@@ -17,7 +18,7 @@ private:
 
     int BufferIndex = 0;
 
-    std::thread* ThreadHandle;
+    std::unique_ptr<std::thread> ThreadHandle;
 
     std::array<std::vector<CameraFeatureData>, 3> FeatureData;
     std::array<std::vector<ObjectData>, 3> ObjData;

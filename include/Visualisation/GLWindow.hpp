@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 class GLFWwindow;
 
+//parent class for all openGL stuff
 class GLWindow
 {
 protected:

@@ -12,7 +12,7 @@ public:
 	ImageSource(/* args */);
 	~ImageSource();
 
-	virtual void SetFrame(CameraImageData& frame, bool Distorted);
+	virtual void SetFrame(const CameraImageData& frame, bool Distorted);
 
-	virtual void GetFrame(CameraImageData& frame, bool Distorted);
+	virtual CameraImageData GetFrame(bool Distorted);
 };

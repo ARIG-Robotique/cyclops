@@ -165,7 +165,7 @@ int main(int argc, char** argv )
 		exit(EXIT_SUCCESS);
 	}
 	
-	vector<VideoCaptureCameraSettings> CamSett = CameraManager::autoDetectCameras(GetCaptureMethod(), GetCaptureConfig().filter, "", false);
+	vector<VideoCaptureCameraSettings> CamSett = CameraManager::autoDetectCameras(GetCaptureMethod(), GetCaptureConfig().filter, false);
 
 	if (CamSett.size() == 0)
 	{

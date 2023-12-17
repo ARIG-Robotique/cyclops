@@ -102,7 +102,7 @@ public:
 
 	virtual void Undistort();
 
-	virtual void GetFrame(CameraImageData& frame, bool Distorted) override;
+	virtual CameraImageData GetFrame(bool Distorted) override;
 
 	virtual std::vector<ObjectData> ToObjectData() const override;
 };

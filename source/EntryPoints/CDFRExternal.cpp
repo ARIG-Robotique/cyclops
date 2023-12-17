@@ -5,6 +5,7 @@
 #include <DetectFeatures/ArucoDetect.hpp>
 
 #include <Visualisation/BoardGL.hpp>
+#include <Visualisation/ImguiWindow.hpp>
 #include <Misc/ManualProfiler.hpp>
 
 #include <Communication/Transport/TCPTransport.hpp>
@@ -94,6 +95,8 @@ void CDFRExternal::ThreadEntryPoint()
 	//bluetracker.RegisterTrackedObject(robot2);
 	
 	BoardGL OpenGLBoard;
+	std::unique_ptr<ImguiWindow> DirectImage;
+	vector<Texture> DirectTextures;
 	unique_ptr<TrackerCube> blue1 = make_unique<TrackerCube>(vector<int>({51, 52, 53, 54, 55}), 0.05, 85.065/1000.0, "blue1");
 	unique_ptr<TrackerCube> blue2 = make_unique<TrackerCube>(vector<int>({56, 57, 58, 59, 60}), 0.05, 85.065/1000.0, "blue2");
 	unique_ptr<TrackerCube> yellow1 = make_unique<TrackerCube>(vector<int>({71, 72, 73, 74, 75}), 0.05, 85.065/1000.0, "yellow1");
@@ -121,22 +124,54 @@ void CDFRExternal::ThreadEntryPoint()
 		OpenGLBoard.LoadTags();
 		OpenGLBoard.Tick({});
 	}
+	if (direct)
+	{
+		DirectImage = make_unique<ImguiWindow>();
+	}
+	
 
 	
 	
 	//track and untrack cameras dynamically
-	CameraMan.StartCamera = [](VideoCaptureCameraSettings settings) -> Camera*
+	if (GetRunType() == RunType::Simulate)
 	{
-		Camera* cam = new VideoCaptureCamera(make_shared<VideoCaptureCameraSettings>(settings));
-		if(!cam->StartFeed())
+		CameraMan.StartCamera = [](VideoCaptureCameraSettings settings) -> Camera*
 		{
-			cerr << "Failed to start feed @" << settings.DeviceInfo.device_description << endl;
-			delete cam;
-			return nullptr;
-		}
-		
-		return cam;
-	};
+			settings.StartType = CameraStartType::PLAYBACK;
+			settings.StartPath = "../sim/sim0.mp4";
+			settings.CameraMatrix.at<double>(0,2) = settings.Resolution.width/2.0; //exact center
+			settings.CameraMatrix.at<double>(1,2) = settings.Resolution.height/2.0;
+			//cout << settings.CameraMatrix << endl;
+			settings.distanceCoeffs *= 0.0; //no distortion
+
+			Camera* cam = new VideoCaptureCamera(make_shared<VideoCaptureCameraSettings>(settings));
+			if(!cam->StartFeed())
+			{
+				cerr << "Failed to start feed @" << settings.DeviceInfo.device_description << endl;
+				delete cam;
+				return nullptr;
+			}
+			
+			return cam;
+		};
+	}
+	else
+	{
+		CameraMan.StartCamera = [](VideoCaptureCameraSettings settings) -> Camera*
+		{
+			Camera* cam = new VideoCaptureCamera(make_shared<VideoCaptureCameraSettings>(settings));
+			if(!cam->StartFeed())
+			{
+				cerr << "Failed to start feed @" << settings.DeviceInfo.device_description << endl;
+				delete cam;
+				return nullptr;
+			}
+			
+			return cam;
+		};
+	}
+	
+	
 	CameraMan.RegisterCamera = [&bluetracker, &yellowtracker](Camera* cam) -> void
 	{
 		bluetracker.RegisterTrackedObject(cam);
@@ -148,6 +183,7 @@ void CDFRExternal::ThreadEntryPoint()
 		bluetracker.UnregisterTrackedObject(cam);
 		yellowtracker.UnregisterTrackedObject(cam);
 		cout << "Unregistering camera @" << cam << endl;
+		
 		return true;
 	};
 
@@ -213,8 +249,7 @@ void CDFRExternal::ThreadEntryPoint()
 				thisprof.EnterSection("CameraUndistort");
 				cam->Undistort();
 				thisprof.EnterSection("CameraGetFrame");
-				CameraImageData ImData;
-				cam->GetFrame(ImData, false);
+				CameraImageData ImData = cam->GetFrame(false);
 				thisprof.EnterSection("DetectAruco");
 				CameraFeatureData &FeatData = FeatureDataLocal[i];
 				FeatData.CopyEssentials(ImData);
@@ -252,6 +287,21 @@ void CDFRExternal::ThreadEntryPoint()
 				return;
 			}
 		}
+		if (direct)
+		{
+			DirectImage->StartFrame();
+			if (DirectTextures.size() != Cameras.size())
+			{
+				DirectTextures.resize(Cameras.size());
+			}
+			for (int i = 0; i < Cameras.size(); i++)
+			{
+				auto ImData = Cameras[i]->GetFrame(false);
+				DirectTextures[i].LoadFromUMat(ImData.Image);
+			}
+			
+		}
+		
 		
 		
 		prof.EnterSection("");
@@ -279,7 +329,7 @@ void CDFRExternal::GetData(std::vector<CameraFeatureData> &OutFeatureData, std::
 CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
 	:direct(InDirect), v3d(InV3D)
 {
-	ThreadHandle = new thread(&CDFRExternal::ThreadEntryPoint, this);
+	ThreadHandle = make_unique<thread>(&CDFRExternal::ThreadEntryPoint, this);
 	assert(ObjData.size() == FeatureData.size());
 	assert(FeatureData.size() > 0);
 }
@@ -290,6 +340,5 @@ CDFRExternal::~CDFRExternal()
 	if (ThreadHandle)
 	{
 		ThreadHandle->join();
-		delete ThreadHandle;
 	}
 }

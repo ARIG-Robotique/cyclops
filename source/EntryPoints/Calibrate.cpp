@@ -120,7 +120,7 @@ CameraCalibrationOutputData ExploreCalibrationWith(const CameraCalibrationSource
 		imageidx++;
 	}
 	OutputData.ReprojectionError = reprojectionErrorTotal;
-	OutputData.Score = pow(numimages, 1.5) / (reprojectionErrorTotal+0.5);
+	OutputData.Score = pow(numimages, GetCalibrationConfig().NumImagePower) / (reprojectionErrorTotal+GetCalibrationConfig().ReprojectionErrorOffset);
 	return OutputData;
 }
 
@@ -424,8 +424,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 			image.copyTo(image2);
 			CamToCalib->Read();
 			CamToCalib->Undistort();
-			CameraImageData Frame;
-			CamToCalib->GetFrame(Frame, false);
+			CameraImageData Frame = CamToCalib->GetFrame(false);
 			imshow(CalibWindowName, undist);
 			waitKey(1000);
 		}
@@ -436,7 +435,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 
 	ImguiWindow imguiinst;
 	Texture cameratex;
-	cameratex.Texture = Mat::zeros(CamSett.Resolution, CV_8UC3);
+	cameratex.SourceImage = Mat::zeros(CamSett.Resolution, CV_8UC3);
 	cameratex.valid = true;
 	
 	cameratex.Bind();
@@ -486,14 +485,14 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 			ImGui::Checkbox("Mirror", &mirrored);
 		}
 
-		CameraImageData framedata;
+		
 		if (ShowUndistorted)
 		{
 			prof.EnterSection("Undistort");
 			CamToCalib->Undistort();
 			prof.EnterSection("Controls");
 		}
-		CamToCalib->GetFrame(framedata, !ShowUndistorted);
+		CameraImageData framedata = CamToCalib->GetFrame(!ShowUndistorted);
 		frame = framedata.Image;
 		
 		if (!ShowUndistorted)
@@ -573,25 +572,22 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 
 
 		prof.EnterSection("Upload frame");
-		cameratex.Texture = frame.getMat(cv::AccessFlag::ACCESS_READ | cv::AccessFlag::ACCESS_FAST);
-		cameratex.Refresh();
-		cameratex.Texture = Mat();
+		cameratex.LoadFromUMat(frame);
 		prof.EnterSection("Background");
 
 
-		ImDrawList* background = ImGui::GetBackgroundDrawList();
 		{
 			cv::Rect Backgroundsize(Point2i(0,0), (Size2i)imguiinst.GetWindowSize());
 			cv::Rect impos = ScaleToFit(CamSett.Resolution, Backgroundsize);
-			ImVec2 p_min = impos.tl(), p_max = impos.br(), uv_min(0,0), uv_max(1,1);
+			Size2f uv_min(0,0), uv_max(1,1);
 
 			if (mirrored)
 			{
-				uv_min = ImVec2(1,0);
-				uv_max = ImVec2(0,1);
+				uv_min = Size2f(1,0);
+				uv_max = Size2f(0,1);
 			}
 			
-			background->AddImage((void*)(intptr_t)cameratex.GetTextureID(), p_min, p_max, uv_min, uv_max);
+			imguiinst.AddImageToBackground(cameratex, impos, uv_min, uv_max);
 		}
 
 		prof.EnterSection("End Frame");

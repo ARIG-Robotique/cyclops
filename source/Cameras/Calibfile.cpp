@@ -67,7 +67,7 @@ bool readCameraParameters(string description, Mat& camMatrix, Mat& distCoeffs, S
 	Mat calibmatrix;
 	fs["camera_matrix"] >> calibmatrix;
 	fs["distortion_coefficients"] >> distCoeffs;
-	if (Resolution.area() != 0)
+	if (Resolution.area() != 0 && Resolution != CalibRes)
 	{
 		Mat scalingMatrix = Mat::zeros(3,3, CV_64F);
 		scalingMatrix.at<double>(0,0) = (double)Resolution.width / CalibRes.width;

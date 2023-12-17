@@ -12,14 +12,14 @@ ImageSource::~ImageSource()
 {
 }
 
-void ImageSource::SetFrame(CameraImageData& frame, bool Distorted)
+void ImageSource::SetFrame(const CameraImageData& frame, bool Distorted)
 {
 
 }
 
-void ImageSource::GetFrame(CameraImageData& frame, bool Distorted)
+CameraImageData ImageSource::GetFrame(bool Distorted)
 {
-
+	return CameraImageData();
 }
 
 Size findSplit(Size screensize, Size targetAspect, int numscreen)

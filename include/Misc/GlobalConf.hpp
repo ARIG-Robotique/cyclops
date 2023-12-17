@@ -10,8 +10,8 @@ enum class CameraStartType;
 
 enum class RunType
 {
-	CameraExternal,
-	CameraInternal
+	Normal,
+	Simulate
 };
 
 struct CaptureConfig
@@ -63,8 +63,9 @@ struct CalibrationConfig
 {
 	float SquareSideLength; //mm
 	cv::Size NumIntersections; //number of square intersections, ex for a chess board is 7x7
-	float CalibrationThreshold; //Stop when reprojection error is at this level or below (px)
+	float ReprojectionErrorOffset; //score computation : (numimages^NumImagePower)/(ReprojectionError + Offset)
+	float NumImagePower;
 	cv::Size2d SensorSize; //only used for stats
 };
 
-CalibrationConfig& GetCalibrationConfig();
+const CalibrationConfig& GetCalibrationConfig();

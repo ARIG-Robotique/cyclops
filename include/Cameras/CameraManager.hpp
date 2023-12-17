@@ -59,7 +59,7 @@ public:
 	//Gather calibration info and start setting (fps, resolution, method...) before starting the camera
 	static VideoCaptureCameraSettings DeviceToSettings(v4l2::devices::DEVICE_INFO device, CameraStartType Start);
 
-	static std::vector<VideoCaptureCameraSettings> autoDetectCameras(CameraStartType Start, std::string Filter, std::string CalibrationFile, bool silent = true);
+	static std::vector<VideoCaptureCameraSettings> autoDetectCameras(CameraStartType Start, std::string Filter, bool silent = true);
 
 public:
 	//Call Tick to remove misbehaving cameras and get the current cameras

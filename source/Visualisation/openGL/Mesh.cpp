@@ -8,6 +8,22 @@
 
 using namespace std;
 
+Mesh::~Mesh()
+{
+	if (bound)
+	{
+		glDeleteBuffers(1, &PositionBuffer);
+
+		glDeleteBuffers(1, &NormalBuffer);
+
+		glDeleteBuffers(1, &UVBuffer);
+
+		glDeleteBuffers(1, &ColorBuffer);
+
+		glDeleteBuffers(1, &IndexBuffer);
+	}
+}
+
 bool Mesh::LoadMesh(std::string path)
 {
 	Assimp::Importer importer;
@@ -83,7 +99,7 @@ bool Mesh::LoadMesh(std::string path)
 
 bool Mesh::LoadTexture(cv::Mat Texture)
 {
-	texture.Texture = Texture;
+	texture.SourceImage = Texture;
 	texture.valid = true;
 	return true;
 }
@@ -114,6 +130,10 @@ bool Mesh::LoadFromFile(std::string path, std::string texturepath)
 
 void Mesh::BindMesh()
 {
+	if (bound)
+	{
+		return;
+	}
 	// Generate 1 buffer, put the resulting identifier in vertexbuffer
 	glGenBuffers(1, &PositionBuffer);
 	// The following commands will talk about our 'vertexbuffer' buffer
@@ -142,7 +162,7 @@ void Mesh::BindMesh()
 	{
 		texture.Bind();
 	}
-	
+	bound = true;
 }
 
 void Mesh::Draw(GLuint ParamHandle, bool forceTexture)

@@ -76,3 +76,13 @@ bool ImguiWindow::EndFrame()
 
 	return IsDone;
 }
+
+void ImguiWindow::AddImageToBackground(const Texture &Image, cv::Rect impos, cv::Size2f UVmin, cv::Size2f UVmax)
+{
+	ImDrawList* background = ImGui::GetBackgroundDrawList();
+	{
+		ImVec2 p_min = impos.tl(), p_max = impos.br();
+		
+		background->AddImage((void*)(intptr_t)Image.GetTextureID(), p_min, p_max, ImVec2(UVmin), ImVec2(UVmax));
+	}
+}

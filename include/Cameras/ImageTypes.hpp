@@ -41,7 +41,8 @@ struct CameraSettings
 enum class CameraStartType
 {
 	ANY = 0,
-	GSTREAMER_CPU = 1
+	GSTREAMER_CPU,
+	PLAYBACK //playback from a file
 };
 
 struct VideoCaptureCameraSettings : public CameraSettings

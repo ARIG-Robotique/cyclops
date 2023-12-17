@@ -5,9 +5,8 @@
 #include <iomanip>  // for controlling float print precision
 #include <sstream>  // string to number conversion
 #include <stdlib.h>
+#include <filesystem>
 #include <opencv2/imgproc.hpp>
-
-
 #include <opencv2/calib3d.hpp>
 
 #include <thirdparty/list-devices.hpp>
@@ -58,6 +57,11 @@ bool VideoCaptureCamera::StartFeed()
 			Settingscast->ApiID = CAP_GSTREAMER;
 		}
 		break;
+	case CameraStartType::PLAYBACK:
+		cout << "Starting camera @" << pathtodevice << " in playback mode (file " << Settingscast->StartPath << ")" << endl;
+		Settingscast->StartPath = filesystem::weakly_canonical(Settingscast->StartPath);
+		Settingscast->ApiID = CAP_ANY;
+		break;
 	default:
 		cerr << "WARNING : Unrecognised Camera Start Type in VideoCaptureCamera, defaulting to auto API" << endl;
 	case CameraStartType::ANY:
@@ -69,7 +73,7 @@ bool VideoCaptureCamera::StartFeed()
 	//snprintf(commandbuffer, sizeof(commandbuffer), "v4l2-ctl -d %s -c exposure_auto=%d,exposure_absolute=%d", pathtodevice.c_str(), 1, 32);
 	//cout << "Aperture system command : " << commandbuffer << endl;
 	//system(commandbuffer);
-	feed = new VideoCapture();
+	feed = make_unique<VideoCapture>();
 	cout << "Opening device at \"" << Settingscast->StartPath << "\" with API id " << Settingscast->ApiID << endl;
 	feed->open(Settingscast->StartPath, Settingscast->ApiID);
 	if (Settingscast->StartType == CameraStartType::ANY)

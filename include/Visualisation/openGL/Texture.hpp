@@ -11,16 +11,23 @@
 struct Texture
 {
 private:
-	GLuint TextureID;
+	GLuint TextureID = 0;
 
 	cv::Size LastSize;
 
 public:
-	cv::Mat Texture;
+	cv::Mat SourceImage;
 
 	bool valid = false;
 
+	Texture()
+	{}
+
+	virtual ~Texture();
+
 	void LoadFromFile(std::string path);
+
+	void LoadFromUMat(const cv::UMat &Image);
 
 	void Bind(); //Send the texutre to the GPU
 
@@ -28,7 +35,7 @@ public:
 
 	void Draw(); //Set the texture as the currently active texture
 
-	GLuint GetTextureID() 
+	GLuint GetTextureID() const
 	{
 		return TextureID;
 	}

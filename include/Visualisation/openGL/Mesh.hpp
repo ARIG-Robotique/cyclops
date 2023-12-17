@@ -18,6 +18,7 @@ private:
 	GLuint ColorBuffer;
 
 	GLuint IndexBuffer;
+	bool bound = false;
 
 public:
 	std::vector<GLfloat> Positions;
@@ -28,6 +29,8 @@ public:
 	std::vector<unsigned int> Indices;
 
 	Texture texture;
+
+	virtual ~Mesh();
 
 	bool LoadMesh(std::string path);
 

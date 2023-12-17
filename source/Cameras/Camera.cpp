@@ -111,8 +111,9 @@ void Camera::Undistort()
 	}
 }
 
-void Camera::GetFrame(CameraImageData& frame, bool Distorted)
+CameraImageData Camera::GetFrame(bool Distorted)
 {
+	CameraImageData frame;
 	frame.Distorted = Distorted;
 	frame.CameraName = Name;
 	if (Distorted)
@@ -126,6 +127,7 @@ void Camera::GetFrame(CameraImageData& frame, bool Distorted)
 		GetCameraSettingsAfterUndistortion(frame.CameraMatrix, frame.DistanceCoefficients);
 		frame.Image = LastFrameUndistorted;
 	}
+	return frame;
 }
 
 vector<ObjectData> Camera::ToObjectData() const

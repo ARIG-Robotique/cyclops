@@ -4,10 +4,33 @@
 
 using namespace std;
 
+Texture::~Texture()
+{
+	if (TextureID)
+	{
+		glDeleteTextures(1, &TextureID);
+	}
+}
+
 void Texture::LoadFromFile(string path)
 {
-	Texture = cv::imread(path, cv::IMREAD_COLOR);
+	SourceImage = cv::imread(path, cv::IMREAD_COLOR);
 	valid = true;
+}
+
+void Texture::LoadFromUMat(const cv::UMat &Image)
+{
+	SourceImage = Image.getMat(cv::AccessFlag::ACCESS_READ | cv::AccessFlag::ACCESS_FAST);
+	if (valid)
+	{
+		Refresh();
+	}
+	else
+	{
+		Bind();
+		valid = true;
+	}
+	SourceImage = cv::Mat();
 }
 
 void Texture::Bind()
@@ -25,14 +48,14 @@ void Texture::Refresh()
 {
 	glBindTexture(GL_TEXTURE_2D, TextureID);
 
-	cv::Size NewSize(Texture.cols, Texture.rows);
+	cv::Size NewSize(SourceImage.cols, SourceImage.rows);
 	if (NewSize != LastSize)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Texture.cols, Texture.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, Texture.data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SourceImage.cols, SourceImage.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, SourceImage.data);
 	}
 	else
 	{
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Texture.cols, Texture.rows, GL_BGR, GL_UNSIGNED_BYTE, Texture.data);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SourceImage.cols, SourceImage.rows, GL_BGR, GL_UNSIGNED_BYTE, SourceImage.data);
 	}
 	LastSize = NewSize;
 }
