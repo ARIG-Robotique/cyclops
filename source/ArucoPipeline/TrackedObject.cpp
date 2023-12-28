@@ -16,7 +16,7 @@ using namespace cv;
 using namespace std;
 
 
-vector<Point3d> ArucoMarker::GetObjectPointsNoOffset(float SideLength)
+array<Point3d, 4> ArucoMarker::GetObjectPointsNoOffset(float SideLength)
 {
 	float sql2 = SideLength*0.5;
 	return {
@@ -27,8 +27,15 @@ vector<Point3d> ArucoMarker::GetObjectPointsNoOffset(float SideLength)
 	};
 }
 
-vector<Point3d>& ArucoMarker::GetObjectPointsNoOffset()
+const array<Point3d, 4>& ArucoMarker::GetObjectPointsNoOffset()
 {
+	if (ObjectPointsNoOffset.size() != 4)
+	{
+		assert(sideLength > 0);
+		ObjectPointsNoOffset = GetObjectPointsNoOffset(sideLength);
+	}
+	
+	assert(ObjectPointsNoOffset.size() == 4);
 	return ObjectPointsNoOffset;
 }
 
@@ -51,8 +58,15 @@ bool TrackedObject::SetLocation(Affine3d InLocation, uint64_t Tick)
 		Location = InLocation;
 		return true;
 	}
-	
+	Location = InLocation;
 	double dt = (Tick - LastSeenTick);
+	LastSeenTick = Tick;
+	if (1) //disable kalman filtering
+	{
+		return true;
+	}
+	
+	
 	dt /= getTickFrequency();
 	LocationFilter.transitionMatrix = Mat::eye(9,9, CV_64F);
 	double v = dt*10;//filter 10Hz
@@ -78,9 +92,7 @@ bool TrackedObject::SetLocation(Affine3d InLocation, uint64_t Tick)
 	//cout << "corrmat: " << correctmat.t() << endl;
 	Vec3d correctloc(correctmat.rowRange(0, 3));
 
-	Location = InLocation;
 	Location.translation(correctloc);
-	LastSeenTick = Tick;
 	return true;
 }
 
@@ -126,7 +138,7 @@ void TrackedObject::GetObjectPoints(vector<vector<Point3d>>& MarkerCorners, vect
 		{
 			continue;
 		}
-		vector<Point3d> cornerslocal = marker.GetObjectPointsNoOffset();
+		auto& cornerslocal = marker.GetObjectPointsNoOffset();
 		MarkerIDs.push_back(marker.number);
 		vector<Point3d> cornersworld;
 		for (int i = 0; i < cornerslocal.size(); i++)
@@ -145,6 +157,7 @@ void TrackedObject::GetObjectPoints(vector<vector<Point3d>>& MarkerCorners, vect
 float TrackedObject::GetSeenMarkers(const CameraFeatureData& CameraData, vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform)
 {
 	float surface = 0;
+	MarkersSeen.reserve(markers.size());
 	for (int i = 0; i < markers.size(); i++)
 	{
 		for (int j = 0; j < CameraData.ArucoIndices.size(); j++)
@@ -157,9 +170,10 @@ float TrackedObject::GetSeenMarkers(const CameraFeatureData& CameraData, vector<
 				seen.IndexInCameraData = j;
 				seen.CameraCornerPositions = CameraData.ArucoCorners[j];
 				seen.AccumulatedTransform = AccumulatedTransform;
-				vector<Point3d> &cornersLocal = markers[i].ObjectPointsNoOffset;
+				auto &cornersLocal = markers[i].GetObjectPointsNoOffset();
 				Affine3d TransformToObject = AccumulatedTransform * markers[i].Pose;
-				for (int k = 0; k < 4; k++)
+				seen.LocalMarkerCorners.reserve(cornersLocal.size());
+				for (int k = 0; k < cornersLocal.size(); k++)
 				{
 					seen.LocalMarkerCorners.push_back(TransformToObject * cornersLocal[k]);
 				}
@@ -187,6 +201,7 @@ float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal
 		vector<Point2d> cornersreproj;
 		projectPoints(MarkersSeen[i].LocalMarkerCorners, rvec, tvec, CameraData.CameraMatrix, CameraData.DistanceCoefficients, cornersreproj);
 		ReprojectedCorners[MarkersSeen[i].IndexInCameraData] = vector<Point2f>(cornersreproj.begin(), cornersreproj.end());
+		//cout << "reprojecting " << MarkersSeen[i].IndexInCameraData << endl;
 		
 		for (int j = 0; j < cornersreproj.size(); j++)
 		{
@@ -220,14 +235,17 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 	int flags = 0;
 	if (nummarkersseen == 1)
 	{
-		flatobj = SeenMarkers[0].Marker->ObjectPointsNoOffset;
-		SeenMarkers[0].LocalMarkerCorners = SeenMarkers[0].Marker->ObjectPointsNoOffset; //hack to have ReprojectSeenMarkers work wih a single marker too
+		auto& objpts = SeenMarkers[0].Marker->GetObjectPointsNoOffset();
+		flatobj = vector<Point3d>(objpts.begin(), objpts.end());
+		SeenMarkers[0].LocalMarkerCorners = flatobj; //hack to have ReprojectSeenMarkers work wih a single marker too
 		flatimg = SeenMarkers[0].CameraCornerPositions;
 		objectToMarker = SeenMarkers[0].AccumulatedTransform * SeenMarkers[0].Marker->Pose;
 		flags |= SOLVEPNP_IPPE_SQUARE;
 	}
 	else
 	{
+		flatobj.reserve(nummarkersseen*4);
+		flatimg.reserve(nummarkersseen*4);
 		for (int i = 0; i < nummarkersseen; i++)
 		{
 			for (int j = 0; j < 4; j++)
@@ -239,9 +257,17 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 		objectToMarker = Affine3d::Identity();
 		flags |= CoplanarTags ? SOLVEPNP_IPPE : SOLVEPNP_SQPNP;
 	}
-	//Mat distCoeffs = Mat::zeros(4,1, CV_64F); //FIXME
 	const Mat &distCoeffs = CameraData.DistanceCoefficients;
-	solvePnP(flatobj, flatimg, CameraData.CameraMatrix, distCoeffs, rvec, tvec, false, flags);
+	try
+	{
+		solvePnP(flatobj, flatimg, CameraData.CameraMatrix, distCoeffs, rvec, tvec, false, flags);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		return Affine3d::Identity();
+	}
+	
 	solvePnPRefineLM(flatobj, flatimg, CameraData.CameraMatrix, distCoeffs, rvec, tvec);
 	ReprojectionError = ReprojectSeenMarkers(SeenMarkers, rvec, tvec, CameraData, ReprojectedCorners);
 	

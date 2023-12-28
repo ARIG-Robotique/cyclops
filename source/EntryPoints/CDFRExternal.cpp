@@ -7,6 +7,7 @@
 #include <Visualisation/BoardGL.hpp>
 #include <Visualisation/ImguiWindow.hpp>
 #include <Misc/ManualProfiler.hpp>
+#include <Misc/math2d.hpp>
 
 #include <Communication/Transport/TCPTransport.hpp>
 #include <Communication/Transport/UDPTransport.hpp>
@@ -138,7 +139,7 @@ void CDFRExternal::ThreadEntryPoint()
 		CameraMan.StartCamera = [](VideoCaptureCameraSettings settings) -> Camera*
 		{
 			settings.StartType = CameraStartType::PLAYBACK;
-			settings.StartPath = "../sim/sim0.mp4";
+			settings.StartPath = "../sim/sim1.mp4";
 			settings.CameraMatrix.at<double>(0,2) = settings.Resolution.width/2.0; //exact center
 			settings.CameraMatrix.at<double>(1,2) = settings.Resolution.height/2.0;
 			//cout << settings.CameraMatrix << endl;
@@ -176,7 +177,7 @@ void CDFRExternal::ThreadEntryPoint()
 	{
 		bluetracker.RegisterTrackedObject(cam);
 		yellowtracker.RegisterTrackedObject(cam);
-		cout << "Registering new camera @" << cam << endl;
+		cout << "Registering new camera @" << cam << ", name " << cam->GetName() << endl;
 	};
 	CameraMan.StopCamera = [&bluetracker, &yellowtracker](Camera* cam) -> bool
 	{
@@ -258,6 +259,7 @@ void CDFRExternal::ThreadEntryPoint()
 				if (CamerasWithPosition[i])
 				{
 					cam->SetLocation(FeatData.CameraTransform, GrabTick);
+					//cout << "Camera has location" << endl;
 				}
 				FeatData.CameraTransform = cam->GetLocation();
 			}
@@ -290,16 +292,75 @@ void CDFRExternal::ThreadEntryPoint()
 		if (direct)
 		{
 			DirectImage->StartFrame();
-			if (DirectTextures.size() != Cameras.size())
+			int DisplaysPerCam = 2;
+			int NumDisplays = Cameras.size()*DisplaysPerCam;
+			if (DirectTextures.size() != NumDisplays)
 			{
-				DirectTextures.resize(Cameras.size());
+				DirectTextures.resize(NumDisplays);
 			}
-			for (int i = 0; i < Cameras.size(); i++)
+			Size WindowSize = DirectImage->GetWindowSize();
+			auto tiles = DistributeViewports(GetCaptureConfig().FrameSize, WindowSize, NumDisplays);
+			for (int camidx = 0; camidx < Cameras.size(); camidx++)
 			{
-				auto ImData = Cameras[i]->GetFrame(false);
-				DirectTextures[i].LoadFromUMat(ImData.Image);
+				if (Cameras[camidx]->errors != 0)
+				{
+					continue;
+				}
+				auto ImData = Cameras[camidx]->GetFrame(true);
+				DirectTextures[camidx*DisplaysPerCam].LoadFromUMat(ImData.Image);
+				DirectImage->AddImageToBackground(DirectTextures[camidx*DisplaysPerCam], tiles[camidx*DisplaysPerCam]);
+
+				if (DisplaysPerCam > 1)
+				{
+					UMat gray, thresholded, tcol;
+					gray = PreprocessArucoImage(ImData.Image);
+					auto& DetParams = GetArucoDetector().getDetectorParameters();
+					adaptiveThreshold(gray, thresholded, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, DetParams.adaptiveThreshWinSizeMax, DetParams.adaptiveThreshConstant);
+					cvtColor(thresholded, tcol, COLOR_GRAY2BGR);
+					DirectTextures[camidx*DisplaysPerCam+1].LoadFromUMat(tcol);
+					DirectImage->AddImageToBackground(DirectTextures[camidx*DisplaysPerCam+1], tiles[camidx*DisplaysPerCam+1]);
+				}
+
+				//draw aruco
+				auto DrawList = ImGui::GetForegroundDrawList();
+				CameraFeatureData &FeatData = FeatureDataLocal[camidx];
+				Rect SourceRemap(Point(0,0), GetCaptureConfig().FrameSize);
+				Rect DestRemap = tiles[camidx];
+				for (int arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
+				{
+					auto& corners = FeatData.ArucoCorners[arucoidx];
+					uint32_t color = IM_COL32(0,255,0,255);
+					if (FeatData.ArucoCornersReprojected[arucoidx].size() != 0)
+					{
+						//cout << arucoidx << " is reprojected" << endl;
+						corners = FeatData.ArucoCornersReprojected[arucoidx];
+						color = IM_COL32(0,0,255,255);
+					}
+					
+					Point2d textpos(0,0);
+					for (auto cornerit = corners.begin(); cornerit != corners.end(); cornerit++)
+					{
+						auto vizpos = ImageRemap<double>(SourceRemap, DestRemap, *cornerit);
+						textpos.x = max<double>(textpos.x, vizpos.x);
+						textpos.y = max<double>(textpos.y, vizpos.y);
+						if (cornerit == corners.begin())
+						{
+							Point2d size = Point2d(2,2);
+							DrawList->AddRect(vizpos-size, vizpos+size, color);
+						}
+						
+						DrawList->PathLineTo(vizpos);
+					}
+					DrawList->PathStroke(color, ImDrawFlags_Closed, 2);
+					string text = to_string(FeatData.ArucoIndices[arucoidx]);
+					DrawList->AddText(textpos, color, &*text.begin(), &*text.end());
+				}
 			}
-			
+			if(!DirectImage->EndFrame())
+			{
+				killed = true;
+				return;
+			}
 		}
 		
 		

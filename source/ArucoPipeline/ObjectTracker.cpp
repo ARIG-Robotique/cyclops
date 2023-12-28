@@ -61,7 +61,7 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 {
 	CameraData.CameraTransform = Affine3d::Identity();
 	float score = 0;
-	map<int, vector<Point2f>> ReprojectedCorners;
+	map<int, vector<Point2f>> ReprojectedCorners; //index in array, corners
 	for (auto object : objects)
 	{
 		auto *staticobj = dynamic_cast<StaticObject*>(object);
@@ -81,7 +81,7 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 		{
 			continue;
 		}
-		CameraData.CameraTransform = NewTransform;
+		CameraData.CameraTransform = NewTransform.inv();
 		score = newscore;
 	}
 
@@ -96,36 +96,9 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 {
 	const int NumCameras = CameraData.size();
 	const int NumObjects = objects.size();
-	vector<CameraFeatureData> BaseCameraData;
-	BaseCameraData.resize(NumCameras);
 	vector<map<int, vector<Point2f>>> ReprojectedCorners;
 	ReprojectedCorners.resize(NumCameras);
-	for (int i = 0; i < NumCameras; i++) //copy everything except the actual aruco data, so that each object only has the needed aruco
-	{
-		BaseCameraData[i].CameraName = CameraData[i].CameraName;
-		BaseCameraData[i].CameraMatrix = CameraData[i].CameraMatrix;
-		BaseCameraData[i].CameraTransform = CameraData[i].CameraTransform;
-		BaseCameraData[i].DistanceCoefficients = CameraData[i].DistanceCoefficients;
-	}
 	
-	vector<vector<CameraFeatureData>> DataPerObject;
-	DataPerObject.resize(NumObjects, BaseCameraData);
-	
-	for (int i = 0; i < NumCameras; i++)
-	{
-		const CameraFeatureData& data = CameraData[i];
-		for (int j = 0; j < data.ArucoIndices.size(); j++)
-		{
-			int tagidx = data.ArucoIndices[j];
-			int objectidx = ArucoMap[tagidx];
-			if (objectidx < 0 || objectidx >= NumObjects)
-			{
-				continue;
-			}
-			DataPerObject[objectidx][i].ArucoCorners.push_back(data.ArucoCorners[j]);
-			DataPerObject[objectidx][i].ArucoIndices.push_back(tagidx);
-		}
-	}
 	/*parallel_for_(Range(0, objects.size()), [&](const Range& range)
 	{*/
 		Range range(0, objects.size());
@@ -148,7 +121,7 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 			vector<ResolvedLocation> locations;
 			for (int CameraIdx = 0; CameraIdx < CameraData.size(); CameraIdx++)
 			{
-				CameraFeatureData& ThisCameraData = DataPerObject[ObjIdx][CameraIdx];
+				CameraFeatureData& ThisCameraData = CameraData[CameraIdx];
 				if (ThisCameraData.ArucoCorners.size() == 0) //Not seen
 				{
 					continue;

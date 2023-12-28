@@ -16,6 +16,39 @@
 using namespace cv;
 using namespace std;
 
+UMat PreprocessArucoImage(UMat Source)
+{
+	int numchannels = Source.channels();
+	if (numchannels == 1)
+	{
+		return Source;
+	}
+	assert(numchannels == 3);
+	if (0)
+	{
+		UMat hsvImage; vector<UMat> hsvplanes;
+		cvtColor(Source, hsvImage, COLOR_BGR2HSV);
+		split(hsvImage, hsvplanes);
+		UMat grayout;
+		if (0)
+		{
+			addWeighted(hsvplanes[1], 0.5, hsvplanes[2], 1, 0, grayout);
+		}
+		else
+		{
+			add(hsvplanes[1], hsvplanes[2], grayout, noArray());
+		}
+		return grayout;
+	}
+	else
+	{
+		UMat grayimage;
+		cvtColor(Source, grayimage, COLOR_BGR2GRAY);
+		return grayimage;
+	}
+	
+}
+
 int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData)
 {
 	Size framesize = InData.Image.size();
@@ -26,7 +59,7 @@ int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData)
 	switch (numchannels)
 	{
 	case 3:
-		cvtColor(InData.Image, GrayFrame, COLOR_BGR2GRAY);
+		GrayFrame = PreprocessArucoImage(InData.Image);
 		break;
 	case 1:
 		GrayFrame = InData.Image;

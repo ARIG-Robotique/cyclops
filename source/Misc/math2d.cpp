@@ -16,12 +16,39 @@ Size ScaleToFit(Size original, Size target)
 	return outsize;
 }
 
-cv::Rect ScaleToFit(cv::Size original, cv::Rect target)
+Rect ScaleToFit(Size original, Rect target)
 {
 	Size targetsz = ScaleToFit(original, target.size());
 	Size szdiff = target.size()-targetsz;
 	Rect roi(szdiff.width/2 + target.x,szdiff.height/2 + target.y, targetsz.width, targetsz.height);
 	return roi;
+}
+
+vector<Rect> DistributeViewports(Size ImageSize, Size ViewportSize, int NumSources)
+{
+	Size cuts(1,1);
+	while (cuts.area() < NumSources)
+	{
+		double cutratio = (ImageSize.width*ViewportSize.height*cuts.width)/(double)(ImageSize.height*ViewportSize.width*cuts.height);
+		if (cutratio > 1)
+		{
+			cuts.height++;
+		}
+		else
+		{
+			cuts.width++;
+		}
+	}
+	Size2d TileSize(ViewportSize.width/(double)cuts.width, ViewportSize.height/(double)cuts.height);
+	vector<Rect> Tiles;
+	for (int i = 0; i < NumSources; i++)
+	{
+		Size pos(i/cuts.height, i%cuts.height);
+		Size start(TileSize.width*pos.width, TileSize.height*pos.height);
+		Rect roi = Rect(Point(start), Size(TileSize));
+		Tiles.push_back(ScaleToFit(ImageSize, roi));
+	}
+	return Tiles;
 }
 
 Size2d GetCameraFOV(Size Resolution, Mat CameraMatrix)

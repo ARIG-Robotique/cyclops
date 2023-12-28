@@ -192,7 +192,7 @@ int main(int argc, char** argv )
 		
 	}
 
-	bool direct = parser.has("direct");
+	bool direct = parser.has("direct") || true;
 	bool opengl = !parser.has("nodisplay");
 	
 	if (parser.has("map"))

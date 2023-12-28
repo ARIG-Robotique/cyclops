@@ -41,7 +41,7 @@ void Texture::Bind()
 	Refresh();
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void Texture::Refresh()
@@ -49,13 +49,16 @@ void Texture::Refresh()
 	glBindTexture(GL_TEXTURE_2D, TextureID);
 
 	cv::Size NewSize(SourceImage.cols, SourceImage.rows);
+	int numchannels = SourceImage.channels();
+	GLenum format = numchannels == 3 ? GL_BGR : GL_R;
+	GLint internal_format = numchannels == 3 ? GL_RGB : GL_R;
 	if (NewSize != LastSize)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SourceImage.cols, SourceImage.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, SourceImage.data);
+		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, SourceImage.cols, SourceImage.rows, 0, format, GL_UNSIGNED_BYTE, SourceImage.data);
 	}
 	else
 	{
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SourceImage.cols, SourceImage.rows, GL_BGR, GL_UNSIGNED_BYTE, SourceImage.data);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SourceImage.cols, SourceImage.rows, format, GL_UNSIGNED_BYTE, SourceImage.data);
 	}
 	LastSize = NewSize;
 }

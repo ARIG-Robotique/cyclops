@@ -3,6 +3,7 @@
 #include <iostream> // for standard I/O
 #include <string>   // for strings
 #include <sstream>  // string to number conversion
+#include <array>
 #include <opencv2/core.hpp>		// Basic OpenCV structures (Mat, Scalar)
 #include <opencv2/video/tracking.hpp>
 #include <ArucoPipeline/ObjectIdentity.hpp>
@@ -15,15 +16,18 @@ struct CameraFeatureData;
 
 struct ArucoMarker
 {
+public:
 	float sideLength; //Length of a side of the tags. Tag should be square
 	int number; //Number of the tag on it
 	cv::Affine3d Pose; //Location relative to it's parent
 
-	std::vector<cv::Point3d> ObjectPointsNoOffset;
+private:
+	std::array<cv::Point3d, 4> ObjectPointsNoOffset;
 
-	static std::vector<cv::Point3d> GetObjectPointsNoOffset(float SideLength);
+public:
+	static std::array<cv::Point3d, 4> GetObjectPointsNoOffset(float SideLength);
 
-	std::vector<cv::Point3d>& GetObjectPointsNoOffset();
+	const std::array<cv::Point3d, 4>& GetObjectPointsNoOffset();
 
 	ArucoMarker()
 		:sideLength(0.05),
