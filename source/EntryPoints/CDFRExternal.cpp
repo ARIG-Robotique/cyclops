@@ -8,6 +8,7 @@
 #include <Visualisation/ImguiWindow.hpp>
 #include <Misc/ManualProfiler.hpp>
 #include <Misc/math2d.hpp>
+#include <Cameras/Calibfile.hpp>
 
 #include <Communication/Transport/TCPTransport.hpp>
 #include <Communication/Transport/UDPTransport.hpp>
@@ -140,10 +141,7 @@ void CDFRExternal::ThreadEntryPoint()
 		{
 			settings.StartType = CameraStartType::PLAYBACK;
 			settings.StartPath = "../sim/sim1.mp4";
-			settings.CameraMatrix.at<double>(0,2) = settings.Resolution.width/2.0; //exact center
-			settings.CameraMatrix.at<double>(1,2) = settings.Resolution.height/2.0;
-			//cout << settings.CameraMatrix << endl;
-			settings.distanceCoeffs *= 0.0; //no distortion
+			readCameraParameters("../sim/cal", settings.CameraMatrix, settings.distanceCoeffs, settings.Resolution);
 
 			Camera* cam = new VideoCaptureCamera(make_shared<VideoCaptureCameraSettings>(settings));
 			if(!cam->StartFeed())
