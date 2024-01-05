@@ -290,7 +290,7 @@ void CDFRExternal::ThreadEntryPoint()
 		if (direct)
 		{
 			DirectImage->StartFrame();
-			int DisplaysPerCam = 2;
+			int DisplaysPerCam = 1;
 			int NumDisplays = Cameras.size()*DisplaysPerCam;
 			if (DirectTextures.size() != NumDisplays)
 			{

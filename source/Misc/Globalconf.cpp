@@ -231,9 +231,12 @@ const aruco::ArucoDetector& GetArucoDetector(){
 		auto dict = aruco::getPredefinedDictionary(aruco::DICT_4X4_100);
 		auto params = aruco::DetectorParameters();
 		params.cornerRefinementMethod = GetArucoReduction() == GetFrameSize() ? aruco::CORNER_REFINE_CONTOUR : aruco::CORNER_REFINE_NONE;
-		params.useAruco3Detection = true;
+		params.useAruco3Detection = 0;
 		params.adaptiveThreshConstant = 20;
-		params.minMarkerPerimeterRate = 0.001;
+		double mulfac = 1.0/20.0;
+		params.minMarkerPerimeterRate *= mulfac;
+		params.minCornerDistanceRate *= mulfac;
+		params.minMarkerDistanceRate *= mulfac;
 		auto refparams = aruco::RefineParameters();
 		ArucoDet = aruco::ArucoDetector(dict, params, refparams);
 	}
