@@ -12,7 +12,6 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/calib3d.hpp>
-#include <opencv2/sfm.hpp>
 
 #include <math3d.hpp>
 #include <Misc/metadata.hpp>

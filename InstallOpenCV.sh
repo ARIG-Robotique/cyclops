@@ -29,10 +29,12 @@ cd build
 # CUDA_ARCH_BIN : 53 pour la jetson Nano, 50,52,61,75,86 pour les GPU
 # run cmake
 
+#pour installer les extra opencv
+# -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
+
 cmake -G Ninja \
 -D CMAKE_BUILD_TYPE=Release \
 -D CMAKE_INSTALL_PREFIX=/usr \
--D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
 -D WITH_OPENCL=ON \
 -D WITH_OPENMP=ON \
 -D WITH_OPENGL=OFF \
@@ -56,7 +58,7 @@ cmake -G Ninja \
 -D WITH_GSTREAMER=ON \
 -D WITH_1394=OFF \
 \
--D HIGHGUI_ENABLE_PLUGINS=ON \
+-D HIGHGUI_ENABLE_PLUGINS=OFF \
 -D WITH_QT=OFF \
 -D WITH_GTK=ON \
 -D WITH_GTK_2_X=OFF \
@@ -70,7 +72,7 @@ cmake -G Ninja \
 -D INSTALL_C_EXAMPLES=OFF \
 -D INSTALL_PYTHON_EXAMPLES=OFF \
 \
--D ENABLE_PROFILING=ON \
+-D ENABLE_PROFILING=OFF \
 -D OPENCV_GENERATE_PKGCONFIG=ON \
 -D BUILD_TESTS=OFF \
 -D BUILD_PERF_TESTS=OFF \
@@ -78,7 +80,6 @@ cmake -G Ninja \
 \
 -D BUILD_wechat_qrcode=OFF ../
 
-sudo -v
 ninja
 
 sudo rm -r /usr/include/opencv4/opencv2 || echo "No previous installation of opencv, skipping..."

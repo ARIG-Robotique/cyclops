@@ -2,7 +2,6 @@ echo "Déverouillage admin, ca sert pour installer"
 export STARTDIR=`pwd`
 ./InstallRequirement.sh
 cd ..
-sudo -v 
 sudo usermod -a -G dialout $USER
 #git clone https://gitlab.kitware.com/vtk/vtk.git || echo "Failed to clone vtk : already exists"
 #cd vtk/
@@ -16,20 +15,20 @@ sudo usermod -a -G dialout $USER
 #cd ../..
 #sudo -v
 
+OPENCV_VERSION=4.9.0
 
-git clone https://github.com/opencv/opencv_contrib.git || echo "Failed to clone opencv_contrib : already exists"
-cd opencv_contrib/
-git reset --hard
-git fetch
-git checkout 4.8.0
-sudo -v
-cd ..
+#git clone https://github.com/opencv/opencv_contrib.git || echo "Failed to clone opencv_contrib : already exists"
+#cd opencv_contrib/
+#git reset --hard
+#git fetch
+#git checkout $OPENCV_VERSION
+#sudo -v
+#cd ..
 git clone https://github.com/opencv/opencv.git || echo "Failed to clone opencv : already exists"
 cd opencv/
 git reset --hard
 git fetch
-git checkout 4.8.0
-sudo -v
+git checkout $OPENCV_VERSION
 cd ..
 cd $STARTDIR
 time ./InstallOpenCV.sh

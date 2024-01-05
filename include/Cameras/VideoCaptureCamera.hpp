@@ -5,7 +5,6 @@
 #include <memory>
 #include <opencv2/core.hpp>		// Basic OpenCV structures (Mat, Scalar)
 #include <opencv2/highgui.hpp>  // OpenCV window I/O
-#include <opencv2/aruco.hpp>
 #include <opencv2/core/affine.hpp>
 
 

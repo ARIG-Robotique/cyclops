@@ -1,8 +1,8 @@
-# Sauron
-ou comment dire que c'est le code pour la machine vision de la CDFR
+# Cyclops
+Ca voit tout, mais avec un seul oeuil
 
 # Installation
-Utiliser Ubuntu (c'est ce que j'utilise, ca matcherai probablement aussi avec d'autre distros)
+Utiliser Debian ou une de ses fork
 
 Si tu veux installer OpenCV avec CUDA, voici le lien pour installer Cuda
 
@@ -21,9 +21,6 @@ Je recommande VisualStudioCode
 
 Avec l'extension CMake, faire un Clean Reconfigure All Projects à chaque fois que un .h et/ou un .cpp est ajouté.
 
-Le code est fait pour des C920, mais ca peut s'adapter.
-Sur mon PC v4l2 est con, c'est à dire qu'il donne plus les noms des webcams, du coup dans Camera.cpp le autodetect est fait pour marcher avec des caméra dans le nom "Video Capture 4"...
-
 Ci dessous je décris tous les modules de mon code.
 
 ## assets
@@ -40,14 +37,26 @@ UV, Vertex colors, normals, triangulate faces
 
 ## calibration
 Une fois la calibration faite, si t'en es content, déplacer le fichier de calibration de /build vers ce fichier. Il aura le nom de la caméra
-Pour effectuer la calibration, lancer l'executable depuis /build `./sauron -c`. Espace enregistre une image dans build/TempCalib/, Entrée calcule la calibration à partir des images dans build/TempCalib/.
-La calibration est rendue indépendante de la résolution mais toutes les images dans le fichier doivent avoir la même résolution. Il faut prendre en photo l'échiquier en entier
+Pour effectuer la calibration, lancer l'executable depuis /build `./cyclops -c`. 
+Les paramètres de la calibration sont dans config.cfg. La calibration essaie de garder un maximum d'images avec le minimum d'erreur de reprojection et peut prends un poil de temps à s'executer
+
+## sim
+Dossier où stocker les simulations software in the loop
+
+## thirdparty
+contient les submodules tels que imgui ou nlohmannjson
+
+## include
+les includes
+
+## source
+toutes les sources 
 
 # Lancer le code
 
-L'exécutable se trouvera dans le fichier Build
+L'exécutable se trouvera dans le fichier build
 
-`./Robotronikaruco -h` pour avoir l'aide
+`./cyclops -h` pour avoir l'aide
 
 # Jetson
 
