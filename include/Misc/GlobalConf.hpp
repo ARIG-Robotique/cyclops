@@ -28,13 +28,6 @@ RunType GetRunType();
 
 const cv::aruco::ArucoDetector& GetArucoDetector();
 
-void SetNoScreen(bool value = true);
-
-cv::Size GetScreenResolution();
-
-//Returns the physical size of the screen in mm
-cv::Size2d GetScreenSize();
-
 cv::Size GetFrameSize();
 
 int GetCaptureFramerate();

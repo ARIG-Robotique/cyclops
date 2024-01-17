@@ -42,30 +42,3 @@ Size findSplit(Size screensize, Size targetAspect, int numscreen)
 	}
 	return splits;
 }
-
-UMat ConcatCameras(vector<ImageSource*> Cameras, int NumCams)
-{
-	Size screensize = GetScreenResolution();
-	UMat concatenated(screensize, CV_8UC3, Scalar(0,0,255));
-	Size splits = findSplit(screensize, GetFrameSize(), Cameras.size());
-	int &rows = splits.height, &columns = splits.width;
-	int winWidth = screensize.width/columns, winHeight = screensize.height/rows;
-	/*parallel_for_(Range(0, Cameras.size()), [&](const Range& range)
-	{*/
-	Range range(0, Cameras.size());
-		for (int i = range.start; i < range.end; i++)
-		{
-			Rect roi(winWidth * (i%columns), winHeight * (i / columns), winWidth, winHeight);
-			/*UMat frame; Cameras[i]->GetFrame(BufferIndex, frame);
-			if (frame.empty())
-			{
-				continue;
-			}*/
-			//Cameras[i]->GetOutputFrame(concatenated, roi);
-			//Size offset = (Size(winWidth, winHeight) - region.size())/2;
-			//region.copyTo(concatenated(Rect(roi.x+offset.width, roi.y+offset.height, region.cols, region.rows)));
-			//region.copyTo(concatenated(roi));
-		}
-	/*});*/
-	return concatenated;
-}

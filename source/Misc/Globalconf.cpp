@@ -5,7 +5,6 @@
 
 #include <iostream>
 #include <libconfig.h++>
-#include <XScreenSize.hpp>
 
 using namespace std;
 using namespace cv;
@@ -23,10 +22,6 @@ Config cfg;
 CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, Size(1920,1080), 1.f, 30, 1, ""};
 vector<InternalCameraConfig> CamerasInternal;
 CalibrationConfig CamCalConf = {40, Size(6,4), 0.5, 1.5, Size2d(4.96, 3.72)};
-
-bool HasScreenData = false;
-Size screenresolution(-1,-1);
-Size2d screensize(-1,-1);
 
 template<class T>
 Setting& EnsureExistCfg(Setting& Location, const char *FieldName, Setting::Type SettingType, T DefaultValue)
@@ -241,59 +236,6 @@ const aruco::ArucoDetector& GetArucoDetector(){
 		ArucoDet = aruco::ArucoDetector(dict, params, refparams);
 	}
 	return ArucoDet;
-}
-
-void SetNoScreen(bool value)
-{
-	HasScreenData = value;
-	if (value)
-	{
-		screenresolution = Size(0,0);
-		screensize = Size2d(0,0);
-	}
-}
-
-void GetScreenData()
-{
-	if (HasScreenData)
-	{
-		return;
-	}
-	HasScreenData = true;
-	#ifdef WITH_X11
-	screenresolution = Size(0,0);
-	screensize = Size2d(0,0);
-	XScreenSize::Getter sizeGetter;
-	auto outputs  = sizeGetter.getOutputs();
-	for (int i = 0; i < outputs.size(); i++)
-	{
-		auto selected = outputs[i];
-		if (selected.connection != "connected")
-		{
-			continue;
-		}
-		screenresolution.width = selected.width;
-		screenresolution.height = selected.height;
-		screensize.width = selected.mmWidth;
-		screensize.height = selected.mmHeight;
-	}
-	
-	#else
-	screenresolution = Size(1920,1080);
-	screensize = Size2d(-1,-1);
-	#endif
-}
-
-Size GetScreenResolution()
-{
-	GetScreenData();
-	return screenresolution;
-}
-
-Size2d GetScreenSize()
-{
-	GetScreenData();
-	return screensize;
 }
 
 Size GetFrameSize()

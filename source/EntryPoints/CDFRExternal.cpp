@@ -79,7 +79,18 @@ void CDFRExternal::ThreadEntryPoint()
 {
 	ExternalProfType prof("External Global Profile");
 	ExternalProfType ParallelProfiler("Parallel Cameras Detail");
-	CameraManager CameraMan(GetCaptureMethod(), GetCaptureConfig().filter, false);
+	unique_ptr<CameraManager> CameraMan;
+	
+	switch (GetRunType())
+	{
+		case RunType::Normal:
+			CameraMan = make_unique<CameraManagerV4L2>(GetCaptureMethod(), GetCaptureConfig().filter, false);
+			break;
+		case RunType::Simulate:
+			CameraMan = make_unique<CameraManagerSimulation>("../sim/scenario0.json");
+			break;
+	}
+	
 
 	auto& Detector = GetArucoDetector();
 
@@ -135,49 +146,26 @@ void CDFRExternal::ThreadEntryPoint()
 	
 	
 	//track and untrack cameras dynamically
-	if (GetRunType() == RunType::Simulate)
+	CameraMan->StartCamera = [](VideoCaptureCameraSettings settings) -> Camera*
 	{
-		CameraMan.StartCamera = [](VideoCaptureCameraSettings settings) -> Camera*
+		Camera* cam = new VideoCaptureCamera(make_shared<VideoCaptureCameraSettings>(settings));
+		if(!cam->StartFeed())
 		{
-			settings.StartType = CameraStartType::PLAYBACK;
-			settings.StartPath = "../sim/sim1.mp4";
-			readCameraParameters("../sim/cal", settings.CameraMatrix, settings.distanceCoeffs, settings.Resolution);
-
-			Camera* cam = new VideoCaptureCamera(make_shared<VideoCaptureCameraSettings>(settings));
-			if(!cam->StartFeed())
-			{
-				cerr << "Failed to start feed @" << settings.DeviceInfo.device_description << endl;
-				delete cam;
-				return nullptr;
-			}
-			
-			return cam;
-		};
-	}
-	else
-	{
-		CameraMan.StartCamera = [](VideoCaptureCameraSettings settings) -> Camera*
-		{
-			Camera* cam = new VideoCaptureCamera(make_shared<VideoCaptureCameraSettings>(settings));
-			if(!cam->StartFeed())
-			{
-				cerr << "Failed to start feed @" << settings.DeviceInfo.device_description << endl;
-				delete cam;
-				return nullptr;
-			}
-			
-			return cam;
-		};
-	}
+			cerr << "Failed to start feed @" << settings.DeviceInfo.device_description << endl;
+			delete cam;
+			return nullptr;
+		}
+		
+		return cam;
+	};
 	
-	
-	CameraMan.RegisterCamera = [&bluetracker, &yellowtracker](Camera* cam) -> void
+	CameraMan->RegisterCamera = [&bluetracker, &yellowtracker](Camera* cam) -> void
 	{
 		bluetracker.RegisterTrackedObject(cam);
 		yellowtracker.RegisterTrackedObject(cam);
 		cout << "Registering new camera @" << cam << ", name " << cam->GetName() << endl;
 	};
-	CameraMan.StopCamera = [&bluetracker, &yellowtracker](Camera* cam) -> bool
+	CameraMan->StopCamera = [&bluetracker, &yellowtracker](Camera* cam) -> bool
 	{
 		bluetracker.UnregisterTrackedObject(cam);
 		yellowtracker.UnregisterTrackedObject(cam);
@@ -186,7 +174,7 @@ void CDFRExternal::ThreadEntryPoint()
 		return true;
 	};
 
-	CameraMan.StartScanThread();
+	CameraMan->StartScanThread();
 
 	int lastmarker = 0;
 	CDFRTeam LastTeam = CDFRTeam::Unknown;
@@ -199,7 +187,7 @@ void CDFRExternal::ThreadEntryPoint()
 		}
 		double deltaTime = fps.GetDeltaTime();
 		prof.EnterSection("CameraManager Tick");
-		vector<Camera*> Cameras = CameraMan.Tick();
+		vector<Camera*> Cameras = CameraMan->Tick();
 		CDFRTeam Team = GetTeamFromCameraPosition(Cameras);
 		if (Team != LastTeam)
 		{

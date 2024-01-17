@@ -2,7 +2,7 @@ echo "Déverouillage admin, ca sert pour installer"
 export STARTDIR=`pwd`
 ./InstallRequirement.sh
 cd ..
-sudo usermod -a -G dialout $USER
+#sudo usermod -a -G dialout $USER
 #git clone https://gitlab.kitware.com/vtk/vtk.git || echo "Failed to clone vtk : already exists"
 #cd vtk/
 #git checkout v9.2.2

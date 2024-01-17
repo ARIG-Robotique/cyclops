@@ -73,7 +73,8 @@ SolvableView GetUnseenSolvable(const CameraFeatureData& ImageIDs, const TrackedO
 void MappingSolve(void)
 {
 	Mat CameraMatrix, DistortionCoefficients;
-	if (!readCameraParameters(MappingFolderName + "calibration", CameraMatrix, DistortionCoefficients, Size(0,0)))
+	Size CameraResolution;
+	if (!readCameraParameters(MappingFolderName + "calibration", CameraMatrix, DistortionCoefficients, CameraResolution))
 	{
 		cerr << "Failed to read calibration, could not init mapping" <<endl;
 		return;

@@ -13,7 +13,7 @@
 
 #include <GlobalConf.hpp>
 #include <Cameras/VideoCaptureCamera.hpp>
-#include <Cameras/CameraManager.hpp>
+#include <Cameras/CameraManagerV4L2.hpp>
 #include <ArucoPipeline/ObjectTracker.hpp>
 #include <Calibrate.hpp>
 #include <Visualisation/BoardGL.hpp>
@@ -30,10 +30,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h> //env vars
-
-#ifdef WITH_X11
-#include <X11/Xlib.h>
-#endif
 
 using namespace std;
 using namespace cv;
@@ -135,19 +131,6 @@ int main(int argc, char** argv )
 	
 	ConfigureOpenCL(true);
 
-	#ifdef WITH_X11
-	if (nodisplay)
-	{
-		SetNoScreen();
-	}
-	else
-	{
-		XInitThreads();
-		cout << "Detected screen resolution : " << GetScreenResolution() << endl;
-		cout << "Detected screen size : " << GetScreenSize() << endl;
-	}
-	#endif
-
 	
 	if (parser.has("marker"))
 	{
@@ -165,7 +148,7 @@ int main(int argc, char** argv )
 		exit(EXIT_SUCCESS);
 	}
 	
-	vector<VideoCaptureCameraSettings> CamSett = CameraManager::autoDetectCameras(GetCaptureMethod(), GetCaptureConfig().filter, false);
+	vector<VideoCaptureCameraSettings> CamSett = CameraManagerV4L2::autoDetectCameras(GetCaptureMethod(), GetCaptureConfig().filter, false);
 
 	if (CamSett.size() == 0)
 	{

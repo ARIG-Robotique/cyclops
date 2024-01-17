@@ -6,7 +6,7 @@
 using namespace std;
 using namespace cv;
 
-static set<string> missingcalibs;
+static set<filesystem::path> missingcalibs;
 
 string GetCalibrationFileName(string description)
 {
@@ -38,47 +38,39 @@ string GetCalibrationFileName(string description)
 	return outstring;
 }
 
-bool readCameraParameters(string description, Mat& camMatrix, Mat& distCoeffs, Size Resolution)
+void CleanCalibrationPath(std::filesystem::path &path)
 {
-	string filename = GetCalibrationFileName(description);
-	auto abspath = filesystem::absolute(filename+".yaml");
-	if (!filesystem::exists(abspath))
+	path = filesystem::weakly_canonical(path);
+	path.replace_extension(".yaml");
+}
+
+bool readCameraParameters(std::filesystem::path path, cv::Mat &camMatrix, cv::Mat &distCoeffs, cv::Size &Resolution)
+{
+	CleanCalibrationPath(path);
+	if (!filesystem::exists(path))
 	{
-		if (missingcalibs.find(filename) == missingcalibs.end())
+		if (missingcalibs.find(path) == missingcalibs.end())
 		{
-			missingcalibs.emplace(filename);
-			cerr << "Failed to read camera parameters for " << filename << ".yaml" << endl;
+			missingcalibs.emplace(path);
+			cerr << "Failed to read camera parameters for " << path << ".yaml" << endl;
 		}
 		
 		return false;
 	}
 	
-	FileStorage fs(filename + ".yaml", FileStorage::READ);
+	FileStorage fs(path, FileStorage::READ);
 	if (!fs.isOpened())
 	{
 		//
 		return false;
 	}
-	
-	Mat1i resmat; Size CalibRes;
+	Mat resmat;
 	fs["resolution"] >> resmat;
-	CalibRes.width = resmat.at<int>(0,0);
-	CalibRes.height = resmat.at<int>(0,1);
+	Resolution.width = resmat.at<int>(0,0);
+	Resolution.height = resmat.at<int>(0,1);
 	Mat calibmatrix;
-	fs["camera_matrix"] >> calibmatrix;
+	fs["camera_matrix"] >> camMatrix;
 	fs["distortion_coefficients"] >> distCoeffs;
-	if (Resolution.area() != 0 && Resolution != CalibRes)
-	{
-		Mat scalingMatrix = Mat::zeros(3,3, CV_64F);
-		scalingMatrix.at<double>(0,0) = (double)Resolution.width / CalibRes.width;
-		scalingMatrix.at<double>(1,1) = (double)Resolution.height / CalibRes.height;
-		scalingMatrix.at<double>(2,2) = 1;
-		camMatrix = scalingMatrix * calibmatrix;
-	}
-	else
-	{
-		camMatrix = calibmatrix;
-	}
 	
 	
 	
@@ -88,10 +80,10 @@ bool readCameraParameters(string description, Mat& camMatrix, Mat& distCoeffs, S
 	return (camMatrix.size() == Size(3,3));
 }
 
-void writeCameraParameters(string description, Mat camMatrix, Mat distCoeffs, Size Resolution)
+void writeCameraParameters(std::filesystem::path path, Mat camMatrix, Mat distCoeffs, Size Resolution)
 {
-	string filename = GetCalibrationFileName(description);
-	FileStorage fs(filename + ".yaml", FileStorage::WRITE);
+	CleanCalibrationPath(path);
+	FileStorage fs(path, FileStorage::WRITE);
 	if (!fs.isOpened())
 	{
 		return;
@@ -102,4 +94,17 @@ void writeCameraParameters(string description, Mat camMatrix, Mat distCoeffs, Si
 	fs.write("resolution", resmat);
 	fs.write("camera_matrix", camMatrix);
 	fs.write("distortion_coefficients", distCoeffs);
+}
+
+bool readCameraParameters(string description, Mat &camMatrix, Mat &distCoeffs, Size &Resolution)
+{
+	string filename = GetCalibrationFileName(description);
+	auto abspath = filesystem::absolute(filename);
+	return readCameraParameters(abspath, camMatrix, distCoeffs, Resolution);
+}
+
+void writeCameraParameters(string description, Mat camMatrix, Mat distCoeffs, Size Resolution)
+{
+	string filename = GetCalibrationFileName(description);
+	return writeCameraParameters(filesystem::absolute(filename), camMatrix, distCoeffs, Resolution);
 }

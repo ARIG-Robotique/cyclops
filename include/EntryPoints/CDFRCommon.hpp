@@ -10,7 +10,8 @@
 #include <GlobalConf.hpp>
 
 #include <Cameras/VideoCaptureCamera.hpp>
-#include <Cameras/CameraManager.hpp>
+#include <Cameras/CameraManagerV4L2.hpp>
+#include <Cameras/CameraManagerSimulation.hpp>
 #include <ArucoPipeline/TrackerCube.hpp>
 #include <ArucoPipeline/TopTracker.hpp>
 #include <ArucoPipeline/StaticObject.hpp>

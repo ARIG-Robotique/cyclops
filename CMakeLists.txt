@@ -10,12 +10,6 @@ project(${PROJECT_NAME})
 # via the command line or GUI
 find_package(OpenCV 4.7 REQUIRED)
 
-#Window manager, used to get the screen resolution
-find_package(X11)
-if(${X11_FOUND})
-	add_compile_definitions(WITH_X11)
-endif(${X11_FOUND})
-
 #find_package(CUDAToolkit)
 #if(CUDAToolkit_FOUND)
 #	add_compile_definitions(WITH_CUDA)
@@ -89,8 +83,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
 target_link_libraries(${PROJECT_NAME} 
 	${OpenCV_LIBS} 
 	stdc++fs
-	${X11_LIBRARIES}
-	Xrandr
 	config++
 	${OPENGL_LIBRARIES} 
 	glfw
