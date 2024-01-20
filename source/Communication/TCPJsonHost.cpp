@@ -42,7 +42,7 @@ TCPJsonHost::TCPJsonHost(int InPort)
 	:Port(InPort)
 {
 	auto interfaces = GenericTransport::GetInterfaces();
-	for (int i=0; i<interfaces.size(); i++)
+	for (size_t i=0; i<interfaces.size(); i++)
 	{
 		auto& ni = interfaces[i];
 		

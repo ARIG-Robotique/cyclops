@@ -16,9 +16,9 @@ using namespace cv;
 using namespace std;
 
 
-array<Point3d, 4> ArucoMarker::GetObjectPointsNoOffset(float SideLength)
+array<Point3d, 4> ArucoMarker::GetObjectPointsNoOffset(double SideLength)
 {
-	float sql2 = SideLength*0.5;
+	double sql2 = SideLength*0.5;
 	return {
 		Point3d(-sql2, sql2, 0.0),
 		Point3d(sql2, sql2, 0.0),
@@ -108,7 +108,7 @@ Affine3d TrackedObject::GetLocation()
 
 bool TrackedObject::FindTag(int MarkerID, ArucoMarker& Marker, Affine3d& TransformToMarker)
 {
-	for (int i = 0; i < markers.size(); i++)
+	for (size_t i = 0; i < markers.size(); i++)
 	{
 		if (markers[i].number == MarkerID)
 		{
@@ -117,7 +117,7 @@ bool TrackedObject::FindTag(int MarkerID, ArucoMarker& Marker, Affine3d& Transfo
 			return true;
 		}
 	}
-	for (int i = 0; i < childs.size(); i++)
+	for (size_t i = 0; i < childs.size(); i++)
 	{
 		if(childs[i]->FindTag(MarkerID, Marker, TransformToMarker))
 		{
@@ -130,7 +130,7 @@ bool TrackedObject::FindTag(int MarkerID, ArucoMarker& Marker, Affine3d& Transfo
 
 void TrackedObject::GetObjectPoints(vector<vector<Point3d>>& MarkerCorners, vector<int>& MarkerIDs, Affine3d rootTransform, vector<int> filter)
 {
-	for (int i = 0; i < markers.size(); i++)
+	for (size_t i = 0; i < markers.size(); i++)
 	{
 		ArucoMarker& marker = markers[i];
 		//If filter is not empty and the number wasn't found in he filter
@@ -141,13 +141,13 @@ void TrackedObject::GetObjectPoints(vector<vector<Point3d>>& MarkerCorners, vect
 		auto& cornerslocal = marker.GetObjectPointsNoOffset();
 		MarkerIDs.push_back(marker.number);
 		vector<Point3d> cornersworld;
-		for (int i = 0; i < cornerslocal.size(); i++)
+		for (size_t i = 0; i < cornerslocal.size(); i++)
 		{
 			cornersworld.push_back(rootTransform * (marker.Pose * cornerslocal[i]));
 		}
 		MarkerCorners.push_back(cornersworld);
 	}
-	for (int i = 0; i < childs.size(); i++)
+	for (size_t i = 0; i < childs.size(); i++)
 	{
 		TrackedObject* child = childs[i];
 		child->GetObjectPoints(MarkerCorners, MarkerIDs, rootTransform * child->Location, filter);
@@ -158,9 +158,9 @@ float TrackedObject::GetSeenMarkers(const CameraFeatureData& CameraData, vector<
 {
 	float surface = 0;
 	MarkersSeen.reserve(markers.size());
-	for (int i = 0; i < markers.size(); i++)
+	for (size_t i = 0; i < markers.size(); i++)
 	{
-		for (int j = 0; j < CameraData.ArucoIndices.size(); j++)
+		for (size_t j = 0; j < CameraData.ArucoIndices.size(); j++)
 		{
 			if (markers[i].number == CameraData.ArucoIndices[j])
 			{
@@ -173,7 +173,7 @@ float TrackedObject::GetSeenMarkers(const CameraFeatureData& CameraData, vector<
 				auto &cornersLocal = markers[i].GetObjectPointsNoOffset();
 				Affine3d TransformToObject = AccumulatedTransform * markers[i].Pose;
 				seen.LocalMarkerCorners.reserve(cornersLocal.size());
-				for (int k = 0; k < cornersLocal.size(); k++)
+				for (size_t k = 0; k < cornersLocal.size(); k++)
 				{
 					seen.LocalMarkerCorners.push_back(TransformToObject * cornersLocal[k]);
 				}
@@ -184,7 +184,7 @@ float TrackedObject::GetSeenMarkers(const CameraFeatureData& CameraData, vector<
 		}
 		
 	}
-	for (int i = 0; i < childs.size(); i++)
+	for (size_t i = 0; i < childs.size(); i++)
 	{
 		TrackedObject* child = childs[i];
 		surface += child->GetSeenMarkers(CameraData, MarkersSeen, AccumulatedTransform * child->Location);
@@ -196,14 +196,14 @@ float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal
 	const CameraFeatureData &CameraData, map<int, vector<Point2f>> &ReprojectedCorners)
 {
 	float ReprojectionError = 0;
-	for (int i = 0; i < MarkersSeen.size(); i++)
+	for (size_t i = 0; i < MarkersSeen.size(); i++)
 	{
 		vector<Point2d> cornersreproj;
 		projectPoints(MarkersSeen[i].LocalMarkerCorners, rvec, tvec, CameraData.CameraMatrix, CameraData.DistanceCoefficients, cornersreproj);
 		ReprojectedCorners[MarkersSeen[i].IndexInCameraData] = vector<Point2f>(cornersreproj.begin(), cornersreproj.end());
 		//cout << "reprojecting " << MarkersSeen[i].IndexInCameraData << endl;
 		
-		for (int j = 0; j < cornersreproj.size(); j++)
+		for (size_t j = 0; j < cornersreproj.size(); j++)
 		{
 			Point2f diff = MarkersSeen[i].CameraCornerPositions[j] - Point2f(cornersreproj[j]);
 			ReprojectionError += sqrt(diff.ddot(diff));
@@ -320,7 +320,7 @@ void TrackedObject::Inspect()
 	while (board.Tick(ObjectData::ToGLObjects(datas)));
 }
 
-Affine3d GetTagTransform(float SideLength, std::vector<Point2f> Corners, Mat& CameraMatrix, Mat& DistanceCoefficients)
+Affine3d GetTagTransform(double SideLength, std::vector<Point2f> Corners, Mat& CameraMatrix, Mat& DistanceCoefficients)
 {
 	Mat rvec, tvec;
 	//Mat distCoeffs = Mat::zeros(4,1, CV_64F);
@@ -331,7 +331,7 @@ Affine3d GetTagTransform(float SideLength, std::vector<Point2f> Corners, Mat& Ca
 	return Affine3d(rotationMatrix, tvec);
 }
 
-Affine3d GetTagTransform(float SideLength, std::vector<Point2f> Corners, Camera* Cam)
+Affine3d GetTagTransform(double SideLength, std::vector<Point2f> Corners, Camera* Cam)
 {
 	Mat rvec, tvec;
 	Mat CamMatrix, distCoeffs;

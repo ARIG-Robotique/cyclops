@@ -45,10 +45,10 @@ const string MappingFolderName = "SFM/";
 SolvableView GetUnseenSolvable(const CameraFeatureData& ImageIDs, const TrackedObject* SolvedTags)
 {
 	SolvableView view;
-	for (int i = 0; i < ImageIDs.ArucoIndices.size(); i++)
+	for (size_t i = 0; i < ImageIDs.ArucoIndices.size(); i++)
 	{
 		bool AlreadySeen = false;
-		for (int j = 0; j < SolvedTags->markers.size(); j++)
+		for (size_t j = 0; j < SolvedTags->markers.size(); j++)
 		{
 			if (SolvedTags->markers[j].number == ImageIDs.ArucoIndices[i])
 			{
@@ -102,7 +102,7 @@ void MappingSolve(void)
 			imagenames.push_back(i.path().filename());
 		}
 	}
-	int numim = images.size();
+	size_t numim = images.size();
 	cout << "Found " << numim << " images for SFM" <<endl;
 	if (numim == 0)
 	{
@@ -158,7 +158,7 @@ void MappingSolve(void)
 		vector<ObservedTag> Observations;
 		cout << "Hierarchy level " << i <<endl;
 		//detect solvable cameras/images
-		for (int j = 0; j < numim; j++)
+		for (size_t j = 0; j < numim; j++)
 		{
 			CameraFeatureData& image = ImageData[j];
 			SolvableView view = GetUnseenSolvable(image, &SolvedTagsObject);
@@ -178,12 +178,12 @@ void MappingSolve(void)
 				camdata.location = CameraPos;
 				vizdata.push_back(camdata);
 			}
-			for (int k = 0; k < view.Unseen.size(); k++)
+			for (size_t k = 0; k < view.Unseen.size(); k++)
 			{
 				int tagarrayindex = view.Unseen[k];
 				int tagid = image.ArucoIndices[tagarrayindex];
 				int obsindex = -1;
-				for (int l = 0; l < Observations.size(); l++)
+				for (size_t l = 0; l < Observations.size(); l++)
 				{
 					if (Observations[l].ID == tagid)
 					{
@@ -211,7 +211,7 @@ void MappingSolve(void)
 			break;
 		}
 		//solve tags
-		for (int j = 0; j < Observations.size(); j++)
+		for (size_t j = 0; j < Observations.size(); j++)
 		{
 			ObservedTag &observed = Observations[j];
 			int numviews = observed.CameraPositions.size();
@@ -270,7 +270,7 @@ void MappingSolve(void)
 					{
 						lines.resize(corners.size());
 						Mat invmat = CameraMatrix.inv();
-						for (int i = 0; i < corners.size(); i++)
+						for (size_t i = 0; i < corners.size(); i++)
 						{
 							Point3d pt(corners[i].x, corners[i].y, 1.0);
 							Mat pt3d = CameraPos.rotation() * (invmat * Vec3d(pt));
@@ -287,7 +287,7 @@ void MappingSolve(void)
 				for (int k = 0; k < numviews; k++)
 				{
 					sorted[k].CameraPos = observed.CameraPositions[k];
-					assert(observed.Observations[k].size() == numpt);
+					assert(numpt == (int)observed.Observations[k].size());
 					sorted[k].corners = vector<Point2f>(observed.Observations[k]);
 					sorted[k].ComputeScore(observed.CameraScores[k]);
 					sorted[k].ComputeLines(CameraMatrix);
@@ -306,7 +306,7 @@ void MappingSolve(void)
 					triangulatedPoints[k] = (l0p*sorted[0].Score + l1p*sorted[1].Score) / AccumulatedArea;
 				}
 
-				for (int k = 2; k < sorted.size(); k++)
+				for (size_t k = 2; k < sorted.size(); k++)
 				{
 					for (int l = 0; l < numpt; l++)
 					{
@@ -319,7 +319,7 @@ void MappingSolve(void)
 				
 				tript mean;
 				Point3d Xmean(0), Ymean(0);
-				double xAcc=0, yAcc=0;
+				//double xAcc=0, yAcc=0;
 				assert(numpt == 4);
 				for (int i = 0; i < 4; i++)
 				{

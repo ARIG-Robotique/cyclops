@@ -8,7 +8,7 @@ project(${PROJECT_NAME})
 # Find OpenCV, you may need to set OpenCV_DIR variable
 # to the absolute path to the directory containing OpenCVConfig.cmake file
 # via the command line or GUI
-find_package(OpenCV 4.7 REQUIRED)
+find_package(OpenCV 4.8 REQUIRED)
 
 #find_package(CUDAToolkit)
 #if(CUDAToolkit_FOUND)
@@ -55,6 +55,7 @@ set(imguisource ${imguiroot}/imgui.cpp ${imguiroot}/imgui_tables.cpp ${imguiroot
 set(imguisource ${imguisource} ${imguiroot}/backends/imgui_impl_glfw.cpp ${imguiroot}/backends/imgui_impl_opengl3.cpp)
 
 add_compile_definitions(IMGUI_USER_CONFIG="Visualisation/imguiconfig.hpp")
+add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 message(STATUS "include directories : ${INCLUDES}")
 
@@ -70,7 +71,6 @@ file(GLOB_RECURSE SOURCES "source/*.cpp")
 set(SOURCES ${SOURCES} ${imguisource})
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-
 
 
 #message(STATUS "Sources found : ${SOURCES}")

@@ -167,6 +167,10 @@ void BoardGL::HandleInputs()
 
 void BoardGL::LoadModels()
 {
+	if (!Window)
+	{
+		return;
+	}
 	if (MeshesLoaded)
 	{
 		return;
@@ -218,6 +222,10 @@ void BoardGL::LoadModels()
 
 void BoardGL::LoadTags()
 {
+	if (!Window)
+	{
+		return;
+	}
 	if (TagsLoaded)
 	{
 		return;
@@ -244,6 +252,11 @@ void BoardGL::LoadTags()
 void BoardGL::Start(string name)
 {
 	GLCreateWindow(1280, 720, name);
+	if (!Window)
+	{
+		return;
+	}
+	
 	// Create and compile our GLSL program from the shaders
 	ShaderProgram.LoadShader(shaderfolder + "vertexshader.vs", shaderfolder + "fragmentshader.fs");
 
@@ -258,6 +271,10 @@ void BoardGL::Start(string name)
 
 bool BoardGL::Tick(std::vector<GLObject> data)
 {
+	if (!Window)
+	{
+		return true;
+	}
 	glfwMakeContextCurrent(Window);
 	glfwPollEvents();
 	HandleInputs();
@@ -287,7 +304,7 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 
 	
 
-	for (int i = 0; i < data.size(); i++)
+	for (size_t i = 0; i < data.size(); i++)
 	{
 		auto &odata = data[i];
 
@@ -315,7 +332,7 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 				{
 					break;
 				}
-				if (number >= TagTextures.size() || number < 0)
+				if (number >= (int)TagTextures.size() || number < 0)
 				{
 					cerr << "Tried to display tag #" << number << " !" <<endl;
 					break;
@@ -328,6 +345,7 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 			break;
 		case MeshNames::brio : //Add an axis to the camera
 			Meshes[MeshNames::axis].Draw(ParameterID);
+			[[fallthrough]];
 		default:
 			Meshes[odata.type].Draw(ParameterID);
 			break;

@@ -51,7 +51,7 @@ bool Mesh::LoadMesh(std::string path)
 	Normals.reserve(mesh->mNumVertices *3);
 	UVs.reserve(mesh->mNumVertices *2);
 	Colors.reserve(mesh->mNumVertices *3);
-	for (int i = 0; i < mesh->mNumVertices; i++)
+	for (size_t i = 0; i < mesh->mNumVertices; i++)
 	{
 		aiVector3D pos = mesh->mVertices[i];
 		aiVector3D normal = mesh->mNormals[i];
@@ -85,7 +85,7 @@ bool Mesh::LoadMesh(std::string path)
 	if (mesh->HasFaces())
 	{
 		Indices.reserve(mesh->mNumFaces *3);
-		for (int i = 0; i < mesh->mNumFaces; i++)
+		for (size_t i = 0; i < mesh->mNumFaces; i++)
 		{
 			for (int j = 0; j < 3; j++)
 			{

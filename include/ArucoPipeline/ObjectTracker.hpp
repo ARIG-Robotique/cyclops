@@ -12,7 +12,7 @@ class ObjectTracker
 private:
 	std::vector<TrackedObject*> objects;
 	std::array<int, ARUCO_DICT_SIZE> ArucoMap; //Which object owns the tag at index i ? objects[ArucoMap[TagID]]
-	std::array<float, ARUCO_DICT_SIZE> ArucoSizes; //Size of the aruco tag
+	std::array<double, ARUCO_DICT_SIZE> ArucoSizes; //Size of the aruco tag
 
 public:
 	ObjectTracker(/* args */);
@@ -30,9 +30,9 @@ public:
 	std::vector<ObjectData> GetObjectDataVector(uint64_t Tick);
 
 	//only needed for the center
-	void SetArucoSize(int number, float SideLength);
+	void SetArucoSize(int number, double SideLength);
 
-	float GetArucoSize(int number);
+	double GetArucoSize(int number);
 
 private:
 

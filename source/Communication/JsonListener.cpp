@@ -135,12 +135,12 @@ bool JsonListener::GetData(const json &filter, json &Response)
 		if (has_filter("aruco"))
 		{
 			cameradata["arucos"] = json::array();
-			for (int i = 0; i < data.ArucoIndices.size(); i++)
+			for (size_t i = 0; i < data.ArucoIndices.size(); i++)
 			{
 				json aruco;
 				aruco["index"] = data.ArucoIndices[i];
 				aruco["corners"] = json::array();
-				for (int j = 0; j < data.ArucoCorners[i].size(); j++)
+				for (size_t j = 0; j < data.ArucoCorners[i].size(); j++)
 				{
 					aruco["corners"][j]["x"] = data.ArucoCorners[i][j].x;
 					aruco["corners"][j]["y"] = data.ArucoCorners[i][j].y;
@@ -152,7 +152,7 @@ bool JsonListener::GetData(const json &filter, json &Response)
 		if (has_filter("yolo"))
 		{
 			cameradata["yolo"] = json::array();
-			for (int i = 0; i < data.YoloIndices.size(); i++)
+			for (size_t i = 0; i < data.YoloIndices.size(); i++)
 			{
 				json yolodet;
 				yolodet["index"] = data.YoloIndices[i];
@@ -253,7 +253,7 @@ void JsonListener::HandleQuery(const json &Query)
 
 void JsonListener::HandleResponse(const json &Response)
 {
-
+	(void) Response;
 }
 
 bool JsonListener::IsQuery(const json &object)
@@ -341,7 +341,7 @@ void JsonListener::ThreadEntryPoint()
 
 		ReceiveBuffer.insert(ReceiveBuffer.end(), bufferraw, bufferraw+numreceived);
 		
-		for (int i = rcvbufinsertpos; i < ReceiveBuffer.size(); i++)
+		for (size_t i = rcvbufinsertpos; i < ReceiveBuffer.size(); i++)
 		{
 			if (ReceiveBuffer[i] != '\n')
 			{

@@ -16,7 +16,7 @@ using namespace std;
 
 UDPTransport::UDPTransport(int inPort, NetworkInterface inInterface)
 	:GenericTransport(),
-	Port(inPort), Interface(inInterface)
+	Interface(inInterface), Port(inPort)
 {
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd == -1)
@@ -87,6 +87,8 @@ bool UDPTransport::Send(const void *buffer, int length, std::string client)
 
 int UDPTransport::Receive(void *buffer, int maxlength, string client, bool blocking)
 {
+	(void)blocking;
+
 	int n;
 	sockaddr_in connectionaddress;
 	socklen_t clientSize = sizeof(connectionaddress);
@@ -123,7 +125,7 @@ void UDPTransport::receiveThread()
 		while ((n = recvfrom(sockfd, dataReceived, sizeof(dataReceived)-1, 0, (struct sockaddr*)&client, &clientSize)) > 0)
 		{
 			bool found = false;
-			for (int i = 0; i < connectionaddresses.size(); i++)
+			for (size_t i = 0; i < connectionaddresses.size(); i++)
 			{
 				if (connectionaddresses[i].sin_addr.s_addr == client.sin_addr.s_addr)
 				{

@@ -8,12 +8,34 @@ class GLFWwindow;
 class GLWindow
 {
 protected:
-	static bool OpenGLInitialized;
-	void GLInit();
+	enum class GLFWStates
+	{
+		Unitialised,
+		Working,
+		InitFail
+	};
+	static GLFWStates GLFWState;
+	static bool GLInit();
 
-public:
+protected:
 	static std::map<GLFWwindow*, GLWindow*> windowmap;
 	GLFWwindow* Window = nullptr;
+
+public:
+	static bool IsOpenGLWorking()
+	{
+		return GLFWState == GLFWStates::Working;
+	}
+
+	GLFWwindow* GetWindow() const
+	{
+		return Window;
+	}
+
+	bool HasWindow() const
+	{
+		return GetWindow();
+	}
 
 	virtual ~GLWindow();
 
@@ -23,5 +45,8 @@ public:
 	*/
 	GLFWwindow* GLCreateWindow(int width, int height, std::string name);
 
+protected:
 	virtual void WindowSizeCallback(int width, int height);
+
+	friend void window_size_callback_generic(GLFWwindow* window, int width, int height);
 };

@@ -8,7 +8,7 @@ private:
     std::string ScenarioPath;
 public:
     CameraManagerSimulation(std::string InScenarioPath)
-        :ScenarioPath(InScenarioPath), CameraManager()
+        :CameraManager(), ScenarioPath(InScenarioPath)
     {
 
     }

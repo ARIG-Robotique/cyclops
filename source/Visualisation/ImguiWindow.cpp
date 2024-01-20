@@ -13,6 +13,11 @@ using namespace std;
 ImguiWindow::ImguiWindow()
 {
 	GLCreateWindow(1280, 720, "ImGUI");
+	if (!Window)
+	{
+		return;
+	}
+	
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -40,6 +45,10 @@ void ImguiWindow::WindowSizeCallback(int width, int height)
 
 ImVec2 ImguiWindow::GetWindowSize()
 {
+	if (!Window)
+	{
+		return ImVec2(0,0);
+	}
 	int winwidth, winheight;
 	glfwGetWindowSize(Window, &winwidth, &winheight);
 	return ImVec2(winwidth, winheight);
@@ -47,6 +56,10 @@ ImVec2 ImguiWindow::GetWindowSize()
 
 void ImguiWindow::StartFrame()
 {
+	if (!Window)
+	{
+		return;
+	}
 	glfwMakeContextCurrent(Window);
 	// Poll and handle events (inputs, window resize, etc.)
 	// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -63,6 +76,10 @@ void ImguiWindow::StartFrame()
 
 bool ImguiWindow::EndFrame()
 {
+	if (!Window)
+	{
+		return true;
+	}
 	// Rendering
 	ImGui::Render();
 	glClearColor(0,0,0,0);
@@ -79,6 +96,10 @@ bool ImguiWindow::EndFrame()
 
 void ImguiWindow::AddImageToBackground(const Texture &Image, cv::Rect impos, cv::Size2f UVmin, cv::Size2f UVmax)
 {
+	if(!Window)
+	{
+		return;
+	}
 	ImDrawList* background = ImGui::GetBackgroundDrawList();
 	{
 		ImVec2 p_min = impos.tl(), p_max = impos.br();

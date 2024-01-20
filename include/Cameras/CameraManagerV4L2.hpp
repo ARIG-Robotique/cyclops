@@ -10,7 +10,7 @@ private:
 	bool AllowNoCalib;
 public:
     CameraManagerV4L2(CameraStartType InStart, std::string InFilter, bool InAllowNoCalib = false)
-        :Start(InStart), Filter(InFilter), AllowNoCalib(InAllowNoCalib), CameraManager()
+        :CameraManager(), Start(InStart), Filter(InFilter), AllowNoCalib(InAllowNoCalib)
     {
 
     }

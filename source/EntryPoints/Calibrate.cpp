@@ -40,7 +40,7 @@ const string TempImgPath = "TempCalib";
 const string CalibWindowName = "Calibration";
 
 
-void CreateKnownBoardPos(Size BoardSize, float squareEdgeLength, vector<Point3f>& corners)
+void CreateKnownBoardPos(Size BoardSize, double squareEdgeLength, vector<Point3f>& corners)
 {
 	for (int i = 0; i < BoardSize.height; i++)
 	{
@@ -210,7 +210,7 @@ vector<String> GetPathsToCalibrationImages()
 int GetCalibrationImagesLastIndex(vector<String> Pathes)
 {
 	int next = -1;
-	for (int i = 0; i < Pathes.size(); i++)
+	for (size_t i = 0; i < Pathes.size(); i++)
 	{
 		String stripped = Pathes[i].substr(TempImgPath.length()+1, Pathes[i].length() - TempImgPath.length()-1 - String(".png").length());
 		try
@@ -245,7 +245,7 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 	parallel_for_(Range(0, numpathes), [&](const Range InRange)
 	{
 	//Range InRange(0, numpathes);
-		for (size_t i = InRange.start; i < InRange.end; i++)
+		for (int i = InRange.start; i < InRange.end; i++)
 		{
 			auto &ThisImageData = SourceData.Images[i];
 			ThisImageData.ImagePath = pathes[i];
@@ -282,7 +282,6 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 		}
 	}
 	
-	bool multires = false;
 	vector<Size> sizes;
 	for (size_t i = 0; i < SourceData.Images.size(); i++)
 	{
@@ -416,7 +415,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 		cout << "No camera was found, calibrating from saved images" << endl;
 		CalibrationWorker();
 		vector<String> pathes = GetPathsToCalibrationImages();
-		for (int i = 0; i < pathes.size(); i++)
+		for (size_t i = 0; i < pathes.size(); i++)
 		{
 			Mat image = imread(pathes[i]);
 			UMat image2, undist;
@@ -454,13 +453,11 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 
 	FrameCounter fps;
 	int failed = 0;
-	bool CapturedImageLastFrame = false;
 	bool mirrored = false;
 	while (true)
 	{
 		prof.EnterSection("StartFrame");
 		imguiinst.StartFrame();
-		ImGuiIO& IO = ImGui::GetIO();
 
 		UMat frame;
 		bool CaptureImageThisFrame = false;
@@ -550,12 +547,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 			prof.EnterSection("Save");
 			imwrite(TempImgPath + "/" + to_string(nextIdx++) + ".png", frame);
 			lastCapture = getTickCount() + getTickFrequency();
-			CapturedImageLastFrame = true;
 			prof.EnterSection("Controls");
-		}
-		else
-		{
-			CapturedImageLastFrame = false;
 		}
 		
 		if (Calibrating)

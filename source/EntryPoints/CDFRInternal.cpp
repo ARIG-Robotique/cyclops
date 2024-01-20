@@ -8,6 +8,8 @@
 
 void CDFRInternalMain(bool direct, bool v3d)
 {
+	(void) direct;
+	(void) v3d;
 	assert(0);
 	/*CameraManager CameraMan(GetCaptureMethod(), GetCaptureConfig().filter, false);
 

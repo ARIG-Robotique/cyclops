@@ -14,11 +14,13 @@ ImageSource::~ImageSource()
 
 void ImageSource::SetFrame(const CameraImageData& frame, bool Distorted)
 {
-
+	(void)frame;
+	(void)Distorted;
 }
 
 CameraImageData ImageSource::GetFrame(bool Distorted)
 {
+	(void)Distorted;
 	return CameraImageData();
 }
 

@@ -2,6 +2,16 @@
 
 #include <Cameras/ImageTypes.hpp>
 
+void CameraFeatureData::Clear()
+{
+    ArucoIndices.clear();
+    ArucoCorners.clear();
+    ArucoCornersReprojected.clear();
+
+    YoloIndices.clear();
+    YoloCorners.clear();
+}
+
 void CameraFeatureData::CopyEssentials(const CameraImageData &source)
 {
     CameraName = source.CameraName;

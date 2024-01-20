@@ -96,7 +96,7 @@ int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData)
 		float reductionFactors = GetReductionFactor();
 
 		//rescale corners to full image position
-		for (int j = 0; j < corners.size(); j++)
+		for (size_t j = 0; j < corners.size(); j++)
 		{
 			for (size_t k = 0; k < 4; k++)
 			{
@@ -106,7 +106,7 @@ int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData)
 			}
 		}
 
-		for (int ArucoIdx = 0; ArucoIdx < IDs.size(); ArucoIdx++)
+		for (size_t ArucoIdx = 0; ArucoIdx < IDs.size(); ArucoIdx++)
 		{
 			Size window = Size(reductionFactors, reductionFactors);
 			cornerSubPix(GrayFrame, corners[ArucoIdx], window, Size(-1,-1), TermCriteria(TermCriteria::COUNT | TermCriteria::EPS, 100, 0.01));

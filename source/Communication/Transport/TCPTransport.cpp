@@ -36,7 +36,7 @@ TCPTransport::TCPTransport(bool inServer, string inIP, int inPort, string inInte
 TCPTransport::~TCPTransport()
 {
 	cout << "Destroying TCP transport " << IP << ":" << Port << " @ " << Interface <<endl;
-	for (int i = 0; i < connections.size(); i++)
+	for (size_t i = 0; i < connections.size(); i++)
 	{
 		shutdown(connections[i].filedescriptor, SHUT_RDWR);
 		close(connections[i].filedescriptor);
@@ -159,7 +159,7 @@ vector<string> TCPTransport::GetClients() const
 		vector<string> clients;
 		shared_lock lock(listenmutex);
 		clients.reserve(connections.size());
-		for (int i = 0; i < connections.size(); i++)
+		for (size_t i = 0; i < connections.size(); i++)
 		{
 			clients.push_back(connections[i].name);
 		}
@@ -182,7 +182,7 @@ int TCPTransport::Receive(void *buffer, int maxlength, string client, bool block
 		set<string> DisconnectedClients;
 		{
 			shared_lock lock(listenmutex);
-			for (int i = 0; i < connections.size(); i++)
+			for (size_t i = 0; i < connections.size(); i++)
 			{
 				if (client != connections[i].name && client != BroadcastClient)
 				{
@@ -248,7 +248,7 @@ bool TCPTransport::Send(const void* buffer, int length, string client)
 		bool failed = false;
 		{
 			shared_lock lock(listenmutex);
-			for (int i = 0; i < connections.size(); i++)
+			for (size_t i = 0; i < connections.size(); i++)
 			{
 				if (client != connections[i].name && client != BroadcastClient)
 				{
@@ -348,7 +348,7 @@ vector<string> TCPTransport::AcceptNewConnections()
 void TCPTransport::DisconnectClient(std::string client)
 {
 	unique_lock lock(listenmutex);
-	for (int i = 0; i < connections.size(); i++)
+	for (size_t i = 0; i < connections.size(); i++)
 	{
 		if (client != connections[i].name && client != BroadcastClient)
 		{
@@ -363,7 +363,6 @@ void TCPTransport::DisconnectClient(std::string client)
 void TCPTransport::receiveThread()
 {
 	cout << "TCP Webserver thread started..." << endl;
-	int n;
 	while (1)
 	{
 		this_thread::sleep_for(chrono::milliseconds(100));

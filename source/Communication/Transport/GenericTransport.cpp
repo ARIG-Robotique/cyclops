@@ -62,12 +62,19 @@ vector<string> GenericTransport::GetClients() const
 
 int GenericTransport::Receive(void *buffer, int maxlength, string client, bool blocking)
 {
+	(void)buffer;
+	(void)maxlength;
+	(void)client;
+	(void)blocking;
 	cerr << "Called receive on base transport class" << endl;
 	return -1;
 }
 
 bool GenericTransport::Send(const void* buffer, int length, string client)
 {
+	(void)buffer;
+	(void)length;
+	(void)client;
 	cerr << "Called Send on base transport class" << endl;
 	return false;
 }
@@ -84,7 +91,7 @@ bool GenericTransport::Send(const void* buffer, int length, string client)
 vector<GenericTransport::NetworkInterface> GenericTransport::GetInterfaces()
 {
 	struct ifaddrs *ifaddr, *ifa;
-	int family, s;
+	int s;
 	char host[NI_MAXHOST];
 
 	if (getifaddrs(&ifaddr) == -1) 

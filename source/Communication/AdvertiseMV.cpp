@@ -19,8 +19,7 @@ AdvertiseMV::AdvertiseMV(/* args */)
 {
 	auto interfaces = GenericTransport::GetInterfaces();
 	cout << "Listing interfaces :" << endl;
-	int chosen = -1;
-	for (int i=0; i<interfaces.size(); i++)
+	for (size_t i=0; i<interfaces.size(); i++)
 	{
 		auto& ni = interfaces[i];
 		cout << "\t- " << ni.name << " / IP:" << ni.address << " / Netmask:" << ni.mask << " / Broadcast:" << ni.broadcast << endl;

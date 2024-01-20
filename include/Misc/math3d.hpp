@@ -14,7 +14,7 @@ template<class AType, class BType>
 float ComputeReprojectionError(const std::vector<cv::Point_<AType>> &A, const std::vector<cv::Point_<BType>> &B)
 {
 	float ReprojectionError = 0;
-	for (int i = 0; i < A.size(); i++)
+	for (size_t i = 0; i < A.size(); i++)
 	{
 		cv::Point_<AType> diff = A[i] - cv::Point_<AType>(B[i]);
 		ReprojectionError += sqrt(diff.ddot(diff));

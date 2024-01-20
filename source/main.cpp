@@ -51,14 +51,14 @@ void ConfigureOpenCL(bool enable)
 	}
 
 	ocl::Context context;
-	if (!context.create(ocl::Device::TYPE_ALL))
+	if (!context.create((int)ocl::Device::TYPE_ALL))
 	{
 		cerr << "Failed creating the context..." << endl;
 		return;
 	}
 
 	cout << context.ndevices() << " OpenCL devices detected." << endl; //This bit provides an overview of the OpenCL devices you have in your computer
-	for (int i = 0; i < context.ndevices(); i++)
+	for (size_t i = 0; i < context.ndevices(); i++)
 	{
 		ocl::Device device = context.device(i);
 		cout << "\tname:              " << device.name() << endl;
@@ -72,6 +72,7 @@ bool killrequest = false;
 
 void signal_handler(int s)
 {
+	(void)s;
 	cout << "SIGINT received, cleaning up..." << endl;
 	//GenericTransport::DeleteAllTransports();
 	//exit(EXIT_SUCCESS);
@@ -124,7 +125,7 @@ int main(int argc, char** argv )
 		exit(EXIT_SUCCESS);
 	}
 	
-	bool nodisplay = parser.has("nodisplay");
+	//bool nodisplay = parser.has("nodisplay");
 
 
 	//putenv("GST_DEBUG=jpegdec:4"); //enable gstreamer debug
@@ -160,7 +161,7 @@ int main(int argc, char** argv )
 	{
 		cout << "Starting calibration of camera index" << parser.get<int>("calibrate") <<endl;
 		int camIndex = parser.get<int>("calibrate");
-		if (0<= camIndex && camIndex < CamSett.size())
+		if (0<= camIndex && camIndex < (int)CamSett.size())
 		{
 			docalibration(CamSett[camIndex]);
 			exit(EXIT_SUCCESS);

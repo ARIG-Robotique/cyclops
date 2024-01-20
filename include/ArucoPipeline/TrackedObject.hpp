@@ -17,7 +17,7 @@ struct CameraFeatureData;
 struct ArucoMarker
 {
 public:
-	float sideLength; //Length of a side of the tags. Tag should be square
+	double sideLength; //Length of a side of the tags. Tag should be square
 	int number; //Number of the tag on it
 	cv::Affine3d Pose; //Location relative to it's parent
 
@@ -25,7 +25,7 @@ private:
 	std::array<cv::Point3d, 4> ObjectPointsNoOffset;
 
 public:
-	static std::array<cv::Point3d, 4> GetObjectPointsNoOffset(float SideLength);
+	static std::array<cv::Point3d, 4> GetObjectPointsNoOffset(double SideLength);
 
 	const std::array<cv::Point3d, 4>& GetObjectPointsNoOffset();
 
@@ -35,14 +35,14 @@ public:
 		Pose(cv::Affine3d::Identity())
 	{}
 
-	ArucoMarker(float InSideLength, int InNumber)
+	ArucoMarker(double InSideLength, int InNumber)
 		:sideLength(InSideLength),
 		number(InNumber),
 		Pose(cv::Affine3d::Identity()),
 		ObjectPointsNoOffset(GetObjectPointsNoOffset(InSideLength))
 	{}
 
-	ArucoMarker(float InSideLength, int InNumber, cv::Affine3d InPose)
+	ArucoMarker(double InSideLength, int InNumber, cv::Affine3d InPose)
 		:sideLength(InSideLength),
 		number(InNumber),
 		Pose(InPose),
@@ -114,8 +114,8 @@ public:
 
 
 
-cv::Affine3d GetTagTransform(float SideLength, std::vector<cv::Point2f> Corners, cv::Mat& CameraMatrix, cv::Mat& DistanceCoefficients);
+cv::Affine3d GetTagTransform(double SideLength, std::vector<cv::Point2f> Corners, cv::Mat& CameraMatrix, cv::Mat& DistanceCoefficients);
 
-cv::Affine3d GetTagTransform(float SideLength, std::vector<cv::Point2f> Corners, Camera* Cam);
+cv::Affine3d GetTagTransform(double SideLength, std::vector<cv::Point2f> Corners, Camera* Cam);
 
 cv::Affine3d GetTransformRelativeToTag(ArucoMarker& Tag, std::vector<cv::Point2f> Corners, Camera* Cam);

@@ -4,7 +4,7 @@ using namespace std;
 
 vector<Camera*> CameraManager::Tick()
 {
-	for (int i = 0; i < Cameras.size(); i++)
+	for (size_t i = 0; i < Cameras.size(); i++)
 	{
 		if (Cameras[i]->errors >= 20)
 		{

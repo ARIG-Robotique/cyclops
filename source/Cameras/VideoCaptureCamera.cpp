@@ -64,12 +64,13 @@ bool VideoCaptureCamera::StartFeed()
 		break;
 	default:
 		cerr << "WARNING : Unrecognised Camera Start Type in VideoCaptureCamera, defaulting to auto API" << endl;
+		[[fallthrough]];
 	case CameraStartType::ANY:
 		Settingscast->StartPath = pathtodevice;
 		Settingscast->ApiID = CAP_ANY;
 		break;
 	}
-	char commandbuffer[1024];
+	//char commandbuffer[1024];
 	//snprintf(commandbuffer, sizeof(commandbuffer), "v4l2-ctl -d %s -c exposure_auto=%d,exposure_absolute=%d", pathtodevice.c_str(), 1, 32);
 	//cout << "Aperture system command : " << commandbuffer << endl;
 	//system(commandbuffer);

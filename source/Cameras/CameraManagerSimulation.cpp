@@ -26,9 +26,18 @@ void CameraManagerSimulation::ScanWorker()
 		}
 		
 		auto rootPath = filesystem::weakly_canonical(ScenarioPath).parent_path();
+		
 		ifstream scenario(ScenarioPath);
 		nlohmann::json decoded;
-		scenario >> decoded;
+		try
+		{
+			scenario >> decoded;
+		}
+		catch(const std::exception& e)
+		{
+			std::cerr << e.what() << '\n';
+			break;
+		}
 		if (!decoded.is_array())
 		{
 			cerr << "Scenario root is not array !" << endl;
@@ -55,8 +64,8 @@ void CameraManagerSimulation::ScanWorker()
 			readCameraParameters(calibpath, settings.CameraMatrix, settings.distanceCoeffs, settings.Resolution);
 			settings.StartType = CameraStartType::PLAYBACK;
 			settings.StartPath = videopath;
-			settings.DeviceInfo.device_paths.push_back(calibpath);
 			settings.DeviceInfo.device_paths.push_back(videopath);
+			settings.DeviceInfo.device_paths.push_back(calibpath);
 			Camera* cam = StartCamera(settings);
 			if (!cam)
 			{
@@ -67,7 +76,7 @@ void CameraManagerSimulation::ScanWorker()
 			{
 				{
 					unique_lock lock(pathmutex);
-					usedpaths.emplace(calibpath);
+					usedpaths.emplace(videopath);
 				}
 				{
 					unique_lock lock(cammutex);

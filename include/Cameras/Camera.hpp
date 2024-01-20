@@ -65,7 +65,7 @@ public:
 		connected(false)
 	{}
 
-	~Camera()
+	virtual ~Camera()
 	{}
 
 protected:

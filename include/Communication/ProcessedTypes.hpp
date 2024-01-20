@@ -15,11 +15,12 @@ struct CameraFeatureData
 	cv::Size FrameSize; 			//Filled by CopyEssentials from CameraImageData
 
 	std::vector<std::vector<cv::Point2f>> ArucoCorners, //Filled by ArucoDetect
-		ArucoCornersReprojected; 						//Filled by ObjectTracker
+		ArucoCornersReprojected; 						//Cleared by ArucoDetect, Filled by ObjectTracker
 	std::vector<int> ArucoIndices; 						//Filled by ArucoDetect
 
 	std::vector<cv::Rect2f> YoloCorners; 	//Filled by YoloDetect
 	std::vector<int> YoloIndices; 			//Filled by YoloDetect
 
+	void Clear();
 	void CopyEssentials(const struct CameraImageData &source);
 };

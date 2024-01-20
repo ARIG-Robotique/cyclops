@@ -12,7 +12,7 @@ using namespace std;
 ObjectTracker::ObjectTracker(/* args */)
 {
 	assert(ArucoMap.size() == ArucoSizes.size());
-	for (int i = 0; i < ArucoMap.size(); i++)
+	for (size_t i = 0; i < ArucoMap.size(); i++)
 	{
 		ArucoMap[i] = -1;
 		ArucoSizes[i] = 0.05;
@@ -95,7 +95,7 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraData, uint64_t Tick)
 {
 	const int NumCameras = CameraData.size();
-	const int NumObjects = objects.size();
+	//const int NumObjects = objects.size();
 	vector<map<int, vector<Point2f>>> ReprojectedCorners;
 	ReprojectedCorners.resize(NumCameras);
 	
@@ -119,7 +119,7 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 			}
 			
 			vector<ResolvedLocation> locations;
-			for (int CameraIdx = 0; CameraIdx < CameraData.size(); CameraIdx++)
+			for (size_t CameraIdx = 0; CameraIdx < CameraData.size(); CameraIdx++)
 			{
 				CameraFeatureData& ThisCameraData = CameraData[CameraIdx];
 				if (ThisCameraData.ArucoCorners.size() == 0) //Not seen
@@ -177,7 +177,7 @@ vector<ObjectData> ObjectTracker::GetObjectDataVector(uint64_t Tick)
 	vector<ObjectData> ObjectDatas;
 	ObjectDatas.reserve(objects.size()*2);
 
-	for (int i = 0; i < objects.size(); i++)
+	for (size_t i = 0; i < objects.size(); i++)
 	{
 		if (Tick != 0 && !objects[i]->ShouldBeDisplayed(Tick)) //not seen, do not display
 		{
@@ -185,7 +185,7 @@ vector<ObjectData> ObjectTracker::GetObjectDataVector(uint64_t Tick)
 		}
 		
 		vector<ObjectData> lp = objects[i]->ToObjectData();
-		for (int j = 0; j < lp.size(); j++)
+		for (size_t j = 0; j < lp.size(); j++)
 		{
 			ObjectDatas.push_back(lp[j]);
 		}
@@ -193,23 +193,23 @@ vector<ObjectData> ObjectTracker::GetObjectDataVector(uint64_t Tick)
 	return ObjectDatas;
 }
 
-void ObjectTracker::SetArucoSize(int number, float SideLength)
+void ObjectTracker::SetArucoSize(int number, double SideLength)
 {
 	ArucoSizes[number] = SideLength;
 }
 
-float ObjectTracker::GetArucoSize(int number)
+double ObjectTracker::GetArucoSize(int number)
 {
 	return ArucoSizes[number];
 }
 
 void ObjectTracker::RegisterArucoRecursive(TrackedObject* object, int index)
 {
-	for (int i = 0; i < object->markers.size(); i++)
+	for (size_t i = 0; i < object->markers.size(); i++)
 	{
 		const ArucoMarker& marker = object->markers[i];
 		int MarkerID = marker.number;
-		assert(MarkerID < sizeof(ArucoMap)/sizeof(ArucoMap[0]));
+		assert(MarkerID < (int)ArucoMap.size());
 		if (ArucoMap[MarkerID] != -1)
 		{
 			cerr << "WARNING Overwriting Marker Misc/owner for marker index " << MarkerID << " with object " << object->Name << endl;
@@ -218,7 +218,7 @@ void ObjectTracker::RegisterArucoRecursive(TrackedObject* object, int index)
 		ArucoMap[MarkerID] = index;
 		ArucoSizes[MarkerID] = marker.sideLength;
 	}
-	for (int i = 0; i < object->childs.size(); i++)
+	for (size_t i = 0; i < object->childs.size(); i++)
 	{
 		RegisterArucoRecursive(object->childs[i], index);
 	}

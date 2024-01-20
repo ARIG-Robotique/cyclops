@@ -36,7 +36,7 @@ vector<GLObject> ObjectData::ToGLObjects(const vector<ObjectData>& data)
 {
 	vector<GLObject> outobj;
 	outobj.reserve(data.size());
-	for (int i = 0; i < data.size(); i++)
+	for (size_t i = 0; i < data.size(); i++)
 	{
 		auto obj = data[i].ToGLObject();
 		if (!obj.has_value())
@@ -45,7 +45,7 @@ vector<GLObject> ObjectData::ToGLObjects(const vector<ObjectData>& data)
 		}
 		outobj.push_back(obj.value());
 		vector<GLObject> childs = ObjectData::ToGLObjects(data[i].Childs);
-		for (int i = 0; i < childs.size(); i++)
+		for (size_t i = 0; i < childs.size(); i++)
 		{
 			childs[i].location = obj.value().location * childs[i].location; //apply parent transform to child
 		}

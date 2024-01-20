@@ -21,7 +21,6 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 	{
 		return CDFRTeam::Unknown;
 	}
-	int blues = 0, greens = 0;
 	const static double ydist = 0.95;
 	const static double xdist = 1.594;
 	const static map<CDFRTeam, vector<Vec2d>> CameraPos = 
@@ -36,9 +35,9 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 		Vec2d pos2d(campos[0], campos[1]);
 		CDFRTeam bestTeam = CDFRTeam::Unknown;
 		double bestdist = 0.5; //tolerance of 50cm
-		for (const auto [team, positions] : CameraPos)
+		for (const auto& [team, positions] : CameraPos)
 		{
-			for (const auto position : positions)
+			for (const auto &position : positions)
 			{
 				Vec2d delta = position-pos2d;
 				double dist = sqrt(delta.ddot(delta));
@@ -73,7 +72,7 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 	return bestTeam;
 }
 
-using ExternalProfType = ManualProfiler<false>;
+using ExternalProfType = ManualProfiler<true>;
 
 void CDFRExternal::ThreadEntryPoint()
 {
@@ -90,9 +89,6 @@ void CDFRExternal::ThreadEntryPoint()
 			CameraMan = make_unique<CameraManagerSimulation>("../sim/scenario0.json");
 			break;
 	}
-	
-
-	auto& Detector = GetArucoDetector();
 
 	//display/debug section
 	FrameCounter fps;
@@ -107,7 +103,7 @@ void CDFRExternal::ThreadEntryPoint()
 	//bluetracker.RegisterTrackedObject(robot1);
 	//bluetracker.RegisterTrackedObject(robot2);
 	
-	BoardGL OpenGLBoard;
+	std::unique_ptr<BoardGL> OpenGLBoard;
 	std::unique_ptr<ImguiWindow> DirectImage;
 	vector<Texture> DirectTextures;
 	unique_ptr<TrackerCube> blue1 = make_unique<TrackerCube>(vector<int>({51, 52, 53, 54, 55}), 0.05, 85.065/1000.0, "blue1");
@@ -133,13 +129,27 @@ void CDFRExternal::ThreadEntryPoint()
 	//OpenGLBoard.InspectObject(blue1);
 	if (v3d)
 	{
-		OpenGLBoard.Start();
-		OpenGLBoard.LoadTags();
-		OpenGLBoard.Tick({});
+		OpenGLBoard = make_unique<BoardGL>();
+		OpenGLBoard->Start();
+		if (OpenGLBoard->HasWindow())
+		{
+			OpenGLBoard->LoadTags();
+			OpenGLBoard->Tick({});
+		}
+		else
+		{
+			cout << "No 3D visualizer created: No window" << endl;
+			OpenGLBoard.reset();
+		}
 	}
 	if (direct)
 	{
 		DirectImage = make_unique<ImguiWindow>();
+		if (!DirectImage->HasWindow())
+		{
+			cout << "No 2D visualizer created: No window" << endl;
+			DirectImage.reset();
+		}
 	}
 	
 
@@ -176,7 +186,6 @@ void CDFRExternal::ThreadEntryPoint()
 
 	CameraMan->StartScanThread();
 
-	int lastmarker = 0;
 	CDFRTeam LastTeam = CDFRTeam::Unknown;
 	while (!killed)
 	{
@@ -204,7 +213,7 @@ void CDFRExternal::ThreadEntryPoint()
 		prof.EnterSection("Camera Gather Frames");
 		int64 GrabTick = getTickCount();
 		
-		for (int i = 0; i < Cameras.size(); i++)
+		for (size_t i = 0; i < Cameras.size(); i++)
 		{
 			Cameras[i]->Grab();
 		}
@@ -230,15 +239,20 @@ void CDFRExternal::ThreadEntryPoint()
 			for (int i = InRange.start; i < InRange.end; i++)
 			{
 				auto &thisprof = ParallelProfilers[i];
-				thisprof.EnterSection("CameraRead");
 				Camera* cam = Cameras[i];
-				cam->Read();
-				thisprof.EnterSection("CameraUndistort");
-				cam->Undistort();
-				thisprof.EnterSection("CameraGetFrame");
-				CameraImageData ImData = cam->GetFrame(false);
-				thisprof.EnterSection("DetectAruco");
 				CameraFeatureData &FeatData = FeatureDataLocal[i];
+				thisprof.EnterSection("CameraRead");
+				if(!cam->Read())
+				{
+					FeatData.Clear();
+					CamerasWithPosition[i] = false;
+					continue;
+				}
+				//thisprof.EnterSection("CameraUndistort");
+				//cam->Undistort();
+				thisprof.EnterSection("CameraGetFrame");
+				CameraImageData ImData = cam->GetFrame(true);
+				thisprof.EnterSection("DetectAruco");
 				FeatData.CopyEssentials(ImData);
 				DetectAruco(ImData, FeatData);
 				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);
@@ -248,6 +262,7 @@ void CDFRExternal::ThreadEntryPoint()
 					//cout << "Camera has location" << endl;
 				}
 				FeatData.CameraTransform = cam->GetLocation();
+				thisprof.EnterSection("");
 			}
 		});
 
@@ -256,8 +271,6 @@ void CDFRExternal::ThreadEntryPoint()
 			ParallelProfiler += pprof;
 		}
 
-		int viewsidx = 0;
-
 		prof.EnterSection("3D Solve");
 		TrackerToUse->SolveLocationsPerObject(FeatureDataLocal, GrabTick);
 		vector<ObjectData> &ObjDataLocal = ObjData[BufferIndex]; 
@@ -265,28 +278,31 @@ void CDFRExternal::ThreadEntryPoint()
 		ObjectData TeamPacket(ObjectType::Team, TeamNames.at(Team));
 		ObjDataLocal.insert(ObjDataLocal.begin(), TeamPacket); //insert team as the first object
 
-		prof.EnterSection("Visualisation");
 		
-		if (v3d)
+		
+		if (OpenGLBoard.get())
 		{
-			if(!OpenGLBoard.Tick(ObjectData::ToGLObjects(ObjDataLocal)))
+			prof.EnterSection("Visualisation 3D");
+			if(!OpenGLBoard->Tick(ObjectData::ToGLObjects(ObjDataLocal)))
 			{
 				killed = true;
+				cout << "3D visualizer closed, shutting down..." << endl;
 				return;
 			}
 		}
-		if (direct)
+		if (DirectImage.get())
 		{
+			prof.EnterSection("Visualisation 2D");
 			DirectImage->StartFrame();
 			int DisplaysPerCam = 1;
 			int NumDisplays = Cameras.size()*DisplaysPerCam;
-			if (DirectTextures.size() != NumDisplays)
+			if ((int)DirectTextures.size() != NumDisplays)
 			{
 				DirectTextures.resize(NumDisplays);
 			}
 			Size WindowSize = DirectImage->GetWindowSize();
 			auto tiles = DistributeViewports(GetCaptureConfig().FrameSize, WindowSize, NumDisplays);
-			for (int camidx = 0; camidx < Cameras.size(); camidx++)
+			for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
 			{
 				if (Cameras[camidx]->errors != 0)
 				{
@@ -312,7 +328,7 @@ void CDFRExternal::ThreadEntryPoint()
 				CameraFeatureData &FeatData = FeatureDataLocal[camidx];
 				Rect SourceRemap(Point(0,0), GetCaptureConfig().FrameSize);
 				Rect DestRemap = tiles[camidx];
-				for (int arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
+				for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
 				{
 					auto& corners = FeatData.ArucoCorners[arucoidx];
 					uint32_t color = IM_COL32(0,255,0,255);
@@ -345,6 +361,7 @@ void CDFRExternal::ThreadEntryPoint()
 			if(!DirectImage->EndFrame())
 			{
 				killed = true;
+				cout << "2D visualizer closed, shutting down..." << endl;
 				return;
 			}
 		}

@@ -137,6 +137,7 @@ void InitConfig()
 			<< " - " << pex.getError() << std::endl;
 		err = true;
 	}
+	(void)err;
 
 	Setting& root = cfg.getRoot();
 
@@ -182,7 +183,6 @@ void InitConfig()
 				for (int k = 0; k < 4; k++)
 				{
 					double &address = CamerasInternal[i].LocationRelative.matrix(j,k);
-					float value = address;
 					if (Loc[j].getLength() <= k)
 					{
 						Loc[j].add(Setting::TypeFloat) = address;

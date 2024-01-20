@@ -7,7 +7,7 @@
 
 using namespace std;
 
-bool GLWindow::OpenGLInitialized = false;
+GLWindow::GLFWStates GLWindow::GLFWState = GLWindow::GLFWStates::Unitialised;
 map<GLFWwindow*, GLWindow*> GLWindow::windowmap;
 
 void window_size_callback_generic(GLFWwindow* window, int width, int height)
@@ -16,22 +16,29 @@ void window_size_callback_generic(GLFWwindow* window, int width, int height)
 	target->WindowSizeCallback(width, height);
 }
 
-void GLWindow::GLInit()
+bool GLWindow::GLInit()
 {
-	if (OpenGLInitialized)
+	switch (GLFWState)
 	{
-		return;
+	case GLFWStates::Working:
+		return true;
+	case GLFWStates::InitFail:
+		return false;
+	default:
+		break;
 	}
 	//cout << "Creating OpenGL context" << endl;
-	OpenGLInitialized = true;
 
 	// Initialise GLFW
 	glewExperimental = true; // Needed for core profile
 	if( !glfwInit() )
 	{
 		cerr << "Failed to initialize GLFW" << endl;
-		return;
+		GLFWState = GLFWStates::InitFail;
+		return false;
 	}
+	GLFWState = GLFWStates::Working;
+	return true;
 }
 
 GLWindow::~GLWindow()
@@ -50,7 +57,10 @@ GLFWwindow* GLWindow::GLCreateWindow(int width, int height, std::string name)
 	{
 		return Window;
 	}
-	GLInit();
+	if(!GLInit())
+	{
+		return nullptr;
+	}
 	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -89,5 +99,6 @@ GLFWwindow* GLWindow::GLCreateWindow(int width, int height, std::string name)
 
 void GLWindow::WindowSizeCallback(int width, int height)
 {
-
+	(void)width;
+	(void)height;
 }
