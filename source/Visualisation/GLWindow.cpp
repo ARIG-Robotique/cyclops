@@ -82,15 +82,6 @@ GLFWwindow* GLWindow::GLCreateWindow(int width, int height, std::string name)
 
 	glfwSwapInterval( 0 ); //disable vsync
 
-	// Enable depth test
-	glEnable(GL_DEPTH_TEST);
-	// Cull triangles which normal is not towards the camera
-	glEnable(GL_CULL_FACE);
-	// Accept fragment if it closer to the camera than the former one
-	glDepthFunc(GL_LESS);
-
-	glfwSetInputMode(Window, GLFW_STICKY_KEYS, GL_TRUE);
-	glfwSetInputMode(Window, GLFW_RAW_MOUSE_MOTION, GL_TRUE);
 
 	glfwSetWindowSizeCallback(Window, window_size_callback_generic);
 	windowmap[Window] = this;

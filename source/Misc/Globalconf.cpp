@@ -231,7 +231,7 @@ const aruco::ArucoDetector& GetArucoDetector(){
 		double mulfac = 1.0/20.0;
 		params.minMarkerPerimeterRate *= mulfac;
 		params.minCornerDistanceRate *= mulfac;
-		params.minMarkerDistanceRate *= mulfac;
+		//params.minMarkerDistanceRate *= mulfac;
 		auto refparams = aruco::RefineParameters();
 		ArucoDet = aruco::ArucoDetector(dict, params, refparams);
 	}

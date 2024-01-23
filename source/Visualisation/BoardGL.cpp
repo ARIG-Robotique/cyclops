@@ -119,16 +119,35 @@ void BoardGL::HandleInputs()
 		horizontalAngle -= mouseSpeed * xdiff;
 		verticalAngle 	+= mouseSpeed * ydiff;
 		//cout << "X: " << xdiff << " Y :" << ydiff << " h: " << horizontalAngle << " v: " << verticalAngle << endl;
-		verticalAngle = clamp<float>(verticalAngle, -M_PI_2, M_PI_2);
+		
 	}
 	else
 	{
 		LookingAround = false;
 		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
+
+	const double LookSensitivty = 0.5;
+	// Look down
+	if (glfwGetKey(Window, GLFW_KEY_KP_2) == GLFW_PRESS){
+		verticalAngle -= deltaTime * LookSensitivty;
+	}
+	// Look up
+	if (glfwGetKey(Window, GLFW_KEY_KP_8) == GLFW_PRESS){
+		verticalAngle += deltaTime * LookSensitivty;
+	}
+	// Look right
+	if (glfwGetKey(Window, GLFW_KEY_KP_6) == GLFW_PRESS){
+		horizontalAngle += deltaTime * LookSensitivty;
+	}
+	// Look left
+	if (glfwGetKey(Window, GLFW_KEY_KP_4) == GLFW_PRESS){
+		horizontalAngle -= deltaTime * LookSensitivty;
+	}
 	
 
-	
+	verticalAngle = clamp<float>(verticalAngle, -M_PI_2, M_PI_2);
+	horizontalAngle = fmod(horizontalAngle, M_PI*2);
 
 	glm::vec3 direction = GetDirection();
 	glm::vec3 right = GetRightVector();
@@ -181,8 +200,6 @@ void BoardGL::LoadModels()
 	{
 		{MeshNames::arena, {"board.obj", "boardtex.png"}},
 		{MeshNames::robot, {"robot.obj", nullopt}},
-		{MeshNames::robot_tray, {"robot/tray.obj", nullopt}},
-		{MeshNames::robot_claw, {"robot/claws.obj", nullopt}},
 		{MeshNames::axis, {"axis.obj", nullopt}},
 		{MeshNames::brio, {"BRIO.obj", nullopt}},
 		{MeshNames::skybox, {"skybox.obj", nullopt}},
@@ -190,10 +207,7 @@ void BoardGL::LoadModels()
 		{MeshNames::trackercube, {"trackercube.obj", nullopt}},
 		{MeshNames::toptracker, {"toptracker.obj", nullopt}},
 
-		{MeshNames::browncake,	{"cakes/cake.obj", "cakes/cakebrown.png"}},
-		{MeshNames::yellowcake,	{"cakes/cake.obj", "cakes/cakeyellow.png"}},
-		{MeshNames::pinkcake,	{"cakes/cake.obj", "cakes/cakepink.png"}},
-		{MeshNames::cherry,	{"cherry.obj", nullopt}}
+		{MeshNames::solarpanel,	{"solarpanel.obj", "solartex.png"}}
 	};
 	//cout << "Loading meshes" << endl;
 
@@ -256,6 +270,16 @@ void BoardGL::Start(string name)
 	{
 		return;
 	}
+
+	// Enable depth test
+	glEnable(GL_DEPTH_TEST);
+	// Cull triangles which normal is not towards the camera
+	glEnable(GL_CULL_FACE);
+	// Accept fragment if it closer to the camera than the former one
+	glDepthFunc(GL_LESS);
+
+	glfwSetInputMode(Window, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(Window, GLFW_RAW_MOUSE_MOTION, GL_TRUE);
 	
 	// Create and compile our GLSL program from the shaders
 	ShaderProgram.LoadShader(shaderfolder + "vertexshader.vs", shaderfolder + "fragmentshader.fs");

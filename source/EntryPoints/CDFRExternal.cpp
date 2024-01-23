@@ -98,6 +98,9 @@ void CDFRExternal::ThreadEntryPoint()
 	unique_ptr<StaticObject> boardobj = make_unique<StaticObject>(false, "board");
 	bluetracker.RegisterTrackedObject(boardobj.get()); 
 	yellowtracker.RegisterTrackedObject(boardobj.get());
+	unique_ptr<SolarPanel> SolarPanels = make_unique<SolarPanel>();
+	bluetracker.RegisterTrackedObject(SolarPanels.get()); 
+	yellowtracker.RegisterTrackedObject(SolarPanels.get());
 	//TrackerCube* robot1 = new TrackerCube({51, 52, 54, 55}, 0.06, 0.0952, "Robot1");
 	//TrackerCube* robot2 = new TrackerCube({57, 58, 59, 61}, 0.06, 0.0952, "Robot2");
 	//bluetracker.RegisterTrackedObject(robot1);
@@ -110,6 +113,7 @@ void CDFRExternal::ThreadEntryPoint()
 	unique_ptr<TrackerCube> blue2 = make_unique<TrackerCube>(vector<int>({56, 57, 58, 59, 60}), 0.05, 85.065/1000.0, "blue2");
 	unique_ptr<TrackerCube> yellow1 = make_unique<TrackerCube>(vector<int>({71, 72, 73, 74, 75}), 0.05, 85.065/1000.0, "yellow1");
 	unique_ptr<TrackerCube> yellow2 = make_unique<TrackerCube>(vector<int>({76, 77, 78, 79, 80}), 0.05, 85.065/1000.0, "yellow2");
+
 	bluetracker.RegisterTrackedObject(blue1.get());
 	bluetracker.RegisterTrackedObject(blue2.get());
 

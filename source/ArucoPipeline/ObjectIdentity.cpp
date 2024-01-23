@@ -16,7 +16,8 @@ std::optional<GLObject> ObjectData::ToGLObject() const
 		{ObjectType::ReferenceRelative, MeshNames::arena},
 		{ObjectType::Tag, MeshNames::tag},
 		{ObjectType::TopTracker, MeshNames::toptracker},
-		{ObjectType::TeamTracker, MeshNames::trackercube}
+		{ObjectType::TeamTracker, MeshNames::trackercube},
+		{ObjectType::SolarPanel, MeshNames::solarpanel}
 	};
 
 	auto foundmesh = PacketToMesh.find(type);

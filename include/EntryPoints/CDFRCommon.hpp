@@ -16,6 +16,7 @@
 #include <ArucoPipeline/TopTracker.hpp>
 #include <ArucoPipeline/StaticObject.hpp>
 #include <ArucoPipeline/ObjectTracker.hpp>
+#include <ArucoPipeline/SolarPanel.hpp>
 
 #include <Misc/FrameCounter.hpp>
 

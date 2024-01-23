@@ -16,8 +16,6 @@ enum class MeshNames
 {
 	unknown,
 	robot,
-	robot_tray,
-	robot_claw,
 	tag,
 	arena,
 	brio,
@@ -25,10 +23,7 @@ enum class MeshNames
 	axis,
 	trackercube,
 	toptracker,
-	cherry,
-	browncake,
-	yellowcake,
-	pinkcake
+	solarpanel
 };
 
 struct GLObject
@@ -61,7 +56,8 @@ private:
 public:
 
 	bool LookingAround = false; //Is left button pressed ?
-	float FoV = 60.f, mouseSpeed = 0.002f;
+	double lastCursorX, lastCursorY;
+	float FoV = 60.f, mouseSpeed = 0.00002f;
 	float horizontalAngle = 0.f, verticalAngle = -M_PI_2;
 	glm::vec3 cameraPosition = glm::vec3(0,0,2);
 

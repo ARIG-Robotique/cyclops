@@ -329,7 +329,7 @@ void JsonListener::ThreadEntryPoint()
 	{
 		CheckAlive();
 		
-		char bufferraw[1024];
+		char bufferraw[1<<10];
 		int numreceived = Transport->Receive(bufferraw, sizeof(bufferraw), ClientName, false);
 		if (numreceived <= 0)
 		{
