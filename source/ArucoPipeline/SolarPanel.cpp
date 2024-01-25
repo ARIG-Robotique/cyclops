@@ -88,7 +88,11 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 
 		Affine3d localTransform = Affine3d(rotationMatrix, tvec); //Camera -> Tag
 		Affine3d WorldTransform = CameraData.CameraTransform * localTransform;
-
+		if (GetAxis(WorldTransform.rotation(), 2).ddot(Vec3d(0,0,1)) < 0.8)
+		{
+			//cout << "Solar Panel " << closest << " matrix :\n" << WorldTransform.matrix << endl; 
+			continue;
+		}
 		PanelRotations[closest] = GetRotZ(WorldTransform.rotation());
 		//cout << "Panel " << closest << " has a rotation of " << PanelRotations[closest]*180.0/M_PI << " deg" << endl;
 		Affine3d ExactTransform(rotationMatrix, PanelPositions[closest]);

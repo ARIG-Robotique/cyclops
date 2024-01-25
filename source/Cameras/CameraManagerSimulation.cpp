@@ -50,7 +50,6 @@ void CameraManagerSimulation::ScanWorker()
 			try
 			{
 				auto value = i.value();
-				cout << "key: " << i.key() << " value: " << i.value() << endl;
 				calibpath = rootPath / value["calibration"];
 				videopath = rootPath / value["video"];
 			}

@@ -45,16 +45,24 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 		objectified["meta"] = Object.metadata;
 	}
 	
+	bool requireCoord = Object.type != ObjectType::SolarPanel;
+
 	switch (ObjectMode)
 	{
 	case TransformMode::Float2D:
-		objectified["x"] = Object.location.translation()[0];
-		objectified["y"] = Object.location.translation()[1];
+		if (requireCoord)
+		{
+			objectified["x"] = Object.location.translation()[0];
+			objectified["y"] = Object.location.translation()[1];
+		}
 		objectified["r"] = GetRotZ(Object.location.rotation());
 		break;
 	case TransformMode::Millimeter2D:
-		objectified["x"] = Object.location.translation()[0]*1000.0+1500.0;
-		objectified["y"] = Object.location.translation()[1]*1000.0+1000.0;
+		if (requireCoord)
+		{
+			objectified["x"] = Object.location.translation()[0]*1000.0+1500.0;
+			objectified["y"] = Object.location.translation()[1]*1000.0+1000.0;
+		}
 		objectified["r"] = -GetRotZ(Object.location.rotation())*180.0/M_PI;
 		break;
 
