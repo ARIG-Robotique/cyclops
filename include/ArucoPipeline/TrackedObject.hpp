@@ -22,12 +22,12 @@ public:
 	cv::Affine3d Pose; //Location relative to it's parent
 
 private:
-	std::array<cv::Point3d, 4> ObjectPointsNoOffset;
+	mutable std::array<cv::Point3d, 4> ObjectPointsNoOffset;
 
 public:
 	static std::array<cv::Point3d, 4> GetObjectPointsNoOffset(double SideLength);
 
-	const std::array<cv::Point3d, 4>& GetObjectPointsNoOffset();
+	const std::array<cv::Point3d, 4>& GetObjectPointsNoOffset() const;
 
 	ArucoMarker()
 		:sideLength(0.05),

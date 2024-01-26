@@ -11,8 +11,9 @@ using namespace cv;
 SolarPanel::SolarPanel()
 	:TrackedObject()
 {
+	Affine3d offset = Affine3d::Identity().translate(Vec3d(0,-15/1000.0,0));
 	markers = {
-		ArucoMarker(37.5/1000.0, 47)
+		ArucoMarker(37.5/1000.0, 47, offset)
 	};
 	Unique=true;
 	Name="Solar Panels";
@@ -35,11 +36,11 @@ SolarPanel::SolarPanel()
 Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
 	map<int, vector<Point2f>> &ReprojectedCorners)
 {
-	(void) ReprojectedCorners;
 
 	std::vector<ArucoViewCameraLocal> SeenMarkers;
 	Surface = GetSeenMarkers(CameraData, SeenMarkers);
-	auto &flatobj = markers[0].GetObjectPointsNoOffset();
+	const auto& markerobj = markers[0];
+	auto &flatobj = markerobj.GetObjectPointsNoOffset();
 	ReprojectionError = 0;
 	Affine3d WorldToCam = CameraData.CameraTransform.inv();
 	vector<Point2d> ImageSolarPanels;
@@ -93,9 +94,13 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 			//cout << "Solar Panel " << closest << " matrix :\n" << WorldTransform.matrix << endl; 
 			continue;
 		}
-		PanelRotations[closest] = GetRotZ(WorldTransform.rotation());
+		auto & rot = PanelRotations[closest];
+		rot = GetRotZ(WorldTransform.rotation());
 		//cout << "Panel " << closest << " has a rotation of " << PanelRotations[closest]*180.0/M_PI << " deg" << endl;
-		Affine3d ExactTransform(rotationMatrix, PanelPositions[closest]);
+		Affine3d ExactTransform = CameraData.CameraTransform.inv() * Affine3d(MakeRotationFromZX(Vec3d(0,0,1), Vec3d(cos(rot),sin(rot),0)), PanelPositions[closest]) * markerobj.Pose; //camera to world to panel to marker
+		vector<Point2d> ReprojectedCornersDouble;
+		projectPoints(markerobj.GetObjectPointsNoOffset(), ExactTransform.rvec(), ExactTransform.translation(), CameraData.CameraMatrix, CameraData.DistanceCoefficients, ReprojectedCornersDouble);
+		ReprojectedCorners[marker.IndexInCameraData] = vector<Point2f>(ReprojectedCornersDouble.begin(), ReprojectedCornersDouble.end());
 	}
 	return Affine3d::Identity();
 }

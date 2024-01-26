@@ -27,7 +27,7 @@ array<Point3d, 4> ArucoMarker::GetObjectPointsNoOffset(double SideLength)
 	};
 }
 
-const array<Point3d, 4>& ArucoMarker::GetObjectPointsNoOffset()
+const array<Point3d, 4>& ArucoMarker::GetObjectPointsNoOffset() const
 {
 	if (ObjectPointsNoOffset.size() != 4)
 	{
