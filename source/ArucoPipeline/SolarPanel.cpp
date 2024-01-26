@@ -72,30 +72,46 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 			continue;
 		}
 		
-		Mat rvec = Mat::zeros(3, 1, CV_64F), tvec = Mat::zeros(3, 1, CV_64F);
+		
+		vector<Mat> rvecs, tvecs;
 		try
 		{
-			solvePnP(flatobj, flatimg, CameraData.CameraMatrix, CameraData.DistanceCoefficients, rvec, tvec, false, SOLVEPNP_IPPE_SQUARE);
+			solvePnPGeneric(flatobj, flatimg, CameraData.CameraMatrix, CameraData.DistanceCoefficients, rvecs, tvecs, false, SOLVEPNP_IPPE_SQUARE);
 		}
 		catch(const std::exception& e)
 		{
 			std::cerr << e.what() << '\n';
 			continue;
 		}
+		Mat rvec = Mat::zeros(3, 1, CV_64F), tvec = Mat::zeros(3, 1, CV_64F);
+		size_t i;
+		for (i = 0; i < rvecs.size(); i++)
+		{
+			Matx33d rotationMatrix; //Matrice de rotation Camera -> Tag
+			Rodrigues(rvecs[i], rotationMatrix);
+
+			Matx33d WorldRot = CameraData.CameraTransform.rotation() * rotationMatrix;
+			if (GetAxis(WorldRot, 2).ddot(Vec3d(0,0,1)) > 0.8)
+			{
+				//cout << "Solar Panel " << closest << " matrix :\n" << WorldTransform.matrix << endl; 
+				rvec = rvecs[i];
+				tvec = tvecs[i];
+				break;
+			}
+		}
+		if (i >= rvecs.size())
+		{
+			cout << "Panel " << closest << " did not find a solution" << endl;
+			continue;
+		}
+		
 		solvePnPRefineLM(flatobj, flatimg, CameraData.CameraMatrix, CameraData.DistanceCoefficients, rvec, tvec);
 
 		Matx33d rotationMatrix; //Matrice de rotation Camera -> Tag
 		Rodrigues(rvec, rotationMatrix);
-
-		Affine3d localTransform = Affine3d(rotationMatrix, tvec); //Camera -> Tag
-		Affine3d WorldTransform = CameraData.CameraTransform * localTransform;
-		if (GetAxis(WorldTransform.rotation(), 2).ddot(Vec3d(0,0,1)) < 0.8)
-		{
-			//cout << "Solar Panel " << closest << " matrix :\n" << WorldTransform.matrix << endl; 
-			continue;
-		}
+		Matx33d RefinedRotation = CameraData.CameraTransform.rotation() * rotationMatrix;
 		auto & rot = PanelRotations[closest];
-		rot = GetRotZ(WorldTransform.rotation());
+		rot = GetRotZ(RefinedRotation);
 		//cout << "Panel " << closest << " has a rotation of " << PanelRotations[closest]*180.0/M_PI << " deg" << endl;
 		Affine3d ExactTransform = CameraData.CameraTransform.inv() * Affine3d(MakeRotationFromZX(Vec3d(0,0,1), Vec3d(cos(rot),sin(rot),0)), PanelPositions[closest]) * markerobj.Pose; //camera to world to panel to marker
 		vector<Point2d> ReprojectedCornersDouble;

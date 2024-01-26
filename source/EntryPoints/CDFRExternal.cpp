@@ -72,7 +72,7 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 	return bestTeam;
 }
 
-using ExternalProfType = ManualProfiler<true>;
+using ExternalProfType = ManualProfiler<false>;
 
 void CDFRExternal::ThreadEntryPoint()
 {
