@@ -3,6 +3,7 @@
 #include <string>
 
 #include <vector>
+#include <filesystem>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
@@ -32,12 +33,12 @@ public:
 
 	virtual ~Mesh();
 
-	bool LoadMesh(std::string path);
+	bool LoadMesh(std::filesystem::path path);
 
 	bool LoadTexture(cv::Mat Texture);
-	bool LoadTexture(std::string path);
+	bool LoadTexture(std::filesystem::path path);
 
-	bool LoadFromFile(std::string path, std::string texturepath = "");
+	bool LoadFromFile(std::filesystem::path path, std::filesystem::path texturepath = "");
 
 	void BindMesh(); //Create buffers for OpenGL
 

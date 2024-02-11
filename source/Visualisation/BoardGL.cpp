@@ -23,8 +23,6 @@
 using namespace std;
 
 
-static string shaderfolder = "../source/Visualisation/openGL/";
-
 GLObject::GLObject(MeshNames InType, double x, double y, double z, std::string InMetadata)
 {
 	type = InType;
@@ -195,19 +193,19 @@ void BoardGL::LoadModels()
 		return;
 	}
 	glfwMakeContextCurrent(Window);
-	string assetpath = "../assets/";
-	static const map<MeshNames, tuple<string, optional<string>>> meshpathes = 
+	auto assetspath = GetAssetsPath() / "models";
+	static const map<MeshNames, string> meshpathes = 
 	{
-		{MeshNames::arena, {"board.obj", "boardtex.png"}},
-		{MeshNames::robot, {"robot.obj", nullopt}},
-		{MeshNames::axis, {"axis.obj", nullopt}},
-		{MeshNames::brio, {"BRIO.obj", nullopt}},
-		{MeshNames::skybox, {"skybox.obj", nullopt}},
-		{MeshNames::tag, {"tag.obj", nullopt}},
-		{MeshNames::trackercube, {"trackercube.obj", nullopt}},
-		{MeshNames::toptracker, {"toptracker.obj", nullopt}},
+		{MeshNames::arena, "board"},
+		{MeshNames::robot, "robot"},
+		{MeshNames::axis, "axis"},
+		{MeshNames::brio, "brio"},
+		{MeshNames::skybox, "skybox"},
+		{MeshNames::tag, "tag"},
+		{MeshNames::trackercube, "tracker"},
+		{MeshNames::toptracker, "top tracker"},
 
-		{MeshNames::solarpanel,	{"solarpanel.obj", "solartex.png"}}
+		{MeshNames::solarpanel,	"solar panel"}
 	};
 	//cout << "Loading meshes" << endl;
 
@@ -215,16 +213,42 @@ void BoardGL::LoadModels()
 	{
 		Meshes[iterator.first] = Mesh();
 		Mesh &thismesh = Meshes[iterator.first];
-		auto &second = iterator.second;
-		auto &meshpath = get<0>(second);
-		auto &textpath = get<1>(second);
-		if (textpath.has_value())
+		filesystem::path folderpath = assetspath / iterator.second;
+		if (!filesystem::exists(folderpath))
 		{
-			thismesh.LoadFromFile(assetpath + meshpath, assetpath + textpath.value());
+			cerr << "[BoardGL::LoadModels] " << folderpath << " does not exist" << endl;
+			continue;
+		}
+		optional<filesystem::path> meshpath, texturepath;
+		for (auto &i : std::filesystem::directory_iterator(folderpath))
+		{
+			//cout << "Found " << i << endl;
+			if (!i.is_regular_file())
+			{
+				continue;
+			}
+			auto entry = i.path();
+			if (entry.extension() == ".obj")
+			{
+				meshpath = entry;
+			}
+			else if (entry.extension() == ".png" || entry.extension() == ".jpeg")
+			{
+				texturepath = entry;
+			}
+		}
+		if (!meshpath.has_value())
+		{
+			cerr << "[BoardGL::LoadModels] Found no mesh for " << folderpath << endl;
+			continue;
+		}
+		if (texturepath.has_value())
+		{
+			thismesh.LoadFromFile(meshpath.value(), texturepath.value());
 		}
 		else
 		{
-			thismesh.LoadFromFile(assetpath + meshpath);
+			thismesh.LoadFromFile(meshpath.value());
 		}
 		thismesh.BindMesh();
 	}
@@ -281,8 +305,9 @@ void BoardGL::Start(string name)
 	glfwSetInputMode(Window, GLFW_STICKY_KEYS, GL_TRUE);
 	glfwSetInputMode(Window, GLFW_RAW_MOUSE_MOTION, GL_TRUE);
 	
+	auto shaderfolder = GetAssetsPath() / "shaders";
 	// Create and compile our GLSL program from the shaders
-	ShaderProgram.LoadShader(shaderfolder + "vertexshader.vs", shaderfolder + "fragmentshader.fs");
+	ShaderProgram.LoadShader(shaderfolder / "vertexshader.vs", shaderfolder / "fragmentshader.fs");
 
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);

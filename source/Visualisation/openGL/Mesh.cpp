@@ -24,7 +24,7 @@ Mesh::~Mesh()
 	}
 }
 
-bool Mesh::LoadMesh(std::string path)
+bool Mesh::LoadMesh(std::filesystem::path path)
 {
 	Assimp::Importer importer;
 	const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate );
@@ -104,7 +104,7 @@ bool Mesh::LoadTexture(cv::Mat Texture)
 	return true;
 }
 
-bool Mesh::LoadTexture(std::string path)
+bool Mesh::LoadTexture(std::filesystem::path path)
 {
 	if (path != "")
 	{
@@ -115,7 +115,7 @@ bool Mesh::LoadTexture(std::string path)
 }
 
 
-bool Mesh::LoadFromFile(std::string path, std::string texturepath)
+bool Mesh::LoadFromFile(std::filesystem::path path, std::filesystem::path texturepath)
 {
 	if(!LoadMesh(path))
 	{

@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-
+#include <filesystem>
 #include <opencv2/core.hpp>
 
 #include <GL/glew.h>
@@ -25,7 +25,7 @@ public:
 
 	virtual ~Texture();
 
-	void LoadFromFile(std::string path);
+	void LoadFromFile(std::filesystem::path path);
 
 	void LoadFromUMat(const cv::UMat &Image);
 

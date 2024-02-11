@@ -3,6 +3,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/objdetect/aruco_detector.hpp>
 #include <opencv2/core/affine.hpp>
+#include <filesystem>
 
 //Defines all global config parameters, and also reads the config file.
 
@@ -23,6 +24,8 @@ struct CaptureConfig
 	int FramerateDivider;
 	std::string filter; //filter to block or allow certain cameras. If camera name contains the filter string, it's allowed. If the filter string starts with a !, the filter is inverted
 };
+
+std::filesystem::path GetAssetsPath();
 
 RunType GetRunType();
 

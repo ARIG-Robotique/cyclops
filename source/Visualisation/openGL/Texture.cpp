@@ -12,7 +12,7 @@ Texture::~Texture()
 	}
 }
 
-void Texture::LoadFromFile(string path)
+void Texture::LoadFromFile(std::filesystem::path path)
 {
 	SourceImage = cv::imread(path, cv::IMREAD_COLOR);
 	valid = true;

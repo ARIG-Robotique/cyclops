@@ -214,6 +214,11 @@ void InitConfig()
 	
 }
 
+std::filesystem::path GetAssetsPath()
+{
+	return std::filesystem::weakly_canonical(std::filesystem::path("../assets/"));
+}
+
 RunType GetRunType()
 {
 	InitConfig();
