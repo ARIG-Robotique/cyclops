@@ -14,8 +14,6 @@ Mesh::~Mesh()
 	{
 		glDeleteBuffers(1, &PositionBuffer);
 
-		glDeleteBuffers(1, &NormalBuffer);
-
 		glDeleteBuffers(1, &UVBuffer);
 
 		glDeleteBuffers(1, &ColorBuffer);
@@ -48,13 +46,11 @@ bool Mesh::LoadMesh(std::filesystem::path path)
 		//return false;
 	}
 	Positions.reserve(mesh->mNumVertices *3);
-	Normals.reserve(mesh->mNumVertices *3);
 	UVs.reserve(mesh->mNumVertices *2);
 	Colors.reserve(mesh->mNumVertices *3);
 	for (size_t i = 0; i < mesh->mNumVertices; i++)
 	{
 		aiVector3D pos = mesh->mVertices[i];
-		aiVector3D normal = mesh->mNormals[i];
 		aiVector3D UV;
 		if (mesh->HasTextureCoords(0))
 		{
@@ -79,7 +75,6 @@ bool Mesh::LoadMesh(std::filesystem::path path)
 		{
 			Positions.push_back(pos[j]);
 			Colors.push_back(col[j]);
-			Normals.push_back(normal[j]);
 		}
 	}
 	if (mesh->HasFaces())
@@ -141,10 +136,6 @@ void Mesh::BindMesh()
 	// Give our vertices to OpenGL.
 	glBufferData(GL_ARRAY_BUFFER, Positions.size() * sizeof(GLfloat), Positions.data(), GL_STATIC_DRAW);
 
-	glGenBuffers(1, &NormalBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, NormalBuffer);
-	glBufferData(GL_ARRAY_BUFFER, Normals.size() * sizeof(GLfloat), Normals.data(), GL_STATIC_DRAW);
-
 	glGenBuffers(1, &UVBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, UVBuffer);
 	glBufferData(GL_ARRAY_BUFFER, UVs.size() * sizeof(GLfloat), UVs.data(), GL_STATIC_DRAW);
@@ -178,17 +169,6 @@ void Mesh::Draw(GLuint ParamHandle, bool forceTexture)
 	GL_FALSE,            // normalized?
 	0,                   // stride
 	(void*)0             // array buffer offset
-	);
-
-	glEnableVertexAttribArray(i);
-	glBindBuffer(GL_ARRAY_BUFFER, NormalBuffer);
-	glVertexAttribPointer(
-		i++,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-		3,                                // size
-		GL_FLOAT,                         // type
-		GL_FALSE,                         // normalized?
-		0,                                // stride
-		(void*)0                          // array buffer offset
 	);
 
 	glEnableVertexAttribArray(i);

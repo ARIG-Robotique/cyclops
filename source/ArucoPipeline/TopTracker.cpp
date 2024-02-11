@@ -24,10 +24,10 @@ TopTracker::~TopTracker()
 
 vector<ObjectData> TopTracker::ToObjectData() const
 {
-	ObjectData robot;
-	robot.name = Name;
-	robot.type = ObjectType::TopTracker;
-	robot.location = Location;
-	robot.Childs = GetMarkersAndChilds();
-	return {robot};
+	ObjectData tracker;
+	tracker.name = Name;
+	tracker.type = ObjectType::TopTracker;
+	tracker.location = Location;
+	//tracker.Childs = GetMarkersAndChilds();
+	return {tracker};
 }

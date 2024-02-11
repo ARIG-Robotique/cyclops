@@ -15,7 +15,6 @@ struct Mesh
 private:
 	GLuint PositionBuffer;
 	GLuint UVBuffer;
-	GLuint NormalBuffer;
 	GLuint ColorBuffer;
 
 	GLuint IndexBuffer;
@@ -24,7 +23,6 @@ private:
 public:
 	std::vector<GLfloat> Positions;
 	std::vector<GLfloat> UVs;
-	std::vector<GLfloat> Normals;
 	std::vector<GLfloat> Colors;
 
 	std::vector<unsigned int> Indices;
