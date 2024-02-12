@@ -23,6 +23,11 @@ find_package(glm REQUIRED)
 
 add_subdirectory("thirdparty/json")
 
+add_subdirectory(
+	"thirdparty/tensorflow/tensorflow/lite"
+	"${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite" EXCLUDE_FROM_ALL)
+
+
 # If the package has been found, several variables will
 # be set, you can find the full list with descriptions
 # in the OpenCVConfig.cmake file.
@@ -90,4 +95,5 @@ target_link_libraries(${PROJECT_NAME}
 	glm::glm
 	assimp
 	nlohmann_json::nlohmann_json
+	tensorflow-lite
 )
