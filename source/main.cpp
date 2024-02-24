@@ -26,6 +26,8 @@
 #include <Communication/TCPJsonHost.hpp>
 #include <Communication/Transport/GenericTransport.hpp>
 
+#include <DetectFeatures/YoloDetect.hpp>
+
 #include <signal.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -132,7 +134,8 @@ int main(int argc, char** argv )
 	
 	ConfigureOpenCL(true);
 
-	
+	YoloTest(); //TODO : Remove this !
+
 	if (parser.has("marker"))
 	{
 		auto& detector = GetArucoDetector();

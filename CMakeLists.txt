@@ -21,11 +21,11 @@ find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glm REQUIRED)
 
-add_subdirectory("thirdparty/json")
 
+add_subdirectory("thirdparty/json")
 add_subdirectory(
-	"thirdparty/tensorflow/tensorflow/lite"
-	"${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite" EXCLUDE_FROM_ALL)
+  "thirdparty/tensorflow/tensorflow/lite"
+  "${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite" EXCLUDE_FROM_ALL)
 
 
 # If the package has been found, several variables will
@@ -60,7 +60,7 @@ set(imguisource ${imguiroot}/imgui.cpp ${imguiroot}/imgui_tables.cpp ${imguiroot
 set(imguisource ${imguisource} ${imguiroot}/backends/imgui_impl_glfw.cpp ${imguiroot}/backends/imgui_impl_opengl3.cpp)
 
 add_compile_definitions(IMGUI_USER_CONFIG="Visualisation/imguiconfig.hpp")
-add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+add_compile_options(-Wall -Wextra -Wpedantic)
 
 message(STATUS "include directories : ${INCLUDES}")
 
@@ -96,4 +96,5 @@ target_link_libraries(${PROJECT_NAME}
 	assimp
 	nlohmann_json::nlohmann_json
 	tensorflow-lite
+	edgetpu
 )

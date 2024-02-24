@@ -3,6 +3,7 @@
 #include <EntryPoints/CDFRCommon.hpp>
 
 #include <DetectFeatures/ArucoDetect.hpp>
+#include <DetectFeatures/YoloDetect.hpp>
 
 #include <Visualisation/BoardGL.hpp>
 #include <Visualisation/ImguiWindow.hpp>
@@ -236,10 +237,11 @@ void CDFRExternal::ThreadEntryPoint()
 		//undistort
 		//detect aruco and yolo
 
-		parallel_for_(Range(0, Cameras.size()), 
+		/*parallel_for_(Range(0, Cameras.size()), 
 		[&Cameras, &FeatureDataLocal, &CamerasWithPosition, TrackerToUse, GrabTick, &ParallelProfilers]
-		(Range InRange)
+		(Range InRange)*/
 		{
+		Range InRange(0, Cameras.size());
 			for (int i = InRange.start; i < InRange.end; i++)
 			{
 				auto &thisprof = ParallelProfilers[i];
@@ -258,6 +260,7 @@ void CDFRExternal::ThreadEntryPoint()
 				CameraImageData ImData = cam->GetFrame(true);
 				thisprof.EnterSection("DetectAruco");
 				FeatData.CopyEssentials(ImData);
+				DetectYolo(ImData, FeatData);
 				DetectAruco(ImData, FeatData);
 				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);
 				if (CamerasWithPosition[i])
@@ -268,7 +271,8 @@ void CDFRExternal::ThreadEntryPoint()
 				FeatData.CameraTransform = cam->GetLocation();
 				thisprof.EnterSection("");
 			}
-		});
+		}
+		//);
 
 		for (auto &pprof : ParallelProfilers)
 		{

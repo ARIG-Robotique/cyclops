@@ -6,4 +6,4 @@
 	url = https://github.com/ocornut/imgui.git
 [submodule "thirdparty/tensorflow"]
 	path = thirdparty/tensorflow
-	url = git@github.com:tensorflow/tensorflow.git
+	url = https://github.com/tensorflow/tensorflow.git
