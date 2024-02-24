@@ -5,11 +5,15 @@ set(PROJECT_NAME cyclops)
 # Define project name
 project(${PROJECT_NAME})
 
-# Find OpenCV, you may need to set OpenCV_DIR variable
-# to the absolute path to the directory containing OpenCVConfig.cmake file
-# via the command line or GUI
+# OpenCV
 find_package(OpenCV 4.8 REQUIRED)
+message(STATUS "OpenCV library status:")
+message(STATUS "    config: ${OpenCV_DIR}")
+message(STATUS "    version: ${OpenCV_VERSION}")
+message(STATUS "    libraries: ${OpenCV_LIBS}")
+message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
+# CUDA
 #find_package(CUDAToolkit)
 #if(CUDAToolkit_FOUND)
 #	add_compile_definitions(WITH_CUDA)
@@ -21,24 +25,22 @@ find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glm REQUIRED)
 
-
+# Json
 add_subdirectory("thirdparty/json")
-add_subdirectory(
-  "thirdparty/tensorflow/tensorflow/lite"
-  "${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite" EXCLUDE_FROM_ALL)
 
+# Coral / EdgeTPU
+find_library(edgetpu_FOUND edgetpu)
+if(edgetpu_FOUND)
+	add_subdirectory(
+		"thirdparty/tensorflow/tensorflow/lite"
+		"${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite" EXCLUDE_FROM_ALL)
+	set(CORALLIBS tensorflow-lite edgetpu)
+	message("EdgeTPU library installed on system, including tensorflow...")
+else(edgetpu_FOUND)
+	message("EdgeTPU library not installed on system, not including tensorflow...")
+endif(edgetpu_FOUND)
 
-# If the package has been found, several variables will
-# be set, you can find the full list with descriptions
-# in the OpenCVConfig.cmake file.
-# Print some message showing some of them
-message(STATUS "Cmake source dir : ${CMAKE_SOURCE_DIR}")
-message(STATUS "OpenCV library status:")
-message(STATUS "    config: ${OpenCV_DIR}")
-message(STATUS "    version: ${OpenCV_VERSION}")
-message(STATUS "    libraries: ${OpenCV_LIBS}")
-message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
-
+# Auto include subfolders
 MACRO(HEADER_DIRECTORIES return_list)
 	FILE(GLOB_RECURSE new_list include/*.h*)
 	SET(dir_list "")
@@ -52,7 +54,7 @@ ENDMACRO()
 
 HEADER_DIRECTORIES(INCLUDES)
 
-#imgui files
+# Imgui files
 set(imguiroot ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui)
 set(imguifolders ${imguiroot} ${imguiroot}/backends)
 
@@ -60,6 +62,8 @@ set(imguisource ${imguiroot}/imgui.cpp ${imguiroot}/imgui_tables.cpp ${imguiroot
 set(imguisource ${imguisource} ${imguiroot}/backends/imgui_impl_glfw.cpp ${imguiroot}/backends/imgui_impl_opengl3.cpp)
 
 add_compile_definitions(IMGUI_USER_CONFIG="Visualisation/imguiconfig.hpp")
+
+# Extra compiler options
 add_compile_options(-Wall -Wextra -Wpedantic)
 
 message(STATUS "include directories : ${INCLUDES}")
@@ -95,6 +99,5 @@ target_link_libraries(${PROJECT_NAME}
 	glm::glm
 	assimp
 	nlohmann_json::nlohmann_json
-	tensorflow-lite
-	edgetpu
+	${CORALLIBS}
 )
