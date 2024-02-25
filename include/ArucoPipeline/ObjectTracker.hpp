@@ -34,6 +34,8 @@ public:
 
 	double GetArucoSize(int number);
 
+	std::vector<std::vector<cv::Point3d>> GetPointsOfInterest() const;
+
 private:
 
 	void RegisterArucoRecursive(TrackedObject* object, int index);

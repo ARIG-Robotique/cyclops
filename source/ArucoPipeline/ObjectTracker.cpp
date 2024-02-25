@@ -203,6 +203,20 @@ double ObjectTracker::GetArucoSize(int number)
 	return ArucoSizes[number];
 }
 
+vector<vector<Point3d>> ObjectTracker::GetPointsOfInterest() const
+{
+	vector<vector<Point3d>> poi;
+	for (auto object : objects)
+	{
+		auto localpoi = object->GetPointsOfInterest();
+		for (auto &&i : localpoi)
+		{
+			poi.push_back(i);
+		}
+	}
+	return poi;
+}
+
 void ObjectTracker::RegisterArucoRecursive(TrackedObject* object, int index)
 {
 	for (size_t i = 0; i < object->markers.size(); i++)

@@ -10,6 +10,7 @@
 #include <Misc/ManualProfiler.hpp>
 #include <Misc/math2d.hpp>
 #include <Cameras/Calibfile.hpp>
+#include <opencv2/photo.hpp>
 
 #include <Communication/Transport/TCPTransport.hpp>
 #include <Communication/Transport/UDPTransport.hpp>
@@ -73,7 +74,7 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 	return bestTeam;
 }
 
-using ExternalProfType = ManualProfiler<false>;
+using ExternalProfType = ManualProfiler<true>;
 
 void CDFRExternal::ThreadEntryPoint()
 {
@@ -241,7 +242,7 @@ void CDFRExternal::ThreadEntryPoint()
 		[&Cameras, &FeatureDataLocal, &CamerasWithPosition, TrackerToUse, GrabTick, &ParallelProfilers]
 		(Range InRange)*/
 		{
-		Range InRange(0, Cameras.size());
+			Range InRange(0, Cameras.size());
 			for (int i = InRange.start; i < InRange.end; i++)
 			{
 				auto &thisprof = ParallelProfilers[i];
@@ -258,10 +259,29 @@ void CDFRExternal::ThreadEntryPoint()
 				//cam->Undistort();
 				thisprof.EnterSection("CameraGetFrame");
 				CameraImageData ImData = cam->GetFrame(true);
-				thisprof.EnterSection("DetectAruco");
+				switch (GetRunType())
+				{
+					case RunType::Normal:
+						break;
+					//add simulated noise
+					case RunType::Simulate:
+						thisprof.EnterSection("Add simulation noise");
+						cv::UMat noise(ImData.Image.size(),ImData.Image.type());
+						float m = 0;
+						float sigma = 20;
+						cv::randn(noise, m, sigma);
+						add(ImData.Image, noise, ImData.Image);
+						//imwrite("noised.jpg", ImData.Image);
+						break;
+				}
+				//thisprof.EnterSection("Denoise");
+				//fastNlMeansDenoising(ImData.Image, ImData.Image, 10);
+				//imwrite("denoised.jpg", ImData.Image);
+				thisprof.EnterSection("Detect Aruco");
 				FeatData.CopyEssentials(ImData);
-				DetectYolo(ImData, FeatData);
+				//DetectYolo(ImData, FeatData);
 				DetectAruco(ImData, FeatData);
+				thisprof.EnterSection("3D Solve Camera");
 				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);
 				if (CamerasWithPosition[i])
 				{
@@ -269,6 +289,9 @@ void CDFRExternal::ThreadEntryPoint()
 					//cout << "Camera has location" << endl;
 				}
 				FeatData.CameraTransform = cam->GetLocation();
+				thisprof.EnterSection("Detect Aruco POIs");
+				const auto &POIs = TrackerToUse->GetPointsOfInterest();
+				DetectArucoPOI(ImData, FeatData, POIs);
 				thisprof.EnterSection("");
 			}
 		}
@@ -339,12 +362,12 @@ void CDFRExternal::ThreadEntryPoint()
 				for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
 				{
 					auto& corners = FeatData.ArucoCorners[arucoidx];
-					uint32_t color = IM_COL32(0,255,0,255);
+					uint32_t color = IM_COL32(11, 222, 152, 255);
 					if (FeatData.ArucoCornersReprojected[arucoidx].size() != 0)
 					{
 						//cout << arucoidx << " is reprojected" << endl;
 						corners = FeatData.ArucoCornersReprojected[arucoidx];
-						color = IM_COL32(0,0,255,255);
+						color = IM_COL32(189, 161, 25, 255);
 					}
 					
 					Point2d textpos(0,0);
@@ -363,7 +386,7 @@ void CDFRExternal::ThreadEntryPoint()
 					}
 					DrawList->PathStroke(color, ImDrawFlags_Closed, 2);
 					string text = to_string(FeatData.ArucoIndices[arucoidx]);
-					DrawList->AddText(textpos, color, &*text.begin(), &*text.end());
+					DrawList->AddText(nullptr, 16, textpos, color, text.c_str());
 				}
 			}
 			if(!DirectImage->EndFrame())

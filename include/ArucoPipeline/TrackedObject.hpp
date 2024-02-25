@@ -109,13 +109,8 @@ public:
 
 	virtual std::vector<ObjectData> ToObjectData() const;
 
+	//Array of world space coordinate points where extra attention should be given using aruco (second pass detection using a smaller window containing those points)
+	virtual std::vector<std::vector<cv::Point3d>> GetPointsOfInterest() const;
+
 	void Inspect();
 };
-
-
-
-cv::Affine3d GetTagTransform(double SideLength, std::vector<cv::Point2f> Corners, cv::Mat& CameraMatrix, cv::Mat& DistanceCoefficients);
-
-cv::Affine3d GetTagTransform(double SideLength, std::vector<cv::Point2f> Corners, Camera* Cam);
-
-cv::Affine3d GetTransformRelativeToTag(ArucoMarker& Tag, std::vector<cv::Point2f> Corners, Camera* Cam);

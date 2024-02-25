@@ -18,18 +18,9 @@ SolarPanel::SolarPanel()
 	Unique=true;
 	Name="Solar Panels";
 
-	const double panelY=-1.037;
-	const double panelGroupSeparationX=1.0, panelSeparationX=0.225;
-	const double ExpectedZ = 0.104;
-	int panelindex = 0;
-	for (int i = -1; i <=1; i++)
+	for (size_t i = 0; i < PanelPositions.size(); i++)
 	{
-		for (int j = -1; j <= 1; j++)
-		{
-			double panelX=i*panelGroupSeparationX+j*panelSeparationX;
-			PanelPositions[panelindex] = Point3d(panelX, panelY, ExpectedZ);
-			panelindex++;
-		}
+		PanelPositions[i] = GetPanelPosition(i);
 	}
 }
 
@@ -71,7 +62,6 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 			//cout << "Distance to closest (" << closest << ") too big " << smallestDistance << " (closest panel is at " << ImageSolarPanels[closest] << ", seen is at " << AimPos << ") rejected." << endl;
 			continue;
 		}
-		
 		
 		vector<Mat> rvecs, tvecs;
 		try
@@ -131,4 +121,29 @@ vector<ObjectData> SolarPanel::ToObjectData() const
 		objects.emplace_back(ObjectType::SolarPanel, "Solar Panel " + to_string(i), location);
 	}
 	return objects;
+}
+
+vector<vector<Point3d>> SolarPanel::GetPointsOfInterest() const
+{
+	static vector<vector<Point3d>> points;
+	if (points.size() != 0)
+	{
+		return points;
+	}
+	
+	points.resize(PanelPositions.size());
+	for (size_t i = 0; i < PanelPositions.size(); i++)
+	{
+		vector<Point3d> &thispanelpoints = points[i];
+		thispanelpoints.resize(4);
+		auto &thispanel = PanelPositions[i];
+		const double offset = 0.3;
+		for (int j = 0; j < 4; j++)
+		{
+			thispanelpoints[j].x = thispanel.x + offset*(j&1 ? 1 : -1);
+			thispanelpoints[j].y = thispanel.y + offset*(j>>1 ? 1 : -1);
+			thispanelpoints[j].z = thispanel.z;
+		}
+	}
+	return points;
 }

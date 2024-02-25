@@ -9,23 +9,40 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
 
+#ifdef WITH_CORAL
 #include <edgetpu.h>
 #include <edgetpu_c.h>
 #include <tensorflow/lite/interpreter.h>
 #include <tensorflow/lite/interpreter_builder.h>
 #include <tensorflow/lite/op_resolver.h>
 #include <tensorflow/lite/core/kernels/register.h>
+#endif
 
 #include <Misc/GlobalConf.hpp>
 
 using namespace std;
 using namespace cv;
 
+const int numclasses = 4;
+array<string, numclasses> ClassNames;
 
+string GetName(int index)
+{
+	return ClassNames[index];
+}
 
 namespace OpenCVDNN
 {
 	optional<dnn::Net> YoloNet;
+
+	void LoadNames()
+	{
+		ifstream NamesFile(GetAssetsPath()/"dnn"/"cdfr.names");
+		for (size_t i = 0; i < numclasses; i++)
+		{
+			NamesFile >> ClassNames[i];
+		}
+	}
 
 	void LoadNet()
 	{
@@ -33,13 +50,16 @@ namespace OpenCVDNN
 		{
 			return;
 		}
+		LoadNames();
 		auto backends = dnn::getAvailableBackends();
 		cout << "Listing available backends and targets" << endl;
 		for (auto &&backend : backends)
 		{
 			cout << "Backend " << backend.first << " is available with target " << backend.second << endl;
 		}
-		YoloNet = dnn::readNet(GetAssetsPath() / "dnn" / "run2_float32.onnx");
+		//YoloNet = dnn::readNet(GetAssetsPath() / "dnn" / "run2_float32.onnx");
+		auto dnnpath = GetAssetsPath() / "dnn";
+		YoloNet = dnn::readNetFromDarknet(dnnpath/"cdfr.cfg", dnnpath/"cdfr.weights");
 	}
 
 	void Preprocess(const UMat& frame, dnn::Net& net, Size inpSize, float scale, const Scalar& mean, bool swapRB)
@@ -54,7 +74,6 @@ namespace OpenCVDNN
 		net.setInput(blob, "", scale, mean);
 	}
 
-	const int numclasses = 4;
 
 	struct Detection
 	{
@@ -68,7 +87,7 @@ namespace OpenCVDNN
 	};
 
 
-	vector<Detection> Postprocess(vector<Mat> outputBlobs, vector<string> layerNames)
+	vector<Detection> Postprocess(vector<Mat> outputBlobs, vector<string> layerNames, Rect window)
 	{
 		vector<Rect> boxes;
 		vector<float> scores;
@@ -77,6 +96,7 @@ namespace OpenCVDNN
 		{
 			auto& blob = outputBlobs[blobidx];
 			auto& layername = layerNames[blobidx];
+			(void) layername;
 			int numdet = 1;
 			for (int i = 0; i < blob.size.dims()-1; i++)
 			{
@@ -95,7 +115,11 @@ namespace OpenCVDNN
 			for (const uint8_t* ptr = blob.data; ptr < blob.dataend; ptr+=stride)
 			{
 				auto recast = reinterpret_cast<const float*>(ptr);
-				boxes.emplace_back(recast[2], recast[3], recast[0], recast[1]);
+				float cx = recast[0]*window.width+window.x;
+				float cy = recast[1]*window.height+window.y;
+				float w = recast[2]*window.width;
+				float h = recast[3]*window.height;
+				boxes.emplace_back(cx-w/2, cy-h/2, w, h);
 				scores.emplace_back(recast[4]);
 				auto& classesloc = classes.emplace_back();
 				copy(&recast[5], &recast[numelem], classesloc.data());
@@ -118,15 +142,20 @@ namespace OpenCVDNN
 
 		int modelwidth = 640;
 
-		Preprocess(InData.Image, YoloNet.value(), Size(modelwidth,modelwidth), 1.0, 0, true);
+		Preprocess(InData.Image, YoloNet.value(), Size(modelwidth,modelwidth), 1.0/255.0, 0, false);
 		auto start = chrono::steady_clock::now();
 		vector<Mat> outputBlobs;
 		auto OutputNames = YoloNet->getUnconnectedOutLayersNames();
 		YoloNet->forward(outputBlobs, OutputNames);
 		auto stop = chrono::steady_clock::now();
-		cout << "Inference took " << chrono::duration<double>(stop-start).count() << " s" << endl;
-		auto detections = Postprocess(outputBlobs, OutputNames);
+		//cout << "Inference took " << chrono::duration<double>(stop-start).count() << " s" << endl;
+		auto detections = Postprocess(outputBlobs, OutputNames, Rect(0,0,InData.Image.cols, InData.Image.rows));
 		Mat painted; InData.Image.copyTo(painted);
+		int numdetections = detections.size();
+		OutData.YoloCorners.clear();
+		OutData.YoloIndices.clear();
+		OutData.YoloCorners.reserve(numdetections);
+		OutData.YoloCorners.reserve(numdetections);
 		for (auto &det : detections)
 		{
 			int maxidx = 0;
@@ -138,15 +167,14 @@ namespace OpenCVDNN
 				}
 			}
 			cout << "Found " << maxidx << " at " << det.BoundingBox << " (Confidence " << det.Confidence << ")" << endl;
-			
+			OutData.YoloCorners.push_back(det.BoundingBox);
+			OutData.YoloIndices.push_back(maxidx);
 		}
-
-		(void) OutData;
-
-		return 0;
+		return numdetections;
 	}
 } // namespace OpenCVDNN
 
+#ifdef WITH_CORAL
 namespace EdgeDNN
 {
 	bool EdgeLoaded = false, EdgeOK = false;
@@ -235,25 +263,67 @@ namespace EdgeDNN
 	}
 
 } // namespace EdgeDNN
-
+#endif
 
 
 int DetectYolo(const CameraImageData &InData, CameraFeatureData& OutData)
 {
+	#ifdef WITH_CORAL
 	if(EdgeDNN::LoadNet())
 	{
 
 	}
+	#endif
 	return OpenCVDNN::DetectYolo(InData, OutData);
 }
 
 #include <opencv2/imgcodecs.hpp>
+#include <Cameras/VideoCaptureCamera.hpp>
+#include <Visualisation/ImguiWindow.hpp>
+#include <Misc/math2d.hpp>
+#include <Visualisation/openGL/Texture.hpp>
 
-void YoloTest()
+void YoloTest(VideoCaptureCameraSettings CamSett)
 {
-	
-	CameraImageData InData;
-	imread(GetAssetsPath() / "dnn" / "test.jpg").copyTo(InData.Image);
-	CameraFeatureData OutData;
-	DetectYolo(InData, OutData);
+	ImguiWindow win;
+	Texture tex;
+	auto resolution = CamSett.Resolution;
+	unique_ptr<Camera> cam = make_unique<VideoCaptureCamera>(make_shared<VideoCaptureCameraSettings>(CamSett));
+	cam->StartFeed();
+	while (1)
+	{
+		if (!cam->Read())
+		{
+			continue;
+		}
+		CameraImageData InData = cam->GetFrame(true);
+		CameraFeatureData OutData;
+		DetectYolo(InData, OutData);
+		cv::Rect impos;
+		ImVec2 imguiwinsize = win.GetWindowSize();
+		win.StartFrame();
+		{
+			cv::Rect Backgroundsize(Point2i(0,0), (Size2i)imguiwinsize);
+			impos = ScaleToFit(resolution, Backgroundsize);
+			Size2f uv_min(0,0), uv_max(1,1);
+			tex.LoadFromUMat(InData.Image);
+			
+			win.AddImageToBackground(tex, impos, uv_min, uv_max);
+		}
+		auto foreground = ImGui::GetForegroundDrawList();
+		for (size_t i = 0; i < OutData.YoloCorners.size(); i++)
+		{
+			auto &this_rect = OutData.YoloCorners[i];
+			auto tl = ImageRemap<float>(Rect(Point(0,0), resolution), impos, this_rect.tl());
+			auto br = ImageRemap<float>(Rect(Point(0,0), resolution), impos, this_rect.br());
+			foreground->AddRect(tl, br, IM_COL32(255,0,0,255));
+			string detstr = GetName(OutData.YoloIndices[i]);
+			foreground->AddText(tl, IM_COL32(255,0,0,255), detstr.c_str());
+		}
+		
+		if(!win.EndFrame())
+		{
+			break;
+		}
+	}
 }

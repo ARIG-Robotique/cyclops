@@ -112,6 +112,7 @@ int main(int argc, char** argv )
 		"{opengl ogl     |      | runs opengl test}"
 		"{server s       |      | force server/client state}"
 		"{map            |      | runs object mapping, using saved images and calibration}"
+		"{test           |      | run test}"
 		"{nodisplay | | start without a display}"
 		;
 	CommandLineParser parser(argc, argv, keys);
@@ -121,6 +122,7 @@ int main(int argc, char** argv )
 		parser.printMessage();
 		exit(EXIT_SUCCESS);
 	}
+	ConfigureOpenCL(true);
 	if (parser.has("build"))
 	{
 		cout << getBuildInformation() << endl;
@@ -132,9 +134,7 @@ int main(int argc, char** argv )
 
 	//putenv("GST_DEBUG=jpegdec:4"); //enable gstreamer debug
 	
-	ConfigureOpenCL(true);
 
-	YoloTest(); //TODO : Remove this !
 
 	if (parser.has("marker"))
 	{
@@ -179,7 +179,12 @@ int main(int argc, char** argv )
 		
 	}
 
-	bool direct = parser.has("direct");
+	if (parser.has("test"))
+	{
+		YoloTest(CamSett[0]); //TODO : Remove this !
+	}
+
+	bool direct = parser.has("direct") || 1;
 	bool opengl = !parser.has("nodisplay");
 	
 	if (parser.has("map"))
