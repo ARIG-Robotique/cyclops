@@ -80,6 +80,17 @@ UMat PreprocessArucoImage(UMat Source)
 	}
 }
 
+Point2f ComputeMean(const vector<Point2f> &Points)
+{
+	Point2f mean(0,0);
+	for (size_t j = 0; j < Points.size(); j++)
+	{
+		mean += Points[j];
+	}
+	mean /= (int)Points.size();
+	return mean;
+}
+
 int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutData, const vector<Rect> &Segments, aruco::ArucoDetector* Detector)
 {
 	size_t NumSegments = Segments.size();
@@ -114,7 +125,27 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 		}
 	});
 
-	size_t numdets = 0;
+	size_t NumDetectionsBefore = OutData.ArucoCorners.size();
+	size_t NumDetectionsThis = 0;
+	for (size_t poiidx = 0; poiidx < NumSegments; poiidx++)
+	{
+		NumDetectionsThis += ids[poiidx].size();
+	}
+	size_t MaxDetectionsAfter = NumDetectionsThis + NumDetectionsBefore;
+	vector<int> accumulations;
+	vector<Point2f> means;
+	accumulations.resize(NumDetectionsBefore, 1);
+	accumulations.reserve(MaxDetectionsAfter);
+	means.resize(NumDetectionsBefore, Point2f(0,0));
+	means.reserve(MaxDetectionsAfter);
+	for (size_t i = 0; i < NumDetectionsBefore; i++)
+	{
+		means[i] = ComputeMean(OutData.ArucoCorners[i]);
+	}
+	const float SameWindowSize = 4;
+	const Rect2f SameThreshold(-SameWindowSize/2,-SameWindowSize/2,SameWindowSize,SameWindowSize);
+	OutData.ArucoCorners.reserve(MaxDetectionsAfter);
+	OutData.ArucoIndices.reserve(MaxDetectionsAfter);
 	for (size_t poiidx = 0; poiidx < NumSegments; poiidx++)
 	{
 		size_t numdetslocal = ids[poiidx].size();
@@ -122,12 +153,48 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 		{
 			continue;
 		}
-		copy(corners[poiidx].begin(), corners[poiidx].end(), back_inserter(OutData.ArucoCorners));
-		copy(ids[poiidx].begin(), ids[poiidx].end(), back_inserter(OutData.ArucoIndices));
+		vector<vector<Point2f>> &CornersLocal = corners[poiidx];
+		vector<int> &IDsLocal = ids[poiidx];
+		for (size_t PotentialIdx = 0; PotentialIdx < numdetslocal; PotentialIdx++)
+		{
+			bool found = false;
+			Point2f mean = ComputeMean(CornersLocal[PotentialIdx]);
+			for (size_t PresentIdx = 0; PresentIdx < OutData.ArucoCorners.size(); PresentIdx++)
+			{
+				if (OutData.ArucoIndices[PresentIdx] != IDsLocal[PotentialIdx])
+				{
+					continue;
+				}
+				Point2f &meanother = means[PresentIdx];
+				Point2f diff = mean-meanother;
+				if (diff.inside(SameThreshold))
+				{
+					found = true;
+					//mean the mean
+					meanother = (meanother*accumulations[PresentIdx] + mean) / (accumulations[PresentIdx]+1);
+					for (size_t corneridx = 0; corneridx < OutData.ArucoCorners[PresentIdx].size(); corneridx++)
+					{
+						//mean the corner locations
+						OutData.ArucoCorners[PresentIdx][corneridx] = (OutData.ArucoCorners[PresentIdx][corneridx]*accumulations[PresentIdx] + CornersLocal[PotentialIdx][corneridx]) / (accumulations[PresentIdx]+1);
+					}
+					accumulations[PresentIdx]++;
+					cout << "Merging aruco at " << mean << endl;
+					break;
+				}
+			}
+			if (found)
+			{
+				continue;
+			}
+			means.push_back(mean);
+			OutData.ArucoIndices.push_back(IDsLocal[PotentialIdx]);
+			OutData.ArucoCorners.push_back(CornersLocal[PotentialIdx]);
+			accumulations.push_back(1);
+		}
 	}
 	OutData.ArucoCornersReprojected.resize(OutData.ArucoIndices.size());
 	copy(Segments.begin(), Segments.end(), back_inserter(OutData.ArucoSegments));
-	return numdets;
+	return NumDetectionsThis;
 }
 
 void CleanArucoDetections(CameraFeatureData& OutData)
@@ -152,8 +219,8 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 	);
 	Size2d OverlappedFrameSize
 	{
-		framesize.width  + (Segments.width -1) * MaxArucoSize,
-		framesize.height + (Segments.height-1) * MaxArucoSize,
+		(double) framesize.width  + (Segments.width -1) * MaxArucoSize,
+		(double) framesize.height + (Segments.height-1) * MaxArucoSize,
 	};
 	Size2d segmentsize(
 		OverlappedFrameSize.width /Segments.width,

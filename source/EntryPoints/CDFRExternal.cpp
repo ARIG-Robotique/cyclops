@@ -265,7 +265,7 @@ void CDFRExternal::ThreadEntryPoint()
 						break;
 					//add simulated noise
 					case RunType::Simulate:
-						break;
+						//break;
 						thisprof.EnterSection("Add simulation noise");
 						cv::UMat noise(ImData.Image.size(),ImData.Image.type());
 						float m = 0;
@@ -282,7 +282,7 @@ void CDFRExternal::ThreadEntryPoint()
 				FeatData.CopyEssentials(ImData);
 				//DetectYolo(ImData, FeatData);
 				DetectArucoSegmented(ImData, FeatData, 200, Size(4,4));
-				DetectAruco(ImData, FeatData);
+				//DetectAruco(ImData, FeatData);
 				thisprof.EnterSection("3D Solve Camera");
 				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);
 				if (CamerasWithPosition[i])
@@ -364,12 +364,12 @@ void CDFRExternal::ThreadEntryPoint()
 				for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
 				{
 					auto& corners = FeatData.ArucoCorners[arucoidx];
-					uint32_t color = IM_COL32(11, 222, 152, 255);
+					uint32_t color = IM_COL32(255, 128, 255, 128);
 					if (FeatData.ArucoCornersReprojected[arucoidx].size() != 0)
 					{
 						//cout << arucoidx << " is reprojected" << endl;
 						corners = FeatData.ArucoCornersReprojected[arucoidx];
-						color = IM_COL32(189, 161, 25, 255);
+						color = IM_COL32(128, 255, 255, 128);
 					}
 					
 					Point2d textpos(0,0);
