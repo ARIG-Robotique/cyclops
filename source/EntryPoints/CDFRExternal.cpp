@@ -265,6 +265,7 @@ void CDFRExternal::ThreadEntryPoint()
 						break;
 					//add simulated noise
 					case RunType::Simulate:
+						break;
 						thisprof.EnterSection("Add simulation noise");
 						cv::UMat noise(ImData.Image.size(),ImData.Image.type());
 						float m = 0;
@@ -280,6 +281,7 @@ void CDFRExternal::ThreadEntryPoint()
 				thisprof.EnterSection("Detect Aruco");
 				FeatData.CopyEssentials(ImData);
 				//DetectYolo(ImData, FeatData);
+				DetectArucoSegmented(ImData, FeatData, 200, Size(4,4));
 				DetectAruco(ImData, FeatData);
 				thisprof.EnterSection("3D Solve Camera");
 				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);
@@ -289,9 +291,9 @@ void CDFRExternal::ThreadEntryPoint()
 					//cout << "Camera has location" << endl;
 				}
 				FeatData.CameraTransform = cam->GetLocation();
-				thisprof.EnterSection("Detect Aruco POIs");
-				const auto &POIs = TrackerToUse->GetPointsOfInterest();
-				DetectArucoPOI(ImData, FeatData, POIs);
+				//thisprof.EnterSection("Detect Aruco POIs");
+				//const auto &POIs = TrackerToUse->GetPointsOfInterest();
+				//DetectArucoPOI(ImData, FeatData, POIs);
 				thisprof.EnterSection("");
 			}
 		}
@@ -388,6 +390,14 @@ void CDFRExternal::ThreadEntryPoint()
 					string text = to_string(FeatData.ArucoIndices[arucoidx]);
 					DrawList->AddText(nullptr, 16, textpos, color, text.c_str());
 				}
+				for (size_t segmentidx = 0; segmentidx < FeatData.ArucoSegments.size(); segmentidx++)
+				{
+					auto &segment = FeatData.ArucoSegments[segmentidx];
+					auto tl = ImageRemap<double>(SourceRemap, DestRemap, segment.tl());
+					auto br = ImageRemap<double>(SourceRemap, DestRemap, segment.br());
+					DrawList->AddRect(tl, br, IM_COL32(255, 255, 255, 64));
+				}
+				
 			}
 			if(!DirectImage->EndFrame())
 			{

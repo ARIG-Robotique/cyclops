@@ -137,7 +137,7 @@ vector<vector<Point3d>> SolarPanel::GetPointsOfInterest() const
 		vector<Point3d> &thispanelpoints = points[i];
 		thispanelpoints.resize(4);
 		auto &thispanel = PanelPositions[i];
-		const double offset = 0.3;
+		const double offset = 0.2;
 		for (int j = 0; j < 4; j++)
 		{
 			thispanelpoints[j].x = thispanel.x + offset*(j&1 ? 1 : -1);

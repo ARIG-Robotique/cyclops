@@ -17,6 +17,7 @@ struct CameraFeatureData
 	std::vector<std::vector<cv::Point2f>> ArucoCorners, //Filled by ArucoDetect
 		ArucoCornersReprojected; 						//Cleared by ArucoDetect, Filled by ObjectTracker
 	std::vector<int> ArucoIndices; 						//Filled by ArucoDetect
+	std::vector<cv::Rect> ArucoSegments;
 
 	std::vector<cv::Rect2f> YoloCorners; 	//Filled by YoloDetect
 	std::vector<int> YoloIndices; 			//Filled by YoloDetect
