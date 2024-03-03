@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #refresh admin unlock
 sudo -v
 
@@ -33,6 +35,18 @@ cd build
 # -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
 
 CUDA_EN=OFF
+
+if [ ! -z $1 ]; then
+    CUDA_EN=$1
+fi
+
+if [ "$CUDA_EN" = "ON" ]; then
+    EXTRA_MODULES="-D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules"
+    echo "Using CUDA and extra modules"
+else
+    EXTRA_MODULES=""
+    echo "Not using CUDA"
+fi
 
 cmake -G Ninja \
 -D CMAKE_BUILD_TYPE=Release \
@@ -80,7 +94,9 @@ cmake -G Ninja \
 -D BUILD_PERF_TESTS=OFF \
 -D BUILD_EXAMPLES=OFF \
 \
--D BUILD_wechat_qrcode=OFF ../
+-D BUILD_wechat_qrcode=OFF \
+$EXTRA_MODULES \
+../
 
 ninja
 

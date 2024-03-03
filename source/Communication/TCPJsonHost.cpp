@@ -19,6 +19,9 @@ void TCPJsonHost::ThreadEntryPoint(GenericTransport::NetworkInterface interface)
 		{
 			JsonListener* listener = new JsonListener(Transport.get(), connection, this);
 			Listeners.emplace(listener);
+			NumClients++;
+			ExternalRunner->SetHasNoClients(NumClients == 0);
+			cout << NumClients << " clients right now" << endl;
 		}
 		for (auto it = Listeners.begin(); it != Listeners.end();)
 		{
@@ -28,12 +31,16 @@ void TCPJsonHost::ThreadEntryPoint(GenericTransport::NetworkInterface interface)
 				cout << "Client at " << lptr->ClientName << " is killed, cleaning..." << endl;
 				Transport->DisconnectClient(lptr->ClientName);
 				it=Listeners.erase(it);
+				NumClients--;
+				ExternalRunner->SetHasNoClients(NumClients == 0);
+				cout << NumClients << " clients right now" << endl;
 			}
 			else
 			{
 				it++;
 			}
 		}
+		
 		this_thread::sleep_for(chrono::milliseconds(10));
 	}
 }

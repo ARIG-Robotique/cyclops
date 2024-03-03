@@ -15,6 +15,7 @@ private:
     bool killed = false;
     bool direct;
     bool v3d;
+    bool HasNoClients = true;
 
     int BufferIndex = 0;
 
@@ -27,6 +28,11 @@ private:
     
 public:
     bool Idle = false;
+
+    void SetHasNoClients(bool value)
+    {
+        HasNoClients = value;
+    }
 
     void ThreadEntryPoint();
 

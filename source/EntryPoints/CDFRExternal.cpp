@@ -193,16 +193,46 @@ void CDFRExternal::ThreadEntryPoint()
 	CameraMan->StartScanThread();
 
 	CDFRTeam LastTeam = CDFRTeam::Unknown;
+	bool sleeping = false, idling = false;
 	while (!killed)
 	{
 		if(Idle)
 		{
 			this_thread::sleep_for(chrono::milliseconds(10));
+			if (!idling)
+			{
+				cout << "Entering idle..." << endl;
+			}
+			idling = true;
 			continue;
 		}
+		else if (idling)
+		{
+			cout << "Exiting idle..." << endl;
+			idling = false;
+		}
+		
 		double deltaTime = fps.GetDeltaTime();
 		prof.EnterSection("CameraManager Tick");
 		vector<Camera*> Cameras = CameraMan->Tick();
+		if (HasNoClients && Cameras.size() == 0)
+		{
+			prof.EnterSection("Sleep");
+			if (!sleeping)
+			{
+				sleeping = true;
+				cout << "Entering sleep..." << endl;
+			}
+			this_thread::sleep_for(chrono::milliseconds(500));
+			//continue;
+		}
+		else if (sleeping)
+		{
+			cout << "Exiting sleep..." << endl;
+			sleeping = false;
+		}
+		
+		
 		CDFRTeam Team = GetTeamFromCameraPosition(Cameras);
 		if (Team != LastTeam)
 		{
@@ -334,7 +364,14 @@ void CDFRExternal::ThreadEntryPoint()
 				DirectTextures.resize(NumDisplays);
 			}
 			Size WindowSize = DirectImage->GetWindowSize();
-			auto tiles = DistributeViewports(GetCaptureConfig().FrameSize, WindowSize, NumDisplays);
+			Size ImageSize = WindowSize;
+			if (Cameras.size() > 0)
+			{
+				ImageSize = Cameras[0]->GetCameraSettings()->Resolution;
+			}
+			
+			auto tiles = DistributeViewports(ImageSize, WindowSize, NumDisplays);
+			assert(tiles.size() == Cameras.size());
 			for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
 			{
 				if (Cameras[camidx]->errors != 0)
@@ -342,25 +379,16 @@ void CDFRExternal::ThreadEntryPoint()
 					continue;
 				}
 				auto ImData = Cameras[camidx]->GetFrame(true);
+				Size Resolution(ImData.Image.cols, ImData.Image.rows);
 				DirectTextures[camidx*DisplaysPerCam].LoadFromUMat(ImData.Image);
 				DirectImage->AddImageToBackground(DirectTextures[camidx*DisplaysPerCam], tiles[camidx*DisplaysPerCam]);
-
-				if (DisplaysPerCam > 1)
-				{
-					UMat gray, thresholded, tcol;
-					gray = PreprocessArucoImage(ImData.Image);
-					auto& DetParams = GetArucoDetector().getDetectorParameters();
-					adaptiveThreshold(gray, thresholded, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, DetParams.adaptiveThreshWinSizeMax, DetParams.adaptiveThreshConstant);
-					cvtColor(thresholded, tcol, COLOR_GRAY2BGR);
-					DirectTextures[camidx*DisplaysPerCam+1].LoadFromUMat(tcol);
-					DirectImage->AddImageToBackground(DirectTextures[camidx*DisplaysPerCam+1], tiles[camidx*DisplaysPerCam+1]);
-				}
 
 				//draw aruco
 				auto DrawList = ImGui::GetForegroundDrawList();
 				CameraFeatureData &FeatData = FeatureDataLocal[camidx];
-				Rect SourceRemap(Point(0,0), GetCaptureConfig().FrameSize);
+				Rect SourceRemap(Point(0,0), Resolution);
 				Rect DestRemap = tiles[camidx];
+				//show arucos
 				for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
 				{
 					auto& corners = FeatData.ArucoCorners[arucoidx];
@@ -380,16 +408,20 @@ void CDFRExternal::ThreadEntryPoint()
 						textpos.y = max<double>(textpos.y, vizpos.y);
 						if (cornerit == corners.begin())
 						{
+							//corner0 square
 							Point2d size = Point2d(2,2);
 							DrawList->AddRect(vizpos-size, vizpos+size, color);
 						}
-						
+						//start aruco contour
 						DrawList->PathLineTo(vizpos);
 					}
+					//finish aruco contour
 					DrawList->PathStroke(color, ImDrawFlags_Closed, 2);
+					//text with aruco number
 					string text = to_string(FeatData.ArucoIndices[arucoidx]);
 					DrawList->AddText(nullptr, 16, textpos, color, text.c_str());
 				}
+				//display segments of segmented detection
 				for (size_t segmentidx = 0; segmentidx < FeatData.ArucoSegments.size(); segmentidx++)
 				{
 					auto &segment = FeatData.ArucoSegments[segmentidx];
@@ -407,11 +439,7 @@ void CDFRExternal::ThreadEntryPoint()
 			}
 		}
 		
-		
-		
 		prof.EnterSection("");
-		
-		
 		
 		if (prof.ShouldPrint())
 		{
