@@ -23,14 +23,14 @@ ObjectTracker::~ObjectTracker()
 {
 }
 
-void ObjectTracker::RegisterTrackedObject(TrackedObject* object)
+void ObjectTracker::RegisterTrackedObject(shared_ptr<TrackedObject> object)
 {
 	int index = objects.size();
 	objects.push_back(object);
 	RegisterArucoRecursive(object, index);
 }
 
-void ObjectTracker::UnregisterTrackedObject(TrackedObject* object)
+void ObjectTracker::UnregisterTrackedObject(shared_ptr<TrackedObject> object)
 {
 	assert(object->markers.size() == 0 && object->childs.size() == 0);
 	auto objpos = find(objects.begin(), objects.end(), object);
@@ -61,10 +61,10 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 {
 	CameraData.CameraTransform = Affine3d::Identity();
 	float score = 0;
-	map<int, vector<Point2f>> ReprojectedCorners; //index in array, corners
+	map<int, ArucoCornerArray> ReprojectedCorners; //index in array, corners
 	for (auto object : objects)
 	{
-		auto *staticobj = dynamic_cast<StaticObject*>(object);
+		auto *staticobj = dynamic_cast<StaticObject*>(object.get());
 		if (staticobj == nullptr)
 		{
 			continue;
@@ -96,7 +96,7 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 {
 	const int NumCameras = CameraData.size();
 	//const int NumObjects = objects.size();
-	vector<map<int, vector<Point2f>>> ReprojectedCorners;
+	vector<map<int, ArucoCornerArray>> ReprojectedCorners;
 	ReprojectedCorners.resize(NumCameras);
 	
 	/*parallel_for_(Range(0, objects.size()), [&](const Range& range)
@@ -104,12 +104,12 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 		Range range(0, objects.size());
 		for(int ObjIdx = range.start; ObjIdx < range.end; ObjIdx++)
 		{
-			TrackedObject* object = objects[ObjIdx];
+			auto object = objects[ObjIdx];
 			if (object->markers.size() == 0)
 			{
 				continue;
 			}
-			StaticObject* objstat = dynamic_cast<StaticObject*>(object);
+			StaticObject* objstat = dynamic_cast<StaticObject*>(object.get());
 			if (objstat != nullptr)
 			{
 				if (!objstat->IsRelative()) //Do not solve for static non-relative objects
@@ -217,7 +217,7 @@ vector<vector<Point3d>> ObjectTracker::GetPointsOfInterest() const
 	return poi;
 }
 
-void ObjectTracker::RegisterArucoRecursive(TrackedObject* object, int index)
+void ObjectTracker::RegisterArucoRecursive(shared_ptr<TrackedObject> object, int index)
 {
 	for (size_t i = 0; i < object->markers.size(); i++)
 	{

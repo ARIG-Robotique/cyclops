@@ -32,10 +32,10 @@ protected:
 public:
 	//Function called when a new camera is to be created. Return nullptr if you want to veto that creation
 	//Will be called in a separate thread 
-	std::function<Camera*(VideoCaptureCameraSettings)> StartCamera; 
+	std::function<std::shared_ptr<Camera>(VideoCaptureCameraSettings)> StartCamera; 
 	//When a new camera is added, called when Tick is called
-	std::function<void(Camera*)> RegisterCamera;
-	std::function<bool(Camera*)> StopCamera; //Function called before a camera is going to be deleted (as a head's up)
+	std::function<void(std::shared_ptr<Camera>)> RegisterCamera;
+	std::function<bool(std::shared_ptr<Camera>)> StopCamera; //Function called before a camera is going to be deleted (as a head's up)
 
 
 	CameraManager()

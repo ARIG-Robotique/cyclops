@@ -149,7 +149,7 @@ void TrackedObject::GetObjectPoints(vector<vector<Point3d>>& MarkerCorners, vect
 	}
 	for (size_t i = 0; i < childs.size(); i++)
 	{
-		TrackedObject* child = childs[i];
+		auto child = childs[i];
 		child->GetObjectPoints(MarkerCorners, MarkerIDs, rootTransform * child->Location, filter);
 	}
 }
@@ -186,25 +186,25 @@ float TrackedObject::GetSeenMarkers(const CameraFeatureData& CameraData, vector<
 	}
 	for (size_t i = 0; i < childs.size(); i++)
 	{
-		TrackedObject* child = childs[i];
+		auto child = childs[i];
 		surface += child->GetSeenMarkers(CameraData, MarkersSeen, AccumulatedTransform * child->Location);
 	}
 	return surface;
 }
 
 float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const Mat &rvec, const Mat &tvec, 
-	const CameraFeatureData &CameraData, map<int, vector<Point2f>> &ReprojectedCorners)
+	const CameraFeatureData &CameraData, map<int, ArucoCornerArray> &ReprojectedCorners)
 {
 	float ReprojectionError = 0;
 	for (size_t i = 0; i < MarkersSeen.size(); i++)
 	{
 		vector<Point2d> cornersreproj;
 		projectPoints(MarkersSeen[i].LocalMarkerCorners, rvec, tvec, CameraData.CameraMatrix, CameraData.DistanceCoefficients, cornersreproj);
-		ReprojectedCorners[MarkersSeen[i].IndexInCameraData] = vector<Point2f>(cornersreproj.begin(), cornersreproj.end());
 		//cout << "reprojecting " << MarkersSeen[i].IndexInCameraData << endl;
 		
 		for (size_t j = 0; j < cornersreproj.size(); j++)
 		{
+			ReprojectedCorners[MarkersSeen[i].IndexInCameraData][j] = cornersreproj[j];
 			Point2f diff = MarkersSeen[i].CameraCornerPositions[j] - Point2f(cornersreproj[j]);
 			ReprojectionError += sqrt(diff.ddot(diff));
 		}
@@ -213,7 +213,7 @@ float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal
 }
 
 Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
-	map<int, vector<Point2f>> &ReprojectedCorners)
+	map<int, ArucoCornerArray> &ReprojectedCorners)
 {
 	vector<ArucoViewCameraLocal> SeenMarkers;
 	Surface = GetSeenMarkers(CameraData, SeenMarkers, Affine3d::Identity());
@@ -238,7 +238,7 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 		auto& objpts = SeenMarkers[0].Marker->GetObjectPointsNoOffset();
 		flatobj = vector<Point3d>(objpts.begin(), objpts.end());
 		SeenMarkers[0].LocalMarkerCorners = flatobj; //hack to have ReprojectSeenMarkers work wih a single marker too
-		flatimg = SeenMarkers[0].CameraCornerPositions;
+		flatimg = vector<Point2f>(SeenMarkers[0].CameraCornerPositions.begin(), SeenMarkers[0].CameraCornerPositions.end());
 		objectToMarker = SeenMarkers[0].AccumulatedTransform * SeenMarkers[0].Marker->Pose;
 		flags |= SOLVEPNP_IPPE_SQUARE;
 	}
@@ -248,7 +248,7 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 		flatimg.reserve(nummarkersseen*4);
 		for (int i = 0; i < nummarkersseen; i++)
 		{
-			for (int j = 0; j < 4; j++)
+			for (int j = 0; j < ARUCO_CORNERS_PER_TAG; j++)
 			{
 				flatobj.push_back(SeenMarkers[i].LocalMarkerCorners[j]);
 				flatimg.push_back(SeenMarkers[i].CameraCornerPositions[j]);

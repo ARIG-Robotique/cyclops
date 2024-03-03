@@ -10,7 +10,7 @@ vector<Camera*> CameraManager::Tick()
 		{
 			std::cerr << "Detaching camera @ " << Cameras[i]->GetName() << std::endl;
 			std::string pathtofind = dynamic_cast<const VideoCaptureCameraSettings*>(Cameras[i]->GetCameraSettings())->DeviceInfo.device_paths[0];
-			StopCamera(Cameras[i].get());
+			StopCamera(Cameras[i]);
 			
 			unique_lock lock(pathmutex);
 			usedpaths.erase(pathtofind);
@@ -22,7 +22,7 @@ vector<Camera*> CameraManager::Tick()
 		unique_lock lock(cammutex);
 		for (auto &Camera : NewCameras)
 		{
-			RegisterCamera(Camera.get());
+			RegisterCamera(Camera);
 			Cameras.emplace_back(Camera);
 		}
 		NewCameras.clear();

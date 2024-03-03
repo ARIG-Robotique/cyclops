@@ -7,7 +7,8 @@
 
 #include <Communication/ProcessedTypes.hpp>
 #include <ArucoPipeline/ObjectIdentity.hpp>
-
+#include <ArucoPipeline/ObjectTracker.hpp>
+#include <Cameras/CameraManager.hpp>
 
 class CDFRExternal
 {
@@ -18,6 +19,9 @@ private:
     bool HasNoClients = true;
 
     int BufferIndex = 0;
+
+    ObjectTracker bluetracker, yellowtracker;
+    std::unique_ptr<CameraManager> CameraMan;
 
     std::unique_ptr<std::thread> ThreadHandle;
 

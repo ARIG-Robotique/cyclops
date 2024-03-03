@@ -129,7 +129,7 @@ void CameraManagerV4L2::ScanWorker()
 				continue;
 			}
 			//cout << "Camera matrix : " << settings.CameraMatrix << " / Distance coeffs : " << settings.distanceCoeffs << endl;
-			Camera* cam = StartCamera(settings);
+			auto cam = StartCamera(settings);
 			if (!cam)
 			{
 				std::cerr << "Did not open camera " << device.device_description << " @ " << pathtofind << " : StartCamera returned null" << std::endl;

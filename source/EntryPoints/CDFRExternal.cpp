@@ -17,6 +17,47 @@
 #include <thread>
 #include <memory>
 
+
+CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
+	:direct(InDirect), v3d(InV3D)
+{
+
+	assert(ObjData.size() == FeatureData.size());
+	assert(FeatureData.size() > 0);
+
+	auto boardobj = make_shared<StaticObject>(false, "board");
+	bluetracker.RegisterTrackedObject(boardobj); 
+	yellowtracker.RegisterTrackedObject(boardobj);
+	auto SolarPanels = make_shared<SolarPanel>();
+	bluetracker.RegisterTrackedObject(SolarPanels); 
+	yellowtracker.RegisterTrackedObject(SolarPanels);
+	//TrackerCube* robot1 = new TrackerCube({51, 52, 54, 55}, 0.06, 0.0952, "Robot1");
+	//TrackerCube* robot2 = new TrackerCube({57, 58, 59, 61}, 0.06, 0.0952, "Robot2");
+	//bluetracker.RegisterTrackedObject(robot1);
+	//bluetracker.RegisterTrackedObject(robot2);
+	
+	
+	auto blue1 = make_shared<TrackerCube>(vector<int>({51, 52, 53, 54, 55}), 0.05, 85.065/1000.0, "blue1");
+	auto blue2 = make_shared<TrackerCube>(vector<int>({56, 57, 58, 59, 60}), 0.05, 85.065/1000.0, "blue2");
+	auto yellow1 = make_shared<TrackerCube>(vector<int>({71, 72, 73, 74, 75}), 0.05, 85.065/1000.0, "yellow1");
+	auto yellow2 = make_shared<TrackerCube>(vector<int>({76, 77, 78, 79, 80}), 0.05, 85.065/1000.0, "yellow2");
+
+	bluetracker.RegisterTrackedObject(blue1);
+	bluetracker.RegisterTrackedObject(blue2);
+
+	yellowtracker.RegisterTrackedObject(yellow1);
+	yellowtracker.RegisterTrackedObject(yellow2);
+
+	for (int i = 1; i < 11; i++)
+	{
+		auto tt = make_shared<TopTracker>(i, 0.07, "top tracker " + std::to_string(i));
+		bluetracker.RegisterTrackedObject(tt);
+		yellowtracker.RegisterTrackedObject(tt);
+	}
+
+	ThreadHandle = make_unique<thread>(&CDFRExternal::ThreadEntryPoint, this);
+}
+
 CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 {
 	if (Cameras.size() == 0)
@@ -80,7 +121,7 @@ void CDFRExternal::ThreadEntryPoint()
 {
 	ExternalProfType prof("External Global Profile");
 	ExternalProfType ParallelProfiler("Parallel Cameras Detail");
-	unique_ptr<CameraManager> CameraMan;
+	
 	
 	switch (GetRunType())
 	{
@@ -94,42 +135,10 @@ void CDFRExternal::ThreadEntryPoint()
 
 	//display/debug section
 	FrameCounter fps;
-	
-	ObjectTracker bluetracker, yellowtracker;
 
-	unique_ptr<StaticObject> boardobj = make_unique<StaticObject>(false, "board");
-	bluetracker.RegisterTrackedObject(boardobj.get()); 
-	yellowtracker.RegisterTrackedObject(boardobj.get());
-	unique_ptr<SolarPanel> SolarPanels = make_unique<SolarPanel>();
-	bluetracker.RegisterTrackedObject(SolarPanels.get()); 
-	yellowtracker.RegisterTrackedObject(SolarPanels.get());
-	//TrackerCube* robot1 = new TrackerCube({51, 52, 54, 55}, 0.06, 0.0952, "Robot1");
-	//TrackerCube* robot2 = new TrackerCube({57, 58, 59, 61}, 0.06, 0.0952, "Robot2");
-	//bluetracker.RegisterTrackedObject(robot1);
-	//bluetracker.RegisterTrackedObject(robot2);
-	
-	std::unique_ptr<BoardGL> OpenGLBoard;
-	std::unique_ptr<ImguiWindow> DirectImage;
+	unique_ptr<BoardGL> OpenGLBoard;
+	unique_ptr<ImguiWindow> DirectImage;
 	vector<Texture> DirectTextures;
-	unique_ptr<TrackerCube> blue1 = make_unique<TrackerCube>(vector<int>({51, 52, 53, 54, 55}), 0.05, 85.065/1000.0, "blue1");
-	unique_ptr<TrackerCube> blue2 = make_unique<TrackerCube>(vector<int>({56, 57, 58, 59, 60}), 0.05, 85.065/1000.0, "blue2");
-	unique_ptr<TrackerCube> yellow1 = make_unique<TrackerCube>(vector<int>({71, 72, 73, 74, 75}), 0.05, 85.065/1000.0, "yellow1");
-	unique_ptr<TrackerCube> yellow2 = make_unique<TrackerCube>(vector<int>({76, 77, 78, 79, 80}), 0.05, 85.065/1000.0, "yellow2");
-
-	bluetracker.RegisterTrackedObject(blue1.get());
-	bluetracker.RegisterTrackedObject(blue2.get());
-
-	yellowtracker.RegisterTrackedObject(yellow1.get());
-	yellowtracker.RegisterTrackedObject(yellow2.get());
-
-	vector<unique_ptr<TopTracker>> TopTrackers;
-	for (int i = 1; i < 11; i++)
-	{
-		TopTracker* tt = new TopTracker(i, 0.07, "top tracker " + std::to_string(i));
-		TopTrackers.emplace_back(tt);
-		bluetracker.RegisterTrackedObject(tt);
-		yellowtracker.RegisterTrackedObject(tt);
-	}
 	
 	
 	//OpenGLBoard.InspectObject(blue1);
@@ -162,26 +171,24 @@ void CDFRExternal::ThreadEntryPoint()
 	
 	
 	//track and untrack cameras dynamically
-	CameraMan->StartCamera = [](VideoCaptureCameraSettings settings) -> Camera*
+	CameraMan->StartCamera = [](VideoCaptureCameraSettings settings) -> shared_ptr<Camera>
 	{
-		Camera* cam = new VideoCaptureCamera(make_shared<VideoCaptureCameraSettings>(settings));
+		auto cam = make_shared<VideoCaptureCamera>(make_shared<VideoCaptureCameraSettings>(settings));
 		if(!cam->StartFeed())
 		{
 			cerr << "Failed to start feed @" << settings.DeviceInfo.device_description << endl;
-			delete cam;
 			return nullptr;
 		}
-		
 		return cam;
 	};
 	
-	CameraMan->RegisterCamera = [&bluetracker, &yellowtracker](Camera* cam) -> void
+	CameraMan->RegisterCamera = [this](shared_ptr<Camera> cam) -> void
 	{
 		bluetracker.RegisterTrackedObject(cam);
 		yellowtracker.RegisterTrackedObject(cam);
 		cout << "Registering new camera @" << cam << ", name " << cam->GetName() << endl;
 	};
-	CameraMan->StopCamera = [&bluetracker, &yellowtracker](Camera* cam) -> bool
+	CameraMan->StopCamera = [this](shared_ptr<Camera> cam) -> bool
 	{
 		bluetracker.UnregisterTrackedObject(cam);
 		yellowtracker.UnregisterTrackedObject(cam);
@@ -459,13 +466,7 @@ void CDFRExternal::GetData(std::vector<CameraFeatureData> &OutFeatureData, std::
 	OutObjectData = ObjData[SelectedBuffer];
 }
 
-CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
-	:direct(InDirect), v3d(InV3D)
-{
-	ThreadHandle = make_unique<thread>(&CDFRExternal::ThreadEntryPoint, this);
-	assert(ObjData.size() == FeatureData.size());
-	assert(FeatureData.size() > 0);
-}
+
 
 CDFRExternal::~CDFRExternal()
 {

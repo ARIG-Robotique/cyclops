@@ -65,7 +65,7 @@ void CameraManagerSimulation::ScanWorker()
 			settings.StartPath = videopath;
 			settings.DeviceInfo.device_paths.push_back(videopath);
 			settings.DeviceInfo.device_paths.push_back(calibpath);
-			Camera* cam = StartCamera(settings);
+			auto cam = StartCamera(settings);
 			if (!cam)
 			{
 				std::cerr << "Did not open virtual camera " << videopath << " @ " << calibpath << " : StartCamera returned null" << std::endl;

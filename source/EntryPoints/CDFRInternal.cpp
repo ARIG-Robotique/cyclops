@@ -6,10 +6,17 @@
 #include <Communication/Transport/UDPTransport.hpp>
 #include <Communication/Transport/SerialTransport.hpp>
 
-void CDFRInternalMain(bool direct, bool v3d)
+CDFRInternal::CDFRInternal(bool InDirect, bool InV3D)
+	:direct(InDirect), v3d(InV3D)
 {
-	(void) direct;
-	(void) v3d;
+}
+
+CDFRInternal::~CDFRInternal()
+{
+}
+
+future<CameraFeatureData> CDFRInternal::Inject(CameraImageData &InData, CDFRTeam Team)
+{
 	assert(0);
 	/*CameraManager CameraMan(GetCaptureMethod(), GetCaptureConfig().filter, false);
 

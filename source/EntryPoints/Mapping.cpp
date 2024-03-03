@@ -25,7 +25,7 @@ using namespace cv;
 
 struct ObservedTag
 {
-	vector<vector<Point2f>> Observations;
+	vector<ArucoCornerArray> Observations;
 	vector<Affine3d> CameraPositions;
 	vector<double> CameraScores;
 	int hierarchy;
@@ -167,7 +167,7 @@ void MappingSolve(void)
 				continue;
 			}
 			float Surface, Error;
-			map<int, vector<Point2f>> ReprojectedCorners;
+			map<int, ArucoCornerArray> ReprojectedCorners;
 			Affine3d CameraToObject = SolvedTagsObject.GetObjectTransform(image, Surface, Error, ReprojectedCorners);
 			Affine3d CameraPos = CameraToObject.inv();
 			{
@@ -243,7 +243,7 @@ void MappingSolve(void)
 				data.ArucoIndices = {observed.ID};
 				data.CameraTransform = observed.CameraPositions[0];
 				float surface, error;
-				map<int, vector<Point2f>> ReprojectedCorners;
+				map<int, ArucoCornerArray> ReprojectedCorners;
 				//roundabout way of getting a solvepnp, but at least i'm using stuff that's already made
 				TagLocation = MObj.GetObjectTransform(data, surface, error, ReprojectedCorners);
 				cout << "\tTag " << observed.ID << " was solved with solvePNP : surface=" << surface << "px² error=" << error << "px/pt" <<endl;
@@ -256,7 +256,7 @@ void MappingSolve(void)
 				{
 					float Score;
 					Affine3d CameraPos;
-					vector<Point2f> corners;
+					ArucoCornerArray corners;
 					vector<Vec3d> lines;
 
 					bool operator<(SortableView& other) {return Score < other.Score;};
@@ -288,7 +288,7 @@ void MappingSolve(void)
 				{
 					sorted[k].CameraPos = observed.CameraPositions[k];
 					assert(numpt == (int)observed.Observations[k].size());
-					sorted[k].corners = vector<Point2f>(observed.Observations[k]);
+					sorted[k].corners = ArucoCornerArray(observed.Observations[k]);
 					sorted[k].ComputeScore(observed.CameraScores[k]);
 					sorted[k].ComputeLines(CameraMatrix);
 				}

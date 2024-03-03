@@ -10,7 +10,7 @@
 class ObjectTracker
 {
 private:
-	std::vector<TrackedObject*> objects;
+	std::vector<std::shared_ptr<TrackedObject>> objects;
 	std::array<int, ARUCO_DICT_SIZE> ArucoMap; //Which object owns the tag at index i ? objects[ArucoMap[TagID]]
 	std::array<double, ARUCO_DICT_SIZE> ArucoSizes; //Size of the aruco tag
 
@@ -18,9 +18,9 @@ public:
 	ObjectTracker(/* args */);
 	~ObjectTracker();
 
-	void RegisterTrackedObject(TrackedObject* object);
+	void RegisterTrackedObject(std::shared_ptr<TrackedObject> object);
 
-	void UnregisterTrackedObject(TrackedObject* object);
+	void UnregisterTrackedObject(std::shared_ptr<TrackedObject> object);
 
 	bool SolveCameraLocation(CameraFeatureData& CameraData);
 
@@ -38,5 +38,5 @@ public:
 
 private:
 
-	void RegisterArucoRecursive(TrackedObject* object, int index);
+	void RegisterArucoRecursive(std::shared_ptr<TrackedObject> object, int index);
 };

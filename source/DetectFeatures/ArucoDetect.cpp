@@ -80,7 +80,7 @@ UMat PreprocessArucoImage(UMat Source)
 	}
 }
 
-Point2f ComputeMean(const vector<Point2f> &Points)
+Point2f ComputeMean(const ArucoCornerArray &Points)
 {
 	Point2f mean(0,0);
 	for (size_t j = 0; j < Points.size(); j++)
@@ -99,7 +99,7 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 		return 0;
 	}
 	
-	vector<vector<vector<Point2f>>> corners;
+	vector<vector<ArucoCornerArray>> corners;
 	vector<vector<int>> ids;
 	corners.resize(NumSegments);
 	ids.resize(NumSegments);
@@ -153,7 +153,7 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 		{
 			continue;
 		}
-		vector<vector<Point2f>> &CornersLocal = corners[poiidx];
+		vector<ArucoCornerArray> &CornersLocal = corners[poiidx];
 		vector<int> &IDsLocal = ids[poiidx];
 		for (size_t PotentialIdx = 0; PotentialIdx < numdetslocal; PotentialIdx++)
 		{
@@ -264,7 +264,7 @@ int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData)
 		ResizedFrame = GrayFrame;
 	}
 
-	vector<vector<Point2f>> &corners = OutData.ArucoCorners;
+	vector<ArucoCornerArray> &corners = OutData.ArucoCorners;
 	vector<int> &IDs = OutData.ArucoIndices;
 
 	try

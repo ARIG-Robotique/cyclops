@@ -4,6 +4,7 @@
 #include <vector>
 #include <opencv2/core.hpp>
 #include <opencv2/core/affine.hpp>
+#include <ArucoPipeline/ArucoTypes.hpp>
 
 struct CameraFeatureData
 {
@@ -14,7 +15,7 @@ struct CameraFeatureData
 	cv::Affine3d CameraTransform; 	//Filled by CopyEssentials from CameraImageData
 	cv::Size FrameSize; 			//Filled by CopyEssentials from CameraImageData
 
-	std::vector<std::vector<cv::Point2f>> ArucoCorners, //Filled by ArucoDetect
+	std::vector<ArucoCornerArray> ArucoCorners, //Filled by ArucoDetect
 		ArucoCornersReprojected; 						//Cleared by ArucoDetect, Filled by ObjectTracker
 	std::vector<int> ArucoIndices; 						//Filled by ArucoDetect
 	std::vector<cv::Rect> ArucoSegments;

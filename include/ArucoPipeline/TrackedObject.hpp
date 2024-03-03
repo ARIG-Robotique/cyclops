@@ -60,13 +60,13 @@ public:
 	{
 		cv::Affine3d AccumulatedTransform; //transform to marker, not including the marker's transform relative to it's parent
 		ArucoMarker* Marker; //pointer to source marker
-		std::vector<cv::Point2f> CameraCornerPositions; //corner positions, in space relative to the calling object's coordinates
+		ArucoCornerArray CameraCornerPositions; //corner positions, in space relative to the calling object's coordinates
 		std::vector<cv::Point3d> LocalMarkerCorners; //corner positions in camera image space
 		int IndexInCameraData; //index where this marker was found in the camera
 	};
 public:
 	std::vector<ArucoMarker> markers; //Should be populated before adding to the Object Tracker
-	std::vector<TrackedObject*> childs; //Should be populated before adding to the Object Tracker
+	std::vector<std::shared_ptr<TrackedObject>> childs; //Should be populated before adding to the Object Tracker
 	bool Unique; //Can there be only one ?
 	bool CoplanarTags; //Are all tags on the same plane ? If true, then it uses IPPE solve when multiple tags are located
 	cv::String Name; //Display name
@@ -97,13 +97,13 @@ public:
 	virtual float GetSeenMarkers(const CameraFeatureData& CameraData, std::vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity());
 
 	float ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const cv::Mat &rvec, const cv::Mat &tvec, 
-		const CameraFeatureData &CameraData, std::map<int, std::vector<cv::Point2f>> &ReprojectedCorners);
+		const CameraFeatureData &CameraData, std::map<int, ArucoCornerArray> &ReprojectedCorners);
 
 	//Given corners, solve this object's location using multiple tags at once
 	//Output transform is given relative to the camera
 	//Does not touch the reprojection data in CameraData
 	virtual cv::Affine3d GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
-		std::map<int, std::vector<cv::Point2f>> &ReprojectedCorners);
+		std::map<int, ArucoCornerArray> &ReprojectedCorners);
 
 	virtual std::vector<ObjectData> GetMarkersAndChilds() const;
 
