@@ -46,7 +46,8 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	}
 	
 	bool requireCoord = Object.type != ObjectType::SolarPanel;
-
+	double rotZ = GetRotZ(Object.location.rotation());
+	double rotZdeg = -rotZ*180.0/M_PI;
 	switch (ObjectMode)
 	{
 	case TransformMode::Float2D:
@@ -55,7 +56,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 			objectified["x"] = Object.location.translation()[0];
 			objectified["y"] = Object.location.translation()[1];
 		}
-		objectified["r"] = GetRotZ(Object.location.rotation());
+		objectified["r"] = rotZ;
 		break;
 	case TransformMode::Millimeter2D:
 		if (requireCoord)
@@ -63,7 +64,9 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 			objectified["x"] = Object.location.translation()[0]*1000.0+1500.0;
 			objectified["y"] = Object.location.translation()[1]*1000.0+1000.0;
 		}
-		objectified["r"] = -GetRotZ(Object.location.rotation())*180.0/M_PI;
+
+		objectified["r"] = rotZdeg;
+		
 		break;
 
 	case TransformMode::Float3D:
@@ -78,6 +81,28 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 
 	default:
 		break;
+	}
+	if (Object.type == ObjectType::SolarPanel)
+	{
+		bool teamblue = false, teamyellow = false;
+		if (rotZdeg > 5)
+		{
+			teamblue = true;
+		}
+		if (rotZdeg < -5)
+		{
+			teamyellow = true;
+		}
+		if (rotZdeg > 155)
+		{
+			teamyellow = true;
+		}
+		if (rotZdeg < -155)
+		{
+			teamblue = true;
+		}
+		static const array<string, 4> teams = {"none", "yellow", "blue", "both"};
+		objectified["team"] = teams[teamblue*2+teamyellow]; 
 	}
 	return objectified;
 }

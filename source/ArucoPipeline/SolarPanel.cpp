@@ -106,9 +106,11 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 		Affine3d ExactTransform = CameraData.CameraTransform.inv() * Affine3d(MakeRotationFromZX(Vec3d(0,0,1), Vec3d(cos(rot),sin(rot),0)), PanelPositions[closest]) * markerobj.Pose; //camera to world to panel to marker
 		array<Point2d, ARUCO_CORNERS_PER_TAG> ReprojectedCornersDouble;
 		projectPoints(markerobj.GetObjectPointsNoOffset(), ExactTransform.rvec(), ExactTransform.translation(), CameraData.CameraMatrix, CameraData.DistanceCoefficients, ReprojectedCornersDouble);
+		auto &ReprojectedCornersStorage = ReprojectedCorners[marker.IndexInCameraData];
+		ReprojectedCornersStorage.resize(ReprojectedCornersDouble.size());
 		for (size_t i = 0; i < ReprojectedCornersDouble.size(); i++)
 		{
-			ReprojectedCorners[marker.IndexInCameraData][i] = ReprojectedCornersDouble[i];
+			ReprojectedCornersStorage[i] = ReprojectedCornersDouble[i];
 		}
 	}
 	return Affine3d::Identity();

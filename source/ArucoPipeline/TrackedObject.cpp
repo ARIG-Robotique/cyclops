@@ -201,10 +201,11 @@ float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal
 		vector<Point2d> cornersreproj;
 		projectPoints(MarkersSeen[i].LocalMarkerCorners, rvec, tvec, CameraData.CameraMatrix, CameraData.DistanceCoefficients, cornersreproj);
 		//cout << "reprojecting " << MarkersSeen[i].IndexInCameraData << endl;
-		
+		auto &reprojectedThisStorage = ReprojectedCorners[MarkersSeen[i].IndexInCameraData];
+		reprojectedThisStorage.resize(cornersreproj.size());
 		for (size_t j = 0; j < cornersreproj.size(); j++)
 		{
-			ReprojectedCorners[MarkersSeen[i].IndexInCameraData][j] = cornersreproj[j];
+			reprojectedThisStorage[j] = cornersreproj[j];
 			Point2f diff = MarkersSeen[i].CameraCornerPositions[j] - Point2f(cornersreproj[j]);
 			ReprojectionError += sqrt(diff.ddot(diff));
 		}
