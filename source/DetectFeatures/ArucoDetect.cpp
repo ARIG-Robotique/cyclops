@@ -178,7 +178,7 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 						OutData.ArucoCorners[PresentIdx][corneridx] = (OutData.ArucoCorners[PresentIdx][corneridx]*accumulations[PresentIdx] + CornersLocal[PotentialIdx][corneridx]) / (accumulations[PresentIdx]+1);
 					}
 					accumulations[PresentIdx]++;
-					cout << "Merging aruco at " << mean << endl;
+					//cout << "Merging aruco at " << mean << endl;
 					break;
 				}
 			}
