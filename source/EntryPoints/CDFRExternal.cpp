@@ -36,7 +36,7 @@ CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
 	//bluetracker.RegisterTrackedObject(robot1);
 	//bluetracker.RegisterTrackedObject(robot2);
 	
-	
+#ifdef USE_TRACKER_CUBES
 	auto blue1 = make_shared<TrackerCube>(vector<int>({51, 52, 53, 54, 55}), 0.05, 85.065/1000.0, "blue1");
 	auto blue2 = make_shared<TrackerCube>(vector<int>({56, 57, 58, 59, 60}), 0.05, 85.065/1000.0, "blue2");
 	auto yellow1 = make_shared<TrackerCube>(vector<int>({71, 72, 73, 74, 75}), 0.05, 85.065/1000.0, "yellow1");
@@ -47,6 +47,7 @@ CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
 
 	yellowtracker.RegisterTrackedObject(yellow1);
 	yellowtracker.RegisterTrackedObject(yellow2);
+#endif
 
 	for (int i = 1; i < 11; i++)
 	{
@@ -244,7 +245,7 @@ void CDFRExternal::ThreadEntryPoint()
 		if (Team != LastTeam)
 		{
 			const string teamname = TeamNames.at(Team);
-			cout << "Detected team change : to " << teamname <<endl; 
+			cout << "Detected team change : to " << teamname <<endl;
 			LastTeam = Team;
 		}
 		ObjectTracker* TrackerToUse = &bluetracker;
@@ -302,7 +303,7 @@ void CDFRExternal::ThreadEntryPoint()
 						break;
 					//add simulated noise
 					case RunType::Simulate:
-						//break;
+						break;
 						thisprof.EnterSection("Add simulation noise");
 						cv::UMat noise(ImData.Image.size(),ImData.Image.type());
 						float m = 0;
@@ -318,7 +319,7 @@ void CDFRExternal::ThreadEntryPoint()
 				thisprof.EnterSection("Detect Aruco");
 				FeatData.CopyEssentials(ImData);
 				//DetectYolo(ImData, FeatData);
-				DetectArucoSegmented(ImData, FeatData, 200, Size(4,4));
+				DetectArucoSegmented(ImData, FeatData, 200, Size(4,3));
 				//DetectAruco(ImData, FeatData);
 				thisprof.EnterSection("3D Solve Camera");
 				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);

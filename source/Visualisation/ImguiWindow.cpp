@@ -7,17 +7,21 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <string>
+#include <iostream>
 
 using namespace std;
 
+bool ImguiWindow::ImguiOpenGLInit = false;
+
 ImguiWindow::ImguiWindow()
 {
+	cout << "Creating ImGui window" << endl;
 	GLCreateWindow(1280, 720, "ImGUI");
 	if (!Window)
 	{
 		return;
 	}
-	
+
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -30,11 +34,18 @@ ImguiWindow::ImguiWindow()
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForOpenGL(Window, true);
+	if (ImguiOpenGLInit)
+	{
+		return;
+	}
+	ImguiOpenGLInit = true;
 	ImGui_ImplOpenGL3_Init(nullptr);
 }
 
 ImguiWindow::~ImguiWindow()
 {
+	cout << "Deleting ImGui" << endl;
+	ImGui_ImplGlfw_Shutdown();
 }
 
 void ImguiWindow::WindowSizeCallback(int width, int height)

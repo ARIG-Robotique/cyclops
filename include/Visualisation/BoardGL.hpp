@@ -57,7 +57,7 @@ public:
 
 	bool LookingAround = false; //Is left button pressed ?
 	double lastCursorX, lastCursorY;
-	float FoV = 60.f, mouseSpeed = 0.00002f;
+	float FoV = 75.f, mouseSpeed = 0.002f;
 	float horizontalAngle = 0.f, verticalAngle = -M_PI_2;
 	glm::vec3 cameraPosition = glm::vec3(0,0,2);
 

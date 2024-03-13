@@ -7,6 +7,8 @@
 
 class ImguiWindow : public GLWindow
 {
+
+	static bool ImguiOpenGLInit;
 public:
 	ImguiWindow();
 	virtual ~ImguiWindow();

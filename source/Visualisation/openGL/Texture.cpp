@@ -1,6 +1,7 @@
 #include "Visualisation/openGL/Texture.hpp"
 
 #include <opencv2/imgcodecs.hpp>
+#include <iostream>
 
 using namespace std;
 
@@ -52,6 +53,11 @@ void Texture::Refresh()
 	int numchannels = SourceImage.channels();
 	GLenum format = numchannels == 3 ? GL_BGR : GL_R;
 	GLint internal_format = numchannels == 3 ? GL_RGB : GL_R;
+	if ((NewSize.width*numchannels) % 4)
+	{
+		cout << "Warning : Texture width (" << NewSize.width << "*" << numchannels << ") not multiple of 4, misaligned!" << endl;
+	}
+	
 	if (NewSize != LastSize)
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, SourceImage.cols, SourceImage.rows, 0, format, GL_UNSIGNED_BYTE, SourceImage.data);

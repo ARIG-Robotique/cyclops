@@ -182,6 +182,7 @@ int main(int argc, char** argv )
 	if (parser.has("test"))
 	{
 		YoloTest(CamSett[0]); //TODO : Remove this !
+		return EXIT_SUCCESS;
 	}
 
 	bool direct = parser.has("direct") || 1;

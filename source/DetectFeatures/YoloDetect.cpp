@@ -23,7 +23,9 @@
 using namespace std;
 using namespace cv;
 
-const int numclasses = 4;
+const int numclasses = 2;
+const Size modelSize(640,480);
+
 array<string, numclasses> ClassNames;
 
 string GetName(int index)
@@ -41,6 +43,7 @@ namespace OpenCVDNN
 		for (size_t i = 0; i < numclasses; i++)
 		{
 			NamesFile >> ClassNames[i];
+			cout << "Yolo class " << i << " is " << ClassNames[i] << endl;
 		}
 	}
 
@@ -140,9 +143,8 @@ namespace OpenCVDNN
 	{
 		LoadNet();
 
-		int modelwidth = 640;
 
-		Preprocess(InData.Image, YoloNet.value(), Size(modelwidth,modelwidth), 1.0/255.0, 0, false);
+		Preprocess(InData.Image, YoloNet.value(), modelSize, 1.0/255.0, 0, false);
 		auto start = chrono::steady_clock::now();
 		vector<Mat> outputBlobs;
 		auto OutputNames = YoloNet->getUnconnectedOutLayersNames();
