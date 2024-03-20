@@ -116,7 +116,7 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 	return bestTeam;
 }
 
-using ExternalProfType = ManualProfiler<true>;
+using ExternalProfType = ManualProfiler<false>;
 
 void CDFRExternal::ThreadEntryPoint()
 {
@@ -223,7 +223,9 @@ void CDFRExternal::ThreadEntryPoint()
 		double deltaTime = fps.GetDeltaTime();
 		prof.EnterSection("CameraManager Tick");
 		vector<Camera*> Cameras = CameraMan->Tick();
-		if (HasNoClients && Cameras.size() == 0)
+		bool HasNoData = Cameras.size() == 0;
+		bool IsUnseen = HasNoClients && !DirectImage && !OpenGLBoard;
+		if (HasNoData || IsUnseen)
 		{
 			prof.EnterSection("Sleep");
 			if (!sleeping)
