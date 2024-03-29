@@ -7,7 +7,7 @@ After=syslog.target network-online.target
 [Service]
 Type=simple
 WorkingDirectory=cyclopsdir/build
-ExecStart=+cyclopsdir/build/cyclops --nodisplay
+ExecStart=+cyclopsdir/build/cyclops -o=0 -d=0
 Restart=always
 RestartSec=1
 KillMode=process
