@@ -19,7 +19,7 @@ bool ConfigInitialised = false;
 Config cfg;
 
 //Default values
-CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, Size(1920,1080), 1.f, 30, 1, ""};
+CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, Size(3840,3032), 1.f, 30, 1, ""};
 vector<InternalCameraConfig> CamerasInternal;
 CalibrationConfig CamCalConf = {40, Size(6,4), 0.5, 1.5, Size2d(4.96, 3.72)};
 

@@ -106,30 +106,26 @@ int main(int argc, char** argv )
 	const string keys = 
 		"{help h usage ? |      | print this message}"
 		"{direct d       |      | show direct camera output}"
+		"{opengl o       |      | show 3D visualizer}"
 		"{build b        |      | print build information}"
 		"{calibrate c    |      | start camera calibration wizard}"
 		"{marker m       |      | print out markers}"
-		"{opengl ogl     |      | runs opengl test}"
-		"{server s       |      | force server/client state}"
 		"{map            |      | runs object mapping, using saved images and calibration}"
-		"{test           |      | run test}"
-		"{nodisplay | | start without a display}"
+		"{yolotest       |      | run yolo test}"
 		;
 	CommandLineParser parser(argc, argv, keys);
 
 	if (parser.has("help"))
 	{
 		parser.printMessage();
-		exit(EXIT_SUCCESS);
+		return EXIT_SUCCESS;
 	}
 	ConfigureOpenCL(true);
 	if (parser.has("build"))
 	{
 		cout << getBuildInformation() << endl;
-		exit(EXIT_SUCCESS);
+		return EXIT_SUCCESS;
 	}
-	
-	//bool nodisplay = parser.has("nodisplay");
 
 
 	//putenv("GST_DEBUG=jpegdec:4"); //enable gstreamer debug
@@ -149,7 +145,7 @@ int main(int argc, char** argv )
 			snprintf(buffer, sizeof(buffer)/sizeof(char), "../markers/marker%d.png", i);
 			imwrite(buffer, markerImage);
 		}
-		exit(EXIT_SUCCESS);
+		return EXIT_SUCCESS;
 	}
 	
 	vector<VideoCaptureCameraSettings> CamSett = CameraManagerV4L2::autoDetectCameras(GetCaptureMethod(), GetCaptureConfig().filter, false);
@@ -167,43 +163,45 @@ int main(int argc, char** argv )
 		if (0<= camIndex && camIndex < (int)CamSett.size())
 		{
 			docalibration(CamSett[camIndex]);
-			exit(EXIT_SUCCESS);
+			return EXIT_SUCCESS;
 		}
 		else
 		{
 			docalibration(VideoCaptureCameraSettings());
-			exit(EXIT_SUCCESS);
+			return EXIT_SUCCESS;
 		}
 		
-		exit(EXIT_FAILURE);
+		return EXIT_FAILURE;
 		
 	}
 
-	if (parser.has("test"))
+	if (parser.has("yolotest"))
 	{
 		YoloTest(CamSett[0]); //TODO : Remove this !
 		return EXIT_SUCCESS;
 	}
 
-	bool direct = parser.has("direct") || 1;
-	bool opengl = !parser.has("nodisplay");
+	bool direct = parser.has("direct") ? parser.get<bool>("direct") : false;
+	bool opengl = parser.has("opengl") ? parser.get<bool>("opengl") : true;
 	
 	if (parser.has("map"))
 	{
 		MappingSolve();
-		exit(EXIT_SUCCESS);
+		return EXIT_SUCCESS;
 	}
 	
-	//AdvertiseMV advertiser;
-	TCPJsonHost JsonHost(50667);
-	
-	CDFRExternal ExternalCameraHost(direct, opengl);
-
-	JsonHost.ExternalRunner = &ExternalCameraHost;
-
-	while (!ExternalCameraHost.IsKilled() && !JsonHost.IsKilled() && !killrequest)
 	{
-		this_thread::sleep_for(chrono::milliseconds(10));
+		//AdvertiseMV advertiser;
+		TCPJsonHost JsonHost(50667);
+		
+		CDFRExternal ExternalCameraHost(direct, opengl);
+
+		JsonHost.ExternalRunner = &ExternalCameraHost;
+
+		while (!ExternalCameraHost.IsKilled() && !JsonHost.IsKilled() && !killrequest)
+		{
+			this_thread::sleep_for(chrono::milliseconds(10));
+		}
 	}
 
 	return 0;
