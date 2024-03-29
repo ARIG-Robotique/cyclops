@@ -63,8 +63,10 @@ void CameraManagerSimulation::ScanWorker()
 			readCameraParameters(calibpath, settings.CameraMatrix, settings.distanceCoeffs, settings.Resolution);
 			settings.StartType = CameraStartType::PLAYBACK;
 			settings.StartPath = videopath;
+			settings.record = true;
 			settings.DeviceInfo.device_paths.push_back(videopath);
 			settings.DeviceInfo.device_paths.push_back(calibpath);
+			settings.DeviceInfo.device_description = videopath.filename().replace_extension("");
 			auto cam = StartCamera(settings);
 			if (!cam)
 			{

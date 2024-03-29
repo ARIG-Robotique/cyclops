@@ -35,6 +35,7 @@ VideoCaptureCameraSettings CameraManagerV4L2::DeviceToSettings(v4l2::devices::DE
 	//these only get populated when StartFeed is called
 	settings.StartPath = "";
 	settings.ApiID = -1;
+	settings.record = true;
 
 	string CalibrationRoot = string("../calibration/");
 	string CalibrationPath = CalibrationRoot + settings.DeviceInfo.device_description;

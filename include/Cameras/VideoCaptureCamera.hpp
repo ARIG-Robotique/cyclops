@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>   // for strings
 #include <memory>
+#include <filesystem>
 #include <opencv2/core.hpp>		// Basic OpenCV structures (Mat, Scalar)
 #include <opencv2/highgui.hpp>  // OpenCV window I/O
 #include <opencv2/core/affine.hpp>
@@ -19,6 +20,9 @@ class VideoCaptureCamera : public Camera
 private:
 	//capture using classic api
 	std::unique_ptr<cv::VideoCapture> feed;
+	std::unique_ptr<cv::VideoWriter> recorder;
+	std::filesystem::path record_path;
+	uint32_t record_idx;
 
 public:
 
