@@ -145,11 +145,11 @@ namespace OpenCVDNN
 
 
 		Preprocess(InData.Image, YoloNet.value(), modelSize, 1.0/255.0, 0, false);
-		auto start = chrono::steady_clock::now();
+		//auto start = chrono::steady_clock::now();
 		vector<Mat> outputBlobs;
 		auto OutputNames = YoloNet->getUnconnectedOutLayersNames();
 		YoloNet->forward(outputBlobs, OutputNames);
-		auto stop = chrono::steady_clock::now();
+		//auto stop = chrono::steady_clock::now();
 		//cout << "Inference took " << chrono::duration<double>(stop-start).count() << " s" << endl;
 		auto detections = Postprocess(outputBlobs, OutputNames, Rect(0,0,InData.Image.cols, InData.Image.rows));
 		Mat painted; InData.Image.copyTo(painted);

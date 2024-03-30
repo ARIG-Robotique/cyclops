@@ -17,6 +17,8 @@ CDFRInternal::~CDFRInternal()
 
 future<CameraFeatureData> CDFRInternal::Inject(CameraImageData &InData, CDFRTeam Team)
 {
+	(void) InData;
+	(void) Team;
 	assert(0);
 	/*CameraManager CameraMan(GetCaptureMethod(), GetCaptureConfig().filter, false);
 

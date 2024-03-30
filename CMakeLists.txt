@@ -20,6 +20,7 @@ message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 #	message(STATUS "CUDA found, assuming OpenCV was built with CUDA")
 #endif(CUDAToolkit_FOUND)
 
+set(OpenGL_GL_PREFERENCE GLVND)
 # OpenGL
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
