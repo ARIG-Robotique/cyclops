@@ -331,9 +331,9 @@ void CDFRExternal::ThreadEntryPoint()
 					//cout << "Camera has location" << endl;
 				}
 				FeatData.CameraTransform = cam->GetLocation();
-				//thisprof.EnterSection("Detect Aruco POIs");
-				//const auto &POIs = TrackerToUse->GetPointsOfInterest();
-				//DetectArucoPOI(ImData, FeatData, POIs);
+				thisprof.EnterSection("Detect Aruco POIs");
+				const auto &POIs = TrackerToUse->GetPointsOfInterest();
+				DetectArucoPOI(ImData, FeatData, POIs);
 				thisprof.EnterSection("");
 			}
 		}
