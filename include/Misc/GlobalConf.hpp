@@ -25,6 +25,8 @@ struct CaptureConfig
 	std::string filter; //filter to block or allow certain cameras. If camera name contains the filter string, it's allowed. If the filter string starts with a !, the filter is inverted
 };
 
+extern bool RecordVideo;
+
 std::filesystem::path GetAssetsPath();
 
 RunType GetRunType();

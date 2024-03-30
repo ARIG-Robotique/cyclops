@@ -107,6 +107,7 @@ int main(int argc, char** argv )
 		"{help h usage ? |      | print this message}"
 		"{direct d       |      | show direct camera output}"
 		"{opengl o       |      | show 3D visualizer}"
+		"{record r       |      | turn on recording}"
 		"{build b        |      | print build information}"
 		"{calibrate c    |      | start camera calibration wizard}"
 		"{marker m       |      | print out markers}"
@@ -183,6 +184,7 @@ int main(int argc, char** argv )
 
 	bool direct = parser.has("direct") ? parser.get<bool>("direct") : false;
 	bool opengl = parser.has("opengl") ? parser.get<bool>("opengl") : true;
+	RecordVideo = parser.has("record");
 	
 	if (parser.has("map"))
 	{

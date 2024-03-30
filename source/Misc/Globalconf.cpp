@@ -18,6 +18,8 @@ vector<UMat> MarkerImages;
 bool ConfigInitialised = false;
 Config cfg;
 
+bool RecordVideo = false;
+
 //Default values
 CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, Size(3840,3032), 1.f, 30, 1, ""};
 vector<InternalCameraConfig> CamerasInternal;
