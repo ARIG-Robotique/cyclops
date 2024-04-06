@@ -16,3 +16,11 @@ map<ObjectType, bool> GetDefaultAllowMap()
 	};
 	return allowmap;
 }
+
+string TimeToStr()
+{
+	auto now = chrono::system_clock::to_time_t(chrono::system_clock::now());
+	char timestr[64] = {0};
+	strftime(timestr, sizeof(timestr), "%m-%d-%H:%M:%S", std::localtime(&now));
+	return timestr;
+}

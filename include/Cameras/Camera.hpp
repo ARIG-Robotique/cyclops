@@ -5,6 +5,7 @@
 #include <string>   // for strings
 #include <vector>
 #include <chrono>
+#include <filesystem>
 #include <opencv2/core.hpp>		// Basic OpenCV structures (Mat, Scalar)
 #include <opencv2/highgui.hpp>  // OpenCV window I/O
 #include <opencv2/core/affine.hpp>
@@ -104,4 +105,6 @@ public:
 	virtual CameraImageData GetFrame(bool Distorted) const override;
 
 	virtual std::vector<ObjectData> ToObjectData() const override;
+
+	virtual void Record(std::filesystem::path rootPath, int RecordIdx);
 };

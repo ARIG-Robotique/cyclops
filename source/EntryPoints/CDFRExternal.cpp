@@ -150,7 +150,7 @@ void CDFRExternal::ThreadEntryPoint()
 		OpenDirectVisualizer();
 	}
 	
-
+	RecordRootPath = TimeToStr();
 	
 	
 	//track and untrack cameras dynamically
@@ -258,6 +258,19 @@ void CDFRExternal::ThreadEntryPoint()
 			TrackerToUse = &UnknownTracker;
 			break;
 		}
+
+		bool RecordThisTick = false;
+		if (RecordTick >= RecordInterval-1)
+		{
+			RecordTick = 0;
+			RecordThisTick = record;
+		}
+		else if (Cameras.size() > 0 && record)
+		{
+			RecordTick++;
+		}
+		
+		
 		
 		prof.EnterSection("Camera Gather Frames");
 		int64 GrabTick = getTickCount();
@@ -353,6 +366,11 @@ void CDFRExternal::ThreadEntryPoint()
 					const auto &POIs = TrackerToUse->GetPointsOfInterest();
 					DetectArucoPOI(ImData, FeatData, POIs);
 				}
+				if (RecordThisTick)
+				{
+					cam->Record(RecordRootPath, RecordIndex);
+				}
+				
 				thisprof.EnterSection("");
 			}
 		}
@@ -370,6 +388,10 @@ void CDFRExternal::ThreadEntryPoint()
 		ObjectData TeamPacket(ObjectType::Team, TeamNames.at(Team));
 		ObjDataLocal.insert(ObjDataLocal.begin(), TeamPacket); //insert team as the first object
 
+		if (RecordThisTick)
+		{
+			RecordIndex++;
+		}
 		
 		
 		if (OpenGLBoard.get())
@@ -454,9 +476,9 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 
 	if (ImGui::Begin("Settings"))
 	{
+		ImGui::InputInt("Record interval", &RecordInterval);
 		if(ImGui::Checkbox("Record", &record))
 		{
-			//ImGui::InputInt("Record interval", nullptr);
 		}
 		if (!OpenGLBoard)
 		{

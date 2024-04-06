@@ -25,3 +25,5 @@ using namespace cv;
 using namespace std;
 
 map<ObjectType, bool> GetDefaultAllowMap();
+
+string TimeToStr();

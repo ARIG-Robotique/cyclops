@@ -28,6 +28,8 @@ private:
 	bool direct;
 	bool v3d;
 	bool record = false;
+	int RecordInterval = 10, RecordTick = 0, RecordIndex=0;
+	std::filesystem::path RecordRootPath;
 	bool SegmentedDetection = true;
 	bool POIDetection = false;
 	bool YoloDetection = false;

@@ -138,3 +138,11 @@ vector<ObjectData> Camera::ToObjectData() const
 	camera.location = Location;
 	return {camera};
 }
+
+void Camera::Record(filesystem::path rootPath, int RecordIdx)
+{
+	string folderstr = Name.substr(0, std::min<size_t>(Name.find(' '), 10));
+	auto writepath = rootPath/folderstr/(to_string(RecordIdx) + string(".jpg"));
+	filesystem::create_directories(writepath.parent_path());
+	imwrite(writepath.string(), GetFrame(true).Image);
+}

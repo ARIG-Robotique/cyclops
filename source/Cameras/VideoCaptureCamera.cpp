@@ -37,7 +37,7 @@ bool VideoCaptureCamera::StartFeed()
 	VideoCaptureCameraSettings* Settingscast = dynamic_cast<VideoCaptureCameraSettings*>(Settings.get());
 
 	string pathtodevice = Settingscast->DeviceInfo.device_paths[0];	
-	Name = pathtodevice;
+	Name = Settingscast->DeviceInfo.device_description + string(" @ ") +  pathtodevice;
 	
 	ostringstream sizestream;
 	sizestream << "width=(int)" << Settings->Resolution.width
