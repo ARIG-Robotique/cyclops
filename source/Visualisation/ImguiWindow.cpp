@@ -13,10 +13,10 @@ using namespace std;
 
 bool ImguiWindow::ImguiOpenGLInit = false;
 
-ImguiWindow::ImguiWindow()
+ImguiWindow::ImguiWindow(string WindowName)
 {
 	cout << "Creating ImGui window" << endl;
-	GLCreateWindow(1280, 720, "ImGUI");
+	GLCreateWindow(1280, 720, WindowName);
 	if (!Window)
 	{
 		return;

@@ -10,7 +10,7 @@ class ImguiWindow : public GLWindow
 
 	static bool ImguiOpenGLInit;
 public:
-	ImguiWindow();
+	ImguiWindow(std::string WindowName = "ImGui");
 	virtual ~ImguiWindow();
 
 	virtual void WindowSizeCallback(int width, int height) override;

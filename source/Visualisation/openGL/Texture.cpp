@@ -9,6 +9,7 @@ Texture::~Texture()
 {
 	if (TextureID)
 	{
+		//cout << "Deleting texture " << TextureID << endl;
 		glDeleteTextures(1, &TextureID);
 	}
 }
@@ -43,6 +44,8 @@ void Texture::Bind()
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	
+	//cout << "Created texture " << TextureID << endl;
 }
 
 void Texture::Refresh()

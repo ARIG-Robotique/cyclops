@@ -18,7 +18,7 @@ public:
 
 	virtual bool SetLocation(cv::Affine3d InLocation, uint64_t Tick) override;
 
-	virtual bool ShouldBeDisplayed(uint64_t Tick) override;
+	virtual bool ShouldBeDisplayed(uint64_t Tick) const override;
 
 	virtual std::vector<ObjectData> ToObjectData() const override;
 

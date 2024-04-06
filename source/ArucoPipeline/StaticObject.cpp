@@ -47,7 +47,7 @@ bool StaticObject::SetLocation(Affine3d InLocation, uint64_t Tick)
 	return false;
 }
 
-bool StaticObject::ShouldBeDisplayed(uint64_t Tick)
+bool StaticObject::ShouldBeDisplayed(uint64_t Tick) const
 {
 	if (Relative)
 	{

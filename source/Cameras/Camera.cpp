@@ -29,7 +29,7 @@ void Camera::RegisterNoError()
 	errors = std::max(0, errors -1);
 }
 
-const CameraSettings* Camera::GetCameraSettings()
+const CameraSettings* Camera::GetCameraSettings() const
 {
 	return Settings.get();
 }
@@ -53,7 +53,7 @@ bool Camera::SetCalibrationSetting(Mat CameraMatrix, Mat DistanceCoefficients)
 	return true;
 }
 
-void Camera::GetCameraSettingsAfterUndistortion(Mat& CameraMatrix, Mat& DistanceCoefficients)
+void Camera::GetCameraSettingsAfterUndistortion(Mat& CameraMatrix, Mat& DistanceCoefficients) const
 {
 	CameraMatrix = Settings->CameraMatrix;
 	//DistanceCoefficients = Settings.distanceCoeffs; //FIXME
@@ -111,7 +111,7 @@ void Camera::Undistort()
 	}
 }
 
-CameraImageData Camera::GetFrame(bool Distorted)
+CameraImageData Camera::GetFrame(bool Distorted) const
 {
 	CameraImageData frame;
 	frame.Distorted = Distorted;

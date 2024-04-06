@@ -18,7 +18,7 @@ void ImageSource::SetFrame(const CameraImageData& frame, bool Distorted)
 	(void)Distorted;
 }
 
-CameraImageData ImageSource::GetFrame(bool Distorted)
+CameraImageData ImageSource::GetFrame(bool Distorted) const
 {
 	(void)Distorted;
 	return CameraImageData();

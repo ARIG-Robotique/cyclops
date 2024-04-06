@@ -80,14 +80,14 @@ public:
 
 	//Get the settings used to start this camera
 	//Please do not modify...
-	virtual const CameraSettings* GetCameraSettings();
+	virtual const CameraSettings* GetCameraSettings() const;
 
 	//Set the settings to used for this camera
 	virtual bool SetCameraSetting(std::shared_ptr<CameraSettings> InSettings);
 
 	virtual bool SetCalibrationSetting(cv::Mat CameraMatrix, cv::Mat DistanceCoefficients);
 
-	virtual void GetCameraSettingsAfterUndistortion(cv::Mat& CameraMatrix, cv::Mat& DistanceCoefficients);
+	virtual void GetCameraSettingsAfterUndistortion(cv::Mat& CameraMatrix, cv::Mat& DistanceCoefficients) const;
 
 	//Start the camera
 	virtual bool StartFeed();
@@ -101,7 +101,7 @@ public:
 
 	virtual void Undistort();
 
-	virtual CameraImageData GetFrame(bool Distorted) override;
+	virtual CameraImageData GetFrame(bool Distorted) const override;
 
 	virtual std::vector<ObjectData> ToObjectData() const override;
 };

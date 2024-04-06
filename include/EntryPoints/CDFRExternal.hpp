@@ -9,46 +9,70 @@
 #include <ArucoPipeline/ObjectIdentity.hpp>
 #include <ArucoPipeline/ObjectTracker.hpp>
 #include <Cameras/CameraManager.hpp>
+#include <Visualisation/BoardGL.hpp>
+#include <Visualisation/ImguiWindow.hpp>
 
 class CDFRExternal
 {
 private:
-    bool killed = false;
-    bool direct;
-    bool v3d;
-    bool HasNoClients = true;
+	//State
+	bool killed = false;
+	bool HasNoClients = true;
+	//Low power modes : disables aruco detection and reduces visualizers to 2fps
+	//Idle : manual low power mode
+	bool Idle = false, LastIdle = false;
+	//Sleep : If we have no data or noone is seeing (no clients + no visualizers), enter sleep
+	bool Sleep = false, LastSleep = false;
 
-    int BufferIndex = 0;
+	//Settings
+	bool direct;
+	bool v3d;
+	bool SegmentedDetection = true;
+	bool POIDetection = false;
+	bool YoloDetection = false;
+	bool Denoising = false;
 
-    ObjectTracker bluetracker, yellowtracker;
-    std::unique_ptr<CameraManager> CameraMan;
+	//Camera manager
+	std::unique_ptr<CameraManager> CameraMan;
+	//Running thread handle
+	std::unique_ptr<std::thread> ThreadHandle;
 
-    std::unique_ptr<std::thread> ThreadHandle;
+	//3D viz
+	std::unique_ptr<BoardGL> OpenGLBoard;
 
-    std::array<std::vector<CameraFeatureData>, 3> FeatureData;
-    std::array<std::vector<ObjectData>, 3> ObjData;
+	//2D viz
+	std::vector<Texture> DirectTextures;
+	std::unique_ptr<ImguiWindow> DirectImage;
 
-    CDFRTeam GetTeamFromCameraPosition(std::vector<class Camera*> Cameras);
-    
+	//data
+	int BufferIndex = 0;
+	CDFRTeam LastTeam = CDFRTeam::Unknown;
+	ObjectTracker BlueTracker, YellowTracker, UnknownTracker;
+
+	std::array<std::vector<CameraFeatureData>, 3> FeatureData;
+	std::array<std::vector<ObjectData>, 3> ObjData;
+
+	CDFRTeam GetTeamFromCameraPosition(std::vector<class Camera*> Cameras);
+
+	void UpdateDirectImage(const std::vector<Camera*> &Cameras, const std::vector<CameraFeatureData> &FeatureDataLocal);
+	
 public:
-    bool Idle = false;
+	void SetHasNoClients(bool value)
+	{
+		HasNoClients = value;
+	}
 
-    void SetHasNoClients(bool value)
-    {
-        HasNoClients = value;
-    }
+	void ThreadEntryPoint();
 
-    void ThreadEntryPoint();
+	void GetData(std::vector<CameraFeatureData> &OutFeatureData, std::vector<ObjectData> &OutObjectData);
 
-    void GetData(std::vector<CameraFeatureData> &OutFeatureData, std::vector<ObjectData> &OutObjectData);
+	bool IsKilled()
+	{
+		return killed;
+	}
 
-    bool IsKilled()
-    {
-        return killed;
-    }
-
-    CDFRExternal(bool InDirect, bool InV3D);
-    ~CDFRExternal();
+	CDFRExternal(bool InDirect, bool InV3D);
+	~CDFRExternal();
 
 };
 

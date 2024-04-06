@@ -96,12 +96,12 @@ bool TrackedObject::SetLocation(Affine3d InLocation, uint64_t Tick)
 	return true;
 }
 
-bool TrackedObject::ShouldBeDisplayed(uint64_t Tick)
+bool TrackedObject::ShouldBeDisplayed(uint64_t Tick) const
 {
 	return Tick < LastSeenTick + getTickFrequency()*0.1;
 }
 
-Affine3d TrackedObject::GetLocation()
+Affine3d TrackedObject::GetLocation() const
 {
 	return Location;
 }
@@ -318,7 +318,6 @@ vector<vector<Point3d>> TrackedObject::GetPointsOfInterest() const
 void TrackedObject::Inspect()
 {
 	BoardGL board;
-	board.Start();
 
 	board.LoadTags();
 

@@ -26,15 +26,17 @@ CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
 	assert(FeatureData.size() > 0);
 
 	auto boardobj = make_shared<StaticObject>(false, "board");
-	bluetracker.RegisterTrackedObject(boardobj); 
-	yellowtracker.RegisterTrackedObject(boardobj);
+	BlueTracker.RegisterTrackedObject(boardobj); 
+	YellowTracker.RegisterTrackedObject(boardobj);
+	UnknownTracker.RegisterTrackedObject(boardobj);
 	auto SolarPanels = make_shared<SolarPanel>();
-	bluetracker.RegisterTrackedObject(SolarPanels); 
-	yellowtracker.RegisterTrackedObject(SolarPanels);
+	BlueTracker.RegisterTrackedObject(SolarPanels); 
+	YellowTracker.RegisterTrackedObject(SolarPanels);
+	UnknownTracker.RegisterTrackedObject(SolarPanels);
 	//TrackerCube* robot1 = new TrackerCube({51, 52, 54, 55}, 0.06, 0.0952, "Robot1");
 	//TrackerCube* robot2 = new TrackerCube({57, 58, 59, 61}, 0.06, 0.0952, "Robot2");
-	//bluetracker.RegisterTrackedObject(robot1);
-	//bluetracker.RegisterTrackedObject(robot2);
+	//BlueTracker.RegisterTrackedObject(robot1);
+	//BlueTracker.RegisterTrackedObject(robot2);
 	
 #ifdef USE_TRACKER_CUBES
 	auto blue1 = make_shared<TrackerCube>(vector<int>({51, 52, 53, 54, 55}), 0.05, 85.065/1000.0, "blue1");
@@ -42,18 +44,19 @@ CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
 	auto yellow1 = make_shared<TrackerCube>(vector<int>({71, 72, 73, 74, 75}), 0.05, 85.065/1000.0, "yellow1");
 	auto yellow2 = make_shared<TrackerCube>(vector<int>({76, 77, 78, 79, 80}), 0.05, 85.065/1000.0, "yellow2");
 
-	bluetracker.RegisterTrackedObject(blue1);
-	bluetracker.RegisterTrackedObject(blue2);
+	BlueTracker.RegisterTrackedObject(blue1);
+	BlueTracker.RegisterTrackedObject(blue2);
 
-	yellowtracker.RegisterTrackedObject(yellow1);
-	yellowtracker.RegisterTrackedObject(yellow2);
+	YellowTracker.RegisterTrackedObject(yellow1);
+	YellowTracker.RegisterTrackedObject(yellow2);
 #endif
 
 	for (int i = 1; i < 11; i++)
 	{
 		auto tt = make_shared<TopTracker>(i, 0.07, "top tracker " + std::to_string(i));
-		bluetracker.RegisterTrackedObject(tt);
-		yellowtracker.RegisterTrackedObject(tt);
+		BlueTracker.RegisterTrackedObject(tt);
+		YellowTracker.RegisterTrackedObject(tt);
+		UnknownTracker.RegisterTrackedObject(tt);
 	}
 
 	ThreadHandle = make_unique<thread>(&CDFRExternal::ThreadEntryPoint, this);
@@ -136,17 +139,11 @@ void CDFRExternal::ThreadEntryPoint()
 
 	//display/debug section
 	FrameCounter fps;
-
-	unique_ptr<BoardGL> OpenGLBoard;
-	unique_ptr<ImguiWindow> DirectImage;
-	vector<Texture> DirectTextures;
-	
 	
 	//OpenGLBoard.InspectObject(blue1);
 	if (v3d)
 	{
 		OpenGLBoard = make_unique<BoardGL>();
-		OpenGLBoard->Start();
 		if (OpenGLBoard->HasWindow())
 		{
 			OpenGLBoard->LoadTags();
@@ -160,7 +157,7 @@ void CDFRExternal::ThreadEntryPoint()
 	}
 	if (direct)
 	{
-		DirectImage = make_unique<ImguiWindow>();
+		DirectImage = make_unique<ImguiWindow>("External Direct Visualizer");
 		if (!DirectImage->HasWindow())
 		{
 			cout << "No 2D visualizer created: No window" << endl;
@@ -185,14 +182,14 @@ void CDFRExternal::ThreadEntryPoint()
 	
 	CameraMan->RegisterCamera = [this](shared_ptr<Camera> cam) -> void
 	{
-		bluetracker.RegisterTrackedObject(cam);
-		yellowtracker.RegisterTrackedObject(cam);
+		BlueTracker.RegisterTrackedObject(cam);
+		YellowTracker.RegisterTrackedObject(cam);
 		cout << "Registering new camera @" << cam << ", name " << cam->GetName() << endl;
 	};
 	CameraMan->StopCamera = [this](shared_ptr<Camera> cam) -> bool
 	{
-		bluetracker.UnregisterTrackedObject(cam);
-		yellowtracker.UnregisterTrackedObject(cam);
+		BlueTracker.UnregisterTrackedObject(cam);
+		YellowTracker.UnregisterTrackedObject(cam);
 		cout << "Unregistering camera @" << cam << endl;
 		
 		return true;
@@ -200,60 +197,78 @@ void CDFRExternal::ThreadEntryPoint()
 
 	CameraMan->StartScanThread();
 
-	CDFRTeam LastTeam = CDFRTeam::Unknown;
-	bool sleeping = false, idling = false;
+	
 	while (!killed)
 	{
+		bool LowPower = false;
 		if(Idle)
 		{
-			this_thread::sleep_for(chrono::milliseconds(10));
-			if (!idling)
+			//this_thread::sleep_for(chrono::milliseconds(10));
+			if (!LastIdle)
 			{
 				cout << "Entering idle..." << endl;
 			}
-			idling = true;
+			LastIdle = true;
+			LowPower = true;
 			continue;
 		}
-		else if (idling)
+		else if (LastIdle)
 		{
 			cout << "Exiting idle..." << endl;
-			idling = false;
+			LastIdle = false;
 		}
-		
+		vector<Camera*> Cameras;
 		double deltaTime = fps.GetDeltaTime();
 		prof.EnterSection("CameraManager Tick");
-		vector<Camera*> Cameras = CameraMan->Tick();
+		Cameras = CameraMan->Tick();
 		bool HasNoData = Cameras.size() == 0;
 		bool IsUnseen = HasNoClients && !DirectImage && !OpenGLBoard;
 		if (HasNoData || IsUnseen)
 		{
 			prof.EnterSection("Sleep");
-			if (!sleeping)
+			if (!LastSleep)
 			{
-				sleeping = true;
+				LastSleep = true;
 				cout << "Entering sleep..." << endl;
 			}
+			LowPower = true;
+			//
+			//continue;
+		}
+		else if (LastSleep)
+		{
+			cout << "Exiting sleep..." << endl;
+			LastSleep = false;
+		}
+
+		if (LowPower)
+		{
+			Cameras.clear();
 			this_thread::sleep_for(chrono::milliseconds(500));
 			//continue;
 		}
-		else if (sleeping)
-		{
-			cout << "Exiting sleep..." << endl;
-			sleeping = false;
-		}
+		
 		
 		
 		CDFRTeam Team = GetTeamFromCameraPosition(Cameras);
-		if (Team != LastTeam)
+		if (Team != LastTeam && Cameras.size() > 0)
 		{
-			const string teamname = TeamNames.at(Team);
-			cout << "Detected team change : to " << teamname <<endl;
+			cout << "Detected team change : to " << Team <<endl;
 			LastTeam = Team;
 		}
-		ObjectTracker* TrackerToUse = &bluetracker;
-		if (Team == CDFRTeam::Yellow)
+		ObjectTracker* TrackerToUse;
+		switch (Team)
 		{
-			TrackerToUse = &yellowtracker;
+		case CDFRTeam::Blue:
+			TrackerToUse = &BlueTracker;
+			break;
+		case CDFRTeam::Yellow:
+			TrackerToUse = &YellowTracker;
+			break;
+		default:
+			cout << "Warning : Using unknown tracker" << endl;
+			TrackerToUse = &UnknownTracker;
+			break;
 		}
 		
 		prof.EnterSection("Camera Gather Frames");
@@ -315,14 +330,27 @@ void CDFRExternal::ThreadEntryPoint()
 						//imwrite("noised.jpg", ImData.Image);
 						break;
 				}
-				//thisprof.EnterSection("Denoise");
-				//fastNlMeansDenoising(ImData.Image, ImData.Image, 10);
-				//imwrite("denoised.jpg", ImData.Image);
-				thisprof.EnterSection("Detect Aruco");
+				if (Denoising)
+				{
+					thisprof.EnterSection("Denoise");
+					fastNlMeansDenoising(ImData.Image, ImData.Image, 10);
+					imwrite("denoised.jpg", ImData.Image);
+				}
 				FeatData.CopyEssentials(ImData);
-				//DetectYolo(ImData, FeatData);
-				DetectArucoSegmented(ImData, FeatData, 200, Size(4,3));
-				//DetectAruco(ImData, FeatData);
+				if (YoloDetection)
+				{
+					thisprof.EnterSection("Detect Yolo");
+					DetectYolo(ImData, FeatData);
+				}
+				thisprof.EnterSection("Detect Aruco");
+				if (SegmentedDetection)
+				{
+					DetectArucoSegmented(ImData, FeatData, 200, Size(4,3));
+				}
+				else
+				{
+					DetectAruco(ImData, FeatData);
+				}
 				thisprof.EnterSection("3D Solve Camera");
 				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);
 				if (CamerasWithPosition[i])
@@ -331,9 +359,12 @@ void CDFRExternal::ThreadEntryPoint()
 					//cout << "Camera has location" << endl;
 				}
 				FeatData.CameraTransform = cam->GetLocation();
-				thisprof.EnterSection("Detect Aruco POIs");
-				const auto &POIs = TrackerToUse->GetPointsOfInterest();
-				DetectArucoPOI(ImData, FeatData, POIs);
+				if (POIDetection)
+				{
+					thisprof.EnterSection("Detect Aruco POIs");
+					const auto &POIs = TrackerToUse->GetPointsOfInterest();
+					DetectArucoPOI(ImData, FeatData, POIs);
+				}
 				thisprof.EnterSection("");
 			}
 		}
@@ -366,89 +397,9 @@ void CDFRExternal::ThreadEntryPoint()
 		if (DirectImage.get())
 		{
 			prof.EnterSection("Visualisation 2D");
-			DirectImage->StartFrame();
-			int DisplaysPerCam = 1;
-			int NumDisplays = Cameras.size()*DisplaysPerCam;
-			if ((int)DirectTextures.size() != NumDisplays)
-			{
-				DirectTextures.resize(NumDisplays);
-			}
-			Size WindowSize = DirectImage->GetWindowSize();
-			Size ImageSize = WindowSize;
-			if (Cameras.size() > 0)
-			{
-				ImageSize = Cameras[0]->GetCameraSettings()->Resolution;
-			}
-			
-			auto tiles = DistributeViewports(ImageSize, WindowSize, NumDisplays);
-			assert(tiles.size() == Cameras.size());
-			for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
-			{
-				if (Cameras[camidx]->errors != 0)
-				{
-					continue;
-				}
-				auto ImData = Cameras[camidx]->GetFrame(true);
-				Size Resolution(ImData.Image.cols, ImData.Image.rows);
-				DirectTextures[camidx*DisplaysPerCam].LoadFromUMat(ImData.Image);
-				DirectImage->AddImageToBackground(DirectTextures[camidx*DisplaysPerCam], tiles[camidx*DisplaysPerCam]);
-
-				//draw aruco
-				auto DrawList = ImGui::GetForegroundDrawList();
-				CameraFeatureData &FeatData = FeatureDataLocal[camidx];
-				Rect SourceRemap(Point(0,0), Resolution);
-				Rect DestRemap = tiles[camidx];
-				//show arucos
-				for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
-				{
-					auto& corners = FeatData.ArucoCorners[arucoidx];
-					uint32_t color = IM_COL32(255, 128, 255, 128);
-					if (FeatData.ArucoCornersReprojected[arucoidx].size() != 0)
-					{
-						//cout << arucoidx << " is reprojected" << endl;
-						corners = FeatData.ArucoCornersReprojected[arucoidx];
-						color = IM_COL32(128, 255, 255, 128);
-					}
-					
-					Point2d textpos(0,0);
-					for (auto cornerit = corners.begin(); cornerit != corners.end(); cornerit++)
-					{
-						auto vizpos = ImageRemap<double>(SourceRemap, DestRemap, *cornerit);
-						textpos.x = max<double>(textpos.x, vizpos.x);
-						textpos.y = max<double>(textpos.y, vizpos.y);
-						if (cornerit == corners.begin())
-						{
-							//corner0 square
-							Point2d size = Point2d(2,2);
-							DrawList->AddRect(vizpos-size, vizpos+size, color);
-						}
-						//start aruco contour
-						DrawList->PathLineTo(vizpos);
-					}
-					//finish aruco contour
-					DrawList->PathStroke(color, ImDrawFlags_Closed, 2);
-					//text with aruco number
-					string text = to_string(FeatData.ArucoIndices[arucoidx]);
-					DrawList->AddText(nullptr, 16, textpos, color, text.c_str());
-				}
-				//display segments of segmented detection
-				for (size_t segmentidx = 0; segmentidx < FeatData.ArucoSegments.size(); segmentidx++)
-				{
-					auto &segment = FeatData.ArucoSegments[segmentidx];
-					auto tl = ImageRemap<double>(SourceRemap, DestRemap, segment.tl());
-					auto br = ImageRemap<double>(SourceRemap, DestRemap, segment.br());
-					DrawList->AddRect(tl, br, IM_COL32(255, 255, 255, 64));
-				}
-				
-			}
-			if(!DirectImage->EndFrame())
-			{
-				killed = true;
-				cout << "2D visualizer closed, shutting down..." << endl;
-				return;
-			}
+			UpdateDirectImage(Cameras, FeatureDataLocal);
 		}
-		
+
 		prof.EnterSection("");
 		
 		if (prof.ShouldPrint())
@@ -469,6 +420,100 @@ void CDFRExternal::GetData(std::vector<CameraFeatureData> &OutFeatureData, std::
 	OutObjectData = ObjData[SelectedBuffer];
 }
 
+
+void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vector<CameraFeatureData> &FeatureDataLocal)
+{
+	DirectImage->StartFrame();
+	int DisplaysPerCam = 1;
+	int NumDisplays = Cameras.size()*DisplaysPerCam;
+	if ((int)DirectTextures.size() != NumDisplays)
+	{
+		DirectTextures.resize(NumDisplays);
+	}
+	Size WindowSize = DirectImage->GetWindowSize();
+	Size ImageSize = WindowSize;
+	if (Cameras.size() > 0)
+	{
+		ImageSize = Cameras[0]->GetCameraSettings()->Resolution;
+	}
+	
+	auto tiles = DistributeViewports(ImageSize, WindowSize, NumDisplays);
+	assert(tiles.size() == Cameras.size());
+	//show cameras and arucos
+	for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
+	{
+		if (Cameras[camidx]->errors != 0)
+		{
+			continue;
+		}
+		const auto &thisTile = tiles[camidx*DisplaysPerCam];
+		const Camera* thisCamera = Cameras[camidx];
+		auto ImData = thisCamera->GetFrame(true);
+		Size Resolution(ImData.Image.cols, ImData.Image.rows);
+		DirectTextures[camidx*DisplaysPerCam].LoadFromUMat(ImData.Image);
+		DirectImage->AddImageToBackground(DirectTextures[camidx*DisplaysPerCam], thisTile);
+
+		auto DrawList = ImGui::GetForegroundDrawList();
+		{
+			ostringstream CameraTextStream;
+			CameraTextStream << thisCamera->GetLocation().translation() <<endl;
+			CameraTextStream << LastTeam << endl;
+			string CameraText = CameraTextStream.str();
+			DrawList->AddText(NULL, 12, ImVec2(thisTile.x, thisTile.y), IM_COL32(255,255,255,255), CameraText.c_str());
+		}
+		//draw aruco
+		const CameraFeatureData &FeatData = FeatureDataLocal[camidx];
+		Rect SourceRemap(Point(0,0), Resolution);
+		Rect DestRemap = tiles[camidx];
+		for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
+		{
+			auto corners = FeatData.ArucoCorners[arucoidx];
+			uint32_t color = IM_COL32(255, 128, 255, 128);
+			if (FeatData.ArucoCornersReprojected[arucoidx].size() != 0)
+			{
+				//cout << arucoidx << " is reprojected" << endl;
+				corners = FeatData.ArucoCornersReprojected[arucoidx];
+				color = IM_COL32(128, 255, 255, 128);
+			}
+			
+			Point2d textpos(0,0);
+			for (auto cornerit = corners.cbegin(); cornerit != corners.cend(); cornerit++)
+			{
+				auto vizpos = ImageRemap<double>(SourceRemap, DestRemap, *cornerit);
+				textpos.x = max<double>(textpos.x, vizpos.x);
+				textpos.y = max<double>(textpos.y, vizpos.y);
+				if (cornerit == corners.begin())
+				{
+					//corner0 square
+					Point2d size = Point2d(2,2);
+					DrawList->AddRect(vizpos-size, vizpos+size, color);
+				}
+				//start aruco contour
+				DrawList->PathLineTo(vizpos);
+			}
+			//finish aruco contour
+			DrawList->PathStroke(color, ImDrawFlags_Closed, 2);
+			//text with aruco number
+			string text = to_string(FeatData.ArucoIndices[arucoidx]);
+			DrawList->AddText(nullptr, 16, textpos, color, text.c_str());
+		}
+		//display segments of segmented detection
+		for (size_t segmentidx = 0; segmentidx < FeatData.ArucoSegments.size(); segmentidx++)
+		{
+			auto &segment = FeatData.ArucoSegments[segmentidx];
+			auto tl = ImageRemap<double>(SourceRemap, DestRemap, segment.tl());
+			auto br = ImageRemap<double>(SourceRemap, DestRemap, segment.br());
+			DrawList->AddRect(tl, br, IM_COL32(255, 255, 255, 64));
+		}
+		
+	}
+	if(!DirectImage->EndFrame())
+	{
+		killed = true;
+		cout << "2D visualizer closed, shutting down..." << endl;
+		return;
+	}
+}
 
 
 CDFRExternal::~CDFRExternal()

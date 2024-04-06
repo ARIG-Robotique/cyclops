@@ -82,10 +82,10 @@ public:
 
 	//Set location. Bypass kalman filter if tick is UINT64_MAX
 	virtual bool SetLocation(cv::Affine3d InLocation, uint64_t Tick);
-	unsigned long GetLastSeenTick() { return LastSeenTick; }
+	unsigned long GetLastSeenTick() const { return LastSeenTick; }
 
-	virtual bool ShouldBeDisplayed(uint64_t Tick);
-	virtual cv::Affine3d GetLocation();
+	virtual bool ShouldBeDisplayed(uint64_t Tick) const;
+	virtual cv::Affine3d GetLocation() const;
 
 	//Find the parameters and the accumulated transform of the tag in the component and it's childs
 	virtual bool FindTag(int MarkerID, ArucoMarker& Marker, cv::Affine3d& TransformToMarker);

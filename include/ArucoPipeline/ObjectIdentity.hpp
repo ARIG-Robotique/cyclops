@@ -14,11 +14,14 @@ enum class CDFRTeam
 	Blue
 };
 
+
 const std::map<CDFRTeam, std::string> TeamNames = {
 	{CDFRTeam::Unknown, "Unknown"},
 	{CDFRTeam::Blue, "Blue"},
 	{CDFRTeam::Yellow, "Yellow"}
 };
+
+std::ostream& operator << (std::ostream& out, CDFRTeam Team);
 
 enum class ObjectType
 {
@@ -51,6 +54,8 @@ const std::map<ObjectType, std::string> ObjectTypeNames =
 	{ObjectType::SolarPanel, 		"Solar Panel"},
 	{ObjectType::Team, 				"Team"}
 };
+
+std::ostream& operator << (std::ostream& out, ObjectType Type);
 
 struct ObjectData
 {

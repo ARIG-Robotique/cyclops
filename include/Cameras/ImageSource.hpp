@@ -14,5 +14,5 @@ public:
 
 	virtual void SetFrame(const CameraImageData& frame, bool Distorted);
 
-	virtual CameraImageData GetFrame(bool Distorted);
+	virtual CameraImageData GetFrame(bool Distorted) const;
 };

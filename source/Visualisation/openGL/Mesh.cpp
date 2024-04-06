@@ -12,6 +12,7 @@ Mesh::~Mesh()
 {
 	if (bound)
 	{
+		//cout << "Deleting mesh " << IndexBuffer << endl;
 		glDeleteBuffers(1, &PositionBuffer);
 
 		glDeleteBuffers(1, &UVBuffer);
@@ -154,6 +155,8 @@ void Mesh::BindMesh()
 		texture.Bind();
 	}
 	bound = true;
+
+	//cout << "Created mesh " << PositionBuffer << endl;
 }
 
 void Mesh::Draw(GLuint ParamHandle, bool forceTexture)

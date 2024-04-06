@@ -30,12 +30,51 @@ GLObject::GLObject(MeshNames InType, double x, double y, double z, std::string I
 	metadata = InMetadata;
 }
 
+BoardGL::BoardGL(string name)
+	:GLWindow()
+{
+	GLCreateWindow(1280, 720, name);
+	if (!Window)
+	{
+		return;
+	}
+
+	// Enable depth test
+	glEnable(GL_DEPTH_TEST);
+	// Cull triangles which normal is not towards the camera
+	glEnable(GL_CULL_FACE);
+	// Accept fragment if it closer to the camera than the former one
+	glDepthFunc(GL_LESS);
+
+	glfwSetInputMode(Window, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(Window, GLFW_RAW_MOUSE_MOTION, GL_TRUE);
+	
+	auto shaderfolder = GetAssetsPath() / "shaders";
+	// Create and compile our GLSL program from the shaders
+	ShaderProgram.LoadShader(shaderfolder / "vertexshader.vs", shaderfolder / "fragmentshader.fs");
+
+	glGenVertexArrays(1, &VertexArrayID);
+	glBindVertexArray(VertexArrayID);
+	
+	glfwMakeContextCurrent(NULL);
+
+	LoadModels();
+	//cout << "OpenGL init done!" << endl;
+}
+
+BoardGL::~BoardGL()
+{
+	glfwMakeContextCurrent(Window);
+	Meshes.clear();
+	TagTextures.clear();
+}
+
 void BoardGL::WindowSizeCallback(int width, int height)
 {
 	glViewport(0, 0, width, height);
 }
 
-glm::mat4 BoardGL::GetVPMatrix(glm::vec3 forward, glm::vec3 up)
+glm::mat4 BoardGL::GetVPMatrix(glm::vec3 forward, glm::vec3 up) const
 {
 	int winwidth, winheight;
 	glfwGetWindowSize(Window, &winwidth, &winheight);
@@ -56,7 +95,7 @@ glm::mat4 BoardGL::GetVPMatrix(glm::vec3 forward, glm::vec3 up)
 	return projectionMatrix * CameraMatrix;
 }
 
-glm::vec3 BoardGL::GetDirection()
+glm::vec3 BoardGL::GetDirection() const
 {
 	// Direction : Spherical coordinates to Cartesian coordinates conversion
 	double sinh, cosh;
@@ -71,8 +110,7 @@ glm::vec3 BoardGL::GetDirection()
 	return direction;
 }
 
-
-glm::vec3 BoardGL::GetRightVector()
+glm::vec3 BoardGL::GetRightVector() const
 {
 	// Right vector
 	double sinh, cosh;
@@ -255,8 +293,6 @@ void BoardGL::LoadModels()
 	MeshesLoaded = true;
 	glfwMakeContextCurrent(NULL);
 }
-	
-#include <opencv2/highgui.hpp>
 
 void BoardGL::LoadTags()
 {
@@ -285,37 +321,6 @@ void BoardGL::LoadTags()
 	}
 	TagsLoaded = true;
 	glfwMakeContextCurrent(NULL);
-}
-
-void BoardGL::Start(string name)
-{
-	GLCreateWindow(1280, 720, name);
-	if (!Window)
-	{
-		return;
-	}
-
-	// Enable depth test
-	glEnable(GL_DEPTH_TEST);
-	// Cull triangles which normal is not towards the camera
-	glEnable(GL_CULL_FACE);
-	// Accept fragment if it closer to the camera than the former one
-	glDepthFunc(GL_LESS);
-
-	glfwSetInputMode(Window, GLFW_STICKY_KEYS, GL_TRUE);
-	glfwSetInputMode(Window, GLFW_RAW_MOUSE_MOTION, GL_TRUE);
-	
-	auto shaderfolder = GetAssetsPath() / "shaders";
-	// Create and compile our GLSL program from the shaders
-	ShaderProgram.LoadShader(shaderfolder / "vertexshader.vs", shaderfolder / "fragmentshader.fs");
-
-	glGenVertexArrays(1, &VertexArrayID);
-	glBindVertexArray(VertexArrayID);
-	
-	glfwMakeContextCurrent(NULL);
-
-	LoadModels();
-	//cout << "OpenGL init done!" << endl;
 }
 
 bool BoardGL::Tick(std::vector<GLObject> data)
@@ -412,8 +417,6 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 
 void BoardGL::runTest()
 {
-	Start();
-
 	int winwidth, winheight;
 	glfwGetWindowSize(Window, &winwidth, &winheight);
 	

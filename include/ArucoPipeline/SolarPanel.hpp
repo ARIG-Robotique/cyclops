@@ -25,7 +25,7 @@ public:
 	virtual cv::Affine3d GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
 		std::map<int, ArucoCornerArray> &ReprojectedCorners) override;
 
-	virtual bool ShouldBeDisplayed(uint64_t Tick) override
+	virtual bool ShouldBeDisplayed(uint64_t Tick) const override
 	{
 		(void) Tick;
 		return true;

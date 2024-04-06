@@ -6,6 +6,18 @@
 #include <map>
 using namespace std;
 
+std::ostream& operator << (std::ostream& out, CDFRTeam Team)
+{
+	out << TeamNames.at(Team);
+	return out;
+}
+
+std::ostream& operator << (std::ostream& out, ObjectType Type)
+{
+	out << ObjectTypeNames.at(Type);
+	return out;
+}
+
 std::optional<GLObject> ObjectData::ToGLObject() const
 {
 	static const map<ObjectType, MeshNames> PacketToMesh = 

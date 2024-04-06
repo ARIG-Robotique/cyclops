@@ -52,8 +52,12 @@ private:
 	std::map<MeshNames, Mesh> Meshes;
 	std::vector<Texture> TagTextures;
 
-	glm::mat4 GetVPMatrix(glm::vec3 forward, glm::vec3 up);
+	glm::mat4 GetVPMatrix(glm::vec3 forward, glm::vec3 up) const;
 public:
+
+	BoardGL(std::string name = "Cyclops");
+
+	virtual ~BoardGL();
 
 	bool LookingAround = false; //Is left button pressed ?
 	double lastCursorX, lastCursorY;
@@ -63,16 +67,14 @@ public:
 
 	double lastTime;
 
-	glm::vec3 GetDirection();
+	glm::vec3 GetDirection() const;
 
-	glm::vec3 GetRightVector();
+	glm::vec3 GetRightVector() const;
 
 	void HandleInputs(); //Move camera and stuff
 
 	void LoadModels();
 	void LoadTags();
-	
-	void Start(std::string name = "Cyclops");
 
 	bool Tick(std::vector<GLObject> data); //Run display loop for these objects, returns false if exit was asked.
 

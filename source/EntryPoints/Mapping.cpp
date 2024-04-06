@@ -353,7 +353,6 @@ void MappingSolve(void)
 	}
 	// display what we found
 	BoardGL visualiser;
-	visualiser.Start();
 	visualiser.LoadTags();
 	
 	while (visualiser.Tick(ObjectData::ToGLObjects(vizdata)))

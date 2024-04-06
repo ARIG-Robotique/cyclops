@@ -48,7 +48,6 @@ GLWindow::~GLWindow()
 		windowmap.erase(Window);
 		glfwDestroyWindow(Window);
 	}
-	
 }
 
 GLFWwindow* GLWindow::GLCreateWindow(int width, int height, std::string name)
