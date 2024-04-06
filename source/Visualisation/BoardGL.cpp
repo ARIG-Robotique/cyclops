@@ -64,9 +64,14 @@ BoardGL::BoardGL(string name)
 
 BoardGL::~BoardGL()
 {
-	glfwMakeContextCurrent(Window);
-	Meshes.clear();
-	TagTextures.clear();
+	for (auto &&i : Meshes)
+	{
+		i.second.Release();
+	}
+	for (auto &&i : TagTextures)
+	{
+		i.Release();
+	}
 }
 
 void BoardGL::WindowSizeCallback(int width, int height)

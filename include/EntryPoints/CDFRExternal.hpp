@@ -27,6 +27,7 @@ private:
 	//Settings
 	bool direct;
 	bool v3d;
+	bool record = false;
 	bool SegmentedDetection = true;
 	bool POIDetection = false;
 	bool YoloDetection = false;
@@ -55,6 +56,10 @@ private:
 	CDFRTeam GetTeamFromCameraPosition(std::vector<class Camera*> Cameras);
 
 	void UpdateDirectImage(const std::vector<Camera*> &Cameras, const std::vector<CameraFeatureData> &FeatureDataLocal);
+
+	void Open3DVisualizer();
+
+	void OpenDirectVisualizer();
 	
 public:
 	void SetHasNoClients(bool value)

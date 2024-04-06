@@ -221,3 +221,13 @@ void Mesh::Draw(GLuint ParamHandle, bool forceTexture)
 	}
 	
 }
+
+void Mesh::Release()
+{
+	bound = false;
+	if (texture.valid)
+	{
+		texture.Release();
+	}
+	
+}

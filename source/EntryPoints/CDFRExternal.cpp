@@ -143,26 +143,11 @@ void CDFRExternal::ThreadEntryPoint()
 	//OpenGLBoard.InspectObject(blue1);
 	if (v3d)
 	{
-		OpenGLBoard = make_unique<BoardGL>();
-		if (OpenGLBoard->HasWindow())
-		{
-			OpenGLBoard->LoadTags();
-			OpenGLBoard->Tick({});
-		}
-		else
-		{
-			cout << "No 3D visualizer created: No window" << endl;
-			OpenGLBoard.reset();
-		}
+		Open3DVisualizer();
 	}
 	if (direct)
 	{
-		DirectImage = make_unique<ImguiWindow>("External Direct Visualizer");
-		if (!DirectImage->HasWindow())
-		{
-			cout << "No 2D visualizer created: No window" << endl;
-			DirectImage.reset();
-		}
+		OpenDirectVisualizer();
 	}
 	
 
@@ -266,7 +251,10 @@ void CDFRExternal::ThreadEntryPoint()
 			TrackerToUse = &YellowTracker;
 			break;
 		default:
-			cout << "Warning : Using unknown tracker" << endl;
+			if (!LowPower)
+			{
+				cout << "Warning : Using unknown tracker" << endl;
+			}
 			TrackerToUse = &UnknownTracker;
 			break;
 		}
@@ -421,8 +409,35 @@ void CDFRExternal::GetData(std::vector<CameraFeatureData> &OutFeatureData, std::
 }
 
 
+
+void CDFRExternal::Open3DVisualizer()
+{
+	OpenGLBoard = make_unique<BoardGL>();
+	if (OpenGLBoard->HasWindow())
+	{
+		OpenGLBoard->LoadTags();
+		OpenGLBoard->Tick({});
+	}
+	else
+	{
+		cout << "No 3D visualizer created: No window" << endl;
+		OpenGLBoard.reset();
+	}
+}
+
+void CDFRExternal::OpenDirectVisualizer()
+{
+	DirectImage = make_unique<ImguiWindow>("External Direct Visualizer");
+	if (!DirectImage->HasWindow())
+	{
+		cout << "No 2D visualizer created: No window" << endl;
+		DirectImage.reset();
+	}
+}
+
 void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vector<CameraFeatureData> &FeatureDataLocal)
 {
+	bool selfkill = false;
 	DirectImage->StartFrame();
 	int DisplaysPerCam = 1;
 	int NumDisplays = Cameras.size()*DisplaysPerCam;
@@ -436,6 +451,40 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 	{
 		ImageSize = Cameras[0]->GetCameraSettings()->Resolution;
 	}
+
+	if (ImGui::Begin("Settings"))
+	{
+		if(ImGui::Checkbox("Record", &record))
+		{
+			//ImGui::InputInt("Record interval", nullptr);
+		}
+		if (!OpenGLBoard)
+		{
+			if (ImGui::Button("Open 3D vizualiser"))
+			{
+				Open3DVisualizer();
+			}
+		}
+		else
+		{
+			if (ImGui::Button("Close 3D vizualiser"))
+			{
+				OpenGLBoard.reset();
+			}
+		}
+		
+		if (ImGui::Button("Close this window"))
+		{
+			selfkill=true;
+		}
+		//ImGui::Checkbox("Freeze camera position", nullptr);
+		ImGui::Checkbox("Segmented detection", &SegmentedDetection);
+		ImGui::Checkbox("POI Detection", &POIDetection);
+		ImGui::Checkbox("Yolo detection", &YoloDetection);
+		ImGui::Checkbox("Denoising", &Denoising);
+	}
+	ImGui::End();
+	
 	
 	auto tiles = DistributeViewports(ImageSize, WindowSize, NumDisplays);
 	assert(tiles.size() == Cameras.size());
@@ -513,6 +562,11 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		cout << "2D visualizer closed, shutting down..." << endl;
 		return;
 	}
+	if (selfkill)
+	{
+		DirectImage.reset();
+	}
+	
 }
 
 
@@ -523,4 +577,9 @@ CDFRExternal::~CDFRExternal()
 	{
 		ThreadHandle->join();
 	}
+	for (auto &&i : DirectTextures)
+	{
+		i.Release();
+	}
+	
 }

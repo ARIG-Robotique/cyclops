@@ -41,4 +41,6 @@ public:
 	void BindMesh(); //Create buffers for OpenGL
 
 	void Draw(GLuint ParamHandle = UINT32_MAX, bool forceTexture = false); //Draw the mesh
+
+	void Release(); //Forget bound buffers
 };
