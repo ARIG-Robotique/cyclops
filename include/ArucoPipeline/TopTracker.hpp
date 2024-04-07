@@ -6,9 +6,9 @@
 class TopTracker : public TrackedObject
 {
 private:
-
+	double ExpectedHeight;
 public:
-	TopTracker(int MarkerIdx, double MarkerSize, std::string InName);
+	TopTracker(int MarkerIdx, double MarkerSize, std::string InName, double InExpectedHeight);
 	~TopTracker();
 
 	virtual std::vector<ObjectData> ToObjectData() const override;

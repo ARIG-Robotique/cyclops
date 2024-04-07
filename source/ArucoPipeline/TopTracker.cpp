@@ -8,7 +8,8 @@
 using namespace cv;
 using namespace std;
 
-TopTracker::TopTracker(int MarkerIdx, double MarkerSize, String InName)
+TopTracker::TopTracker(int MarkerIdx, double MarkerSize, String InName, double InExpectedHeight)
+	:ExpectedHeight(InExpectedHeight)
 {
 	Unique = false;
 	Name = InName;

@@ -50,10 +50,21 @@ CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
 	YellowTracker.RegisterTrackedObject(yellow1);
 	YellowTracker.RegisterTrackedObject(yellow2);
 #endif
+	vector<string> PAMINames = {"Triangle", "Square", "Circle"};
+	for (size_t i = 0; i < 2; i++)
+	{
+		auto &tracker = i ? BlueTracker : YellowTracker;
+		for (size_t j = 0; j < PAMINames.size(); j++)
+		{
+			auto pamitracker = make_shared<TopTracker>(i, 0.07, PAMINames[j], 0.112);
+			tracker.RegisterTrackedObject(pamitracker);
+		}
+	}
+	
 
 	for (int i = 1; i < 11; i++)
 	{
-		auto tt = make_shared<TopTracker>(i, 0.07, "top tracker " + std::to_string(i));
+		auto tt = make_shared<TopTracker>(i, 0.07, "Robot " + std::to_string(i), 0.450);
 		BlueTracker.RegisterTrackedObject(tt);
 		YellowTracker.RegisterTrackedObject(tt);
 		UnknownTracker.RegisterTrackedObject(tt);
@@ -195,7 +206,6 @@ void CDFRExternal::ThreadEntryPoint()
 			}
 			LastIdle = true;
 			LowPower = true;
-			continue;
 		}
 		else if (LastIdle)
 		{
@@ -388,6 +398,8 @@ void CDFRExternal::ThreadEntryPoint()
 		ObjectData TeamPacket(ObjectType::Team, TeamNames.at(Team));
 		ObjDataLocal.insert(ObjDataLocal.begin(), TeamPacket); //insert team as the first object
 
+
+		BufferIndex = (BufferIndex+1)%ObjData.size();
 		if (RecordThisTick)
 		{
 			RecordIndex++;
@@ -418,7 +430,6 @@ void CDFRExternal::ThreadEntryPoint()
 			prof.PrintProfile();
 			ParallelProfiler.PrintProfile();
 		}
-		BufferIndex = (BufferIndex+1)%ObjData.size();
 	}
 }
 
@@ -429,8 +440,6 @@ void CDFRExternal::GetData(std::vector<CameraFeatureData> &OutFeatureData, std::
 	OutFeatureData = FeatureData[SelectedBuffer];
 	OutObjectData = ObjData[SelectedBuffer];
 }
-
-
 
 void CDFRExternal::Open3DVisualizer()
 {
@@ -504,6 +513,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		ImGui::Checkbox("POI Detection", &POIDetection);
 		ImGui::Checkbox("Yolo detection", &YoloDetection);
 		ImGui::Checkbox("Denoising", &Denoising);
+		ImGui::Checkbox("Idle", &Idle);
 	}
 	ImGui::End();
 	
