@@ -53,7 +53,7 @@ CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
 	vector<string> PAMINames = {"Triangle", "Square", "Circle"};
 	for (size_t i = 0; i < 2; i++)
 	{
-		auto &tracker = i ? BlueTracker : YellowTracker;
+		auto &tracker = i==0 ? BlueTracker : YellowTracker;
 		for (size_t j = 0; j < PAMINames.size(); j++)
 		{
 			auto pamitracker = make_shared<TopTracker>(51+i*20+j, 0.07, PAMINames[j], 0.112);
