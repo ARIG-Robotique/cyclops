@@ -15,6 +15,7 @@ private:
 	std::atomic<int> NumClients = 0;
 public:
 	class CDFRExternal* ExternalRunner = nullptr;
+	class CDFRInternal* InternalRunner = nullptr;
 	TCPJsonHost(int InPort);
 	~TCPJsonHost();
 

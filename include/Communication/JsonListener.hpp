@@ -62,6 +62,8 @@ private:
 
 	bool GetImage(double reduction, nlohmann::json &Response);
 
+	void ReceiveImage(const nlohmann::json &Query);
+
 	void HandleQuery(const nlohmann::json &Query);
 
 	void HandleResponse(const nlohmann::json &Response);

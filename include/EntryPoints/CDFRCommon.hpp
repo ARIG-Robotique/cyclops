@@ -24,6 +24,21 @@
 using namespace cv;
 using namespace std;
 
-map<ObjectType, bool> GetDefaultAllowMap();
+namespace CDFRCommon
+{
+	extern bool direct;
+	extern bool v3d;
+	extern bool record;
+	extern int RecordInterval;
+
+
+	extern bool SegmentedDetection;
+	extern bool POIDetection;
+	extern bool YoloDetection;
+	extern bool Denoising;
+	extern bool DistortedDetection;
+
+	void MakeTrackedObjects(bool Internal, std::map<CDFRTeam, ObjectTracker&> Trackers);
+};
 
 string TimeToStr();

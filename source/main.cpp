@@ -20,6 +20,7 @@
 #include <Visualisation/ImguiWindow.hpp>
 #include <EntryPoints/CDFRExternal.hpp>
 #include <EntryPoints/CDFRInternal.hpp>
+#include <EntryPoints/CDFRCommon.hpp>
 #include <EntryPoints/Mapping.hpp>
 
 #include <Communication/AdvertiseMV.hpp>
@@ -182,9 +183,10 @@ int main(int argc, char** argv )
 		return EXIT_SUCCESS;
 	}
 
-	bool direct = parser.has("direct") ? parser.get<bool>("direct") : false;
-	bool opengl = parser.has("opengl") ? parser.get<bool>("opengl") : true;
-	RecordVideo = parser.has("record");
+	CDFRCommon::direct = parser.has("direct") ? parser.get<bool>("direct") : false;
+	CDFRCommon::v3d = parser.has("opengl") ? parser.get<bool>("opengl") : true;
+	CDFRCommon::record = parser.has("record");
+
 	
 	if (parser.has("map"))
 	{
@@ -196,9 +198,11 @@ int main(int argc, char** argv )
 		//AdvertiseMV advertiser;
 		TCPJsonHost JsonHost(50667);
 		
-		CDFRExternal ExternalCameraHost(direct, opengl);
+		CDFRExternal ExternalCameraHost;
+		CDFRInternal InternalCameraHost;
 
 		JsonHost.ExternalRunner = &ExternalCameraHost;
+		JsonHost.InternalRunner = &InternalCameraHost;
 
 		while (!ExternalCameraHost.IsKilled() && !JsonHost.IsKilled() && !killrequest)
 		{

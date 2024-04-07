@@ -18,57 +18,19 @@
 #include <memory>
 
 
-CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
-	:direct(InDirect), v3d(InV3D)
+CDFRExternal::CDFRExternal()
 {
 
 	assert(ObjData.size() == FeatureData.size());
 	assert(FeatureData.size() > 0);
 
-	auto boardobj = make_shared<StaticObject>(false, "board");
-	BlueTracker.RegisterTrackedObject(boardobj); 
-	YellowTracker.RegisterTrackedObject(boardobj);
-	UnknownTracker.RegisterTrackedObject(boardobj);
-	auto SolarPanels = make_shared<SolarPanel>();
-	BlueTracker.RegisterTrackedObject(SolarPanels); 
-	YellowTracker.RegisterTrackedObject(SolarPanels);
-	UnknownTracker.RegisterTrackedObject(SolarPanels);
-	//TrackerCube* robot1 = new TrackerCube({51, 52, 54, 55}, 0.06, 0.0952, "Robot1");
-	//TrackerCube* robot2 = new TrackerCube({57, 58, 59, 61}, 0.06, 0.0952, "Robot2");
-	//BlueTracker.RegisterTrackedObject(robot1);
-	//BlueTracker.RegisterTrackedObject(robot2);
-	
-#ifdef USE_TRACKER_CUBES
-	auto blue1 = make_shared<TrackerCube>(vector<int>({51, 52, 53, 54, 55}), 0.05, 85.065/1000.0, "blue1");
-	auto blue2 = make_shared<TrackerCube>(vector<int>({56, 57, 58, 59, 60}), 0.05, 85.065/1000.0, "blue2");
-	auto yellow1 = make_shared<TrackerCube>(vector<int>({71, 72, 73, 74, 75}), 0.05, 85.065/1000.0, "yellow1");
-	auto yellow2 = make_shared<TrackerCube>(vector<int>({76, 77, 78, 79, 80}), 0.05, 85.065/1000.0, "yellow2");
-
-	BlueTracker.RegisterTrackedObject(blue1);
-	BlueTracker.RegisterTrackedObject(blue2);
-
-	YellowTracker.RegisterTrackedObject(yellow1);
-	YellowTracker.RegisterTrackedObject(yellow2);
-#endif
-	vector<string> PAMINames = {"Triangle", "Square", "Circle"};
-	for (size_t i = 0; i < 2; i++)
-	{
-		auto &tracker = i==0 ? BlueTracker : YellowTracker;
-		for (size_t j = 0; j < PAMINames.size(); j++)
+	CDFRCommon::MakeTrackedObjects(false, 
 		{
-			auto pamitracker = make_shared<TopTracker>(51+i*20+j, 0.07, PAMINames[j], 0.112);
-			tracker.RegisterTrackedObject(pamitracker);
-		}
-	}
-	
-
-	for (int i = 1; i < 11; i++)
-	{
-		auto tt = make_shared<TopTracker>(i, 0.07, "Robot " + std::to_string(i), 0.450);
-		BlueTracker.RegisterTrackedObject(tt);
-		YellowTracker.RegisterTrackedObject(tt);
-		UnknownTracker.RegisterTrackedObject(tt);
-	}
+			{CDFRTeam::Blue, BlueTracker},
+			{CDFRTeam::Yellow, YellowTracker},
+			{CDFRTeam::Unknown, UnknownTracker}
+		}	
+	);
 
 	ThreadHandle = make_unique<thread>(&CDFRExternal::ThreadEntryPoint, this);
 }
@@ -152,11 +114,11 @@ void CDFRExternal::ThreadEntryPoint()
 	FrameCounter fps;
 	
 	//OpenGLBoard.InspectObject(blue1);
-	if (v3d)
+	if (CDFRCommon::v3d)
 	{
 		Open3DVisualizer();
 	}
-	if (direct)
+	if (CDFRCommon::direct)
 	{
 		OpenDirectVisualizer();
 	}
@@ -270,12 +232,12 @@ void CDFRExternal::ThreadEntryPoint()
 		}
 
 		bool RecordThisTick = false;
-		if (RecordTick >= RecordInterval-1)
+		if (RecordTick >= CDFRCommon::RecordInterval-1)
 		{
 			RecordTick = 0;
-			RecordThisTick = record;
+			RecordThisTick = CDFRCommon::record;
 		}
-		else if (Cameras.size() > 0 && record)
+		else if (Cameras.size() > 0 && CDFRCommon::record)
 		{
 			RecordTick++;
 		}
@@ -323,14 +285,14 @@ void CDFRExternal::ThreadEntryPoint()
 					CamerasWithPosition[i] = false;
 					continue;
 				}
-				if (!DistortedDetection)
+				if (!CDFRCommon::DistortedDetection)
 				{
 					thisprof.EnterSection("CameraUndistort");
 					cam->Undistort();
 				}
 				thisprof.EnterSection("CameraGetFrame");
 				CameraImageData &ImData = ImageDataLocal[i];
-				ImData = cam->GetFrame(DistortedDetection);
+				ImData = cam->GetFrame(CDFRCommon::DistortedDetection);
 				switch (GetRunType())
 				{
 					case RunType::Normal:
@@ -347,20 +309,20 @@ void CDFRExternal::ThreadEntryPoint()
 						//imwrite("noised.jpg", ImData.Image);
 						break;
 				}
-				if (Denoising)
+				if (CDFRCommon::Denoising)
 				{
 					thisprof.EnterSection("Denoise");
 					fastNlMeansDenoising(ImData.Image, ImData.Image, 10);
 					imwrite("denoised.jpg", ImData.Image);
 				}
 				FeatData.CopyEssentials(ImData);
-				if (YoloDetection)
+				if (CDFRCommon::YoloDetection)
 				{
 					thisprof.EnterSection("Detect Yolo");
 					DetectYolo(ImData, FeatData);
 				}
 				thisprof.EnterSection("Detect Aruco");
-				if (SegmentedDetection)
+				if (CDFRCommon::SegmentedDetection)
 				{
 					DetectArucoSegmented(ImData, FeatData, 200, Size(4,3));
 				}
@@ -376,7 +338,7 @@ void CDFRExternal::ThreadEntryPoint()
 					//cout << "Camera has location" << endl;
 				}
 				FeatData.CameraTransform = cam->GetLocation();
-				if (POIDetection)
+				if (CDFRCommon::POIDetection)
 				{
 					thisprof.EnterSection("Detect Aruco POIs");
 					const auto &POIs = TrackerToUse->GetPointsOfInterest();
@@ -503,8 +465,8 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 
 	if (ImGui::Begin("Settings"))
 	{
-		ImGui::InputInt("Record interval", &RecordInterval);
-		if(ImGui::Checkbox("Record", &record))
+		ImGui::InputInt("Record interval", &CDFRCommon::RecordInterval);
+		if(ImGui::Checkbox("Record", &CDFRCommon::record))
 		{
 		}
 		if (!OpenGLBoard)
@@ -527,11 +489,11 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 			selfkill=true;
 		}
 		//ImGui::Checkbox("Freeze camera position", nullptr);
-		ImGui::Checkbox("Distorted detection", &DistortedDetection);
-		ImGui::Checkbox("Segmented detection", &SegmentedDetection);
-		ImGui::Checkbox("POI Detection", &POIDetection);
-		ImGui::Checkbox("Yolo detection", &YoloDetection);
-		ImGui::Checkbox("Denoising", &Denoising);
+		ImGui::Checkbox("Distorted detection", &CDFRCommon::DistortedDetection);
+		ImGui::Checkbox("Segmented detection", &CDFRCommon::SegmentedDetection);
+		ImGui::Checkbox("POI Detection", &CDFRCommon::POIDetection);
+		ImGui::Checkbox("Yolo detection", &CDFRCommon::YoloDetection);
+		ImGui::Checkbox("Denoising", &CDFRCommon::Denoising);
 		ImGui::Checkbox("Idle", &Idle);
 	}
 	ImGui::End();

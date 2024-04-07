@@ -25,16 +25,8 @@ private:
 	bool Sleep = false, LastSleep = false;
 
 	//Settings
-	bool direct;
-	bool v3d;
-	bool record = false;
-	int RecordInterval = 10, RecordTick = 0, RecordIndex=0;
+	int RecordTick = 0, RecordIndex=0;
 	std::filesystem::path RecordRootPath;
-	bool SegmentedDetection = true;
-	bool POIDetection = false;
-	bool YoloDetection = false;
-	bool Denoising = false;
-	bool DistortedDetection = true;
 
 	//Camera manager
 	std::unique_ptr<CameraManager> CameraMan;
@@ -85,7 +77,7 @@ public:
 		return killed;
 	}
 
-	CDFRExternal(bool InDirect, bool InV3D);
+	CDFRExternal();
 	~CDFRExternal();
 
 };

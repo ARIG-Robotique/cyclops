@@ -16,7 +16,7 @@ private:
 	bool direct, v3d;
 	ObjectTracker BlueTracker, YellowTracker;
 public:
-	CDFRInternal(bool InDirect, bool InV3D);
+	CDFRInternal();
 	~CDFRInternal();
 
 	std::future<CameraFeatureData> Inject(CameraImageData &InData, CDFRTeam Team);

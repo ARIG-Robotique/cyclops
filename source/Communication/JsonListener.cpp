@@ -217,8 +217,16 @@ bool JsonListener::GetData(const json &filter, json &Response)
 
 bool JsonListener::GetImage(double reduction, json &Response)
 {
+	if (!Parent)
+	{
+		return false;
+	}
+	if (!Parent->ExternalRunner)
+	{
+		return false;
+	}
 	auto cameras = Parent->ExternalRunner->GetImage();
-	Response["Cameras"] = json::array({});
+	Response["cameras"] = json::array({});
 	for (size_t i = 0; i < cameras.size(); i++)
 	{
 		cv::UMat image;
@@ -239,11 +247,39 @@ bool JsonListener::GetImage(double reduction, json &Response)
 			reinterpret_cast<char*>(b64enc.data()), &b64size, 0);
 		b64enc.resize(b64size);
 		json this_camera_json;
-		this_camera_json["Name"] = this_cam.CameraName;
-		this_camera_json["Data"] = b64enc;
-		Response["Cameras"].push_back(this_camera_json);
+		this_camera_json["name"] = this_cam.CameraName;
+		this_camera_json["data"] = b64enc;
+		Response["cameras"].push_back(this_camera_json);
 	}
 	return true;
+}
+
+void JsonListener::ReceiveImage(const json &Query)
+{
+	if (!Query.contains("data"))
+	{
+		cout << "Received homework without any image !" << endl << Query << endl;
+		return;
+	}
+	std::vector<uchar> jpgenc;
+	string b64enc = Query.at("data");
+	size_t jpegsize = b64enc.size()*3/4+16;
+	jpgenc.resize(jpegsize);
+	if(int decerr = base64_decode(b64enc.c_str(), b64enc.size(), reinterpret_cast<char*>(jpgenc.data()), &jpegsize, 0))
+	{
+		cerr << "Failed to decode image: " << decerr << endl;
+		return;
+	}
+	cv::UMat decoded;
+	cv::imdecode(jpgenc, 0).copyTo(decoded);
+	if (!Parent)
+	{
+		return;
+	}
+	if (!Parent->InternalRunner)
+	{
+		return;
+	}
 }
 
 void JsonListener::HandleQuery(const json &Query)

@@ -6,8 +6,7 @@
 #include <Communication/Transport/UDPTransport.hpp>
 #include <Communication/Transport/SerialTransport.hpp>
 
-CDFRInternal::CDFRInternal(bool InDirect, bool InV3D)
-	:direct(InDirect), v3d(InV3D)
+CDFRInternal::CDFRInternal()
 {
 }
 
