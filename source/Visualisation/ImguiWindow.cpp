@@ -50,7 +50,7 @@ ImguiWindow::~ImguiWindow()
 
 void ImguiWindow::WindowSizeCallback(int width, int height)
 {
-	glViewport(0, 0, width, height);
+	//glViewport(0, 0, width, height);
 	ImGui::GetIO().DisplaySize = ImVec2(width, height);
 }
 
