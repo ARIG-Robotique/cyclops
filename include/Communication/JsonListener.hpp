@@ -60,6 +60,8 @@ private:
 	//Get data from external monitor
 	bool GetData(const nlohmann::json &filter, nlohmann::json &Response);
 
+	bool GetImage(double reduction, nlohmann::json &Response);
+
 	void HandleQuery(const nlohmann::json &Query);
 
 	void HandleResponse(const nlohmann::json &Response);

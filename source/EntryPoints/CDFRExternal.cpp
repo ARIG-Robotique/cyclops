@@ -291,9 +291,11 @@ void CDFRExternal::ThreadEntryPoint()
 		}
 
 		int NumCams = Cameras.size();
+		vector<CameraImageData> &ImageDataLocal = ImageData[BufferIndex];
 		vector<CameraFeatureData> &FeatureDataLocal = FeatureData[BufferIndex];
 		vector<bool> CamerasWithPosition;
 		vector<ExternalProfType> ParallelProfilers;
+		ImageDataLocal.resize(NumCams);
 		FeatureDataLocal.resize(NumCams);
 		CamerasWithPosition.resize(NumCams);
 		ParallelProfilers.resize(NumCams);
@@ -321,10 +323,14 @@ void CDFRExternal::ThreadEntryPoint()
 					CamerasWithPosition[i] = false;
 					continue;
 				}
-				//thisprof.EnterSection("CameraUndistort");
-				//cam->Undistort();
+				if (!DistortedDetection)
+				{
+					thisprof.EnterSection("CameraUndistort");
+					cam->Undistort();
+				}
 				thisprof.EnterSection("CameraGetFrame");
-				CameraImageData ImData = cam->GetFrame(true);
+				CameraImageData &ImData = ImageDataLocal[i];
+				ImData = cam->GetFrame(DistortedDetection);
 				switch (GetRunType())
 				{
 					case RunType::Normal:
@@ -433,12 +439,24 @@ void CDFRExternal::ThreadEntryPoint()
 	}
 }
 
-void CDFRExternal::GetData(std::vector<CameraFeatureData> &OutFeatureData, std::vector<ObjectData> &OutObjectData)
+int CDFRExternal::GetReadBufferIndex() const
 {
-	int SelectedBuffer = (BufferIndex+FeatureData.size()-1)%FeatureData.size();
-	cout << "Copying " << FeatureData[SelectedBuffer].size() << " features and " << ObjData[SelectedBuffer].size() << " objects" << endl;
-	OutFeatureData = FeatureData[SelectedBuffer];
-	OutObjectData = ObjData[SelectedBuffer];
+	return (BufferIndex+FeatureData.size()-1)%FeatureData.size();
+}
+
+vector<CameraImageData> CDFRExternal::GetImage() const
+{
+	return ImageData[GetReadBufferIndex()];
+}
+
+std::vector<CameraFeatureData> CDFRExternal::GetFeatureData() const
+{
+	return FeatureData[GetReadBufferIndex()];
+}
+
+std::vector<ObjectData> CDFRExternal::GetObjectData() const
+{
+	return ObjData[GetReadBufferIndex()];
 }
 
 void CDFRExternal::Open3DVisualizer()
@@ -509,6 +527,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 			selfkill=true;
 		}
 		//ImGui::Checkbox("Freeze camera position", nullptr);
+		ImGui::Checkbox("Distorted detection", &DistortedDetection);
 		ImGui::Checkbox("Segmented detection", &SegmentedDetection);
 		ImGui::Checkbox("POI Detection", &POIDetection);
 		ImGui::Checkbox("Yolo detection", &YoloDetection);

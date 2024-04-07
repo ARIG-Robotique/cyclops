@@ -29,6 +29,9 @@ find_package(glm REQUIRED)
 # Json
 add_subdirectory("thirdparty/json")
 
+# base64
+add_subdirectory("thirdparty/base64")
+
 # Coral / EdgeTPU
 find_library(edgetpu_FOUND edgetpu)
 if(edgetpu_FOUND)
@@ -102,4 +105,5 @@ target_link_libraries(${PROJECT_NAME}
 	assimp
 	nlohmann_json::nlohmann_json
 	${CORALLIBS}
+	base64
 )

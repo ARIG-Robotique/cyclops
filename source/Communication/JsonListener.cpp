@@ -5,6 +5,9 @@
 #include <Misc/math3d.hpp>
 #include <Misc/math2d.hpp>
 
+#include <opencv2/imgcodecs.hpp>
+#include <libbase64.h>
+
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <set>
@@ -117,8 +120,8 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	{
 		return false;
 	}
-	vector<CameraFeatureData> FeatureData; vector<ObjectData> ObjData;
-	Parent->ExternalRunner->GetData(FeatureData, ObjData);
+	vector<CameraFeatureData> FeatureData = Parent->ExternalRunner->GetFeatureData(); 
+	vector<ObjectData> ObjData = Parent->ExternalRunner->GetObjectData();
 	set<ObjectType> AllowedTypes;
 	set<string> filterStrings;
 	for (auto &elem : filter)
@@ -212,6 +215,37 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	return true;
 }
 
+bool JsonListener::GetImage(double reduction, json &Response)
+{
+	auto cameras = Parent->ExternalRunner->GetImage();
+	Response["Cameras"] = json::array({});
+	for (size_t i = 0; i < cameras.size(); i++)
+	{
+		cv::UMat image;
+		auto & this_cam = cameras[i];
+		if (reduction <= 1)
+		{
+			image = this_cam.Image;
+		}
+		else
+		{
+			cv::resize(this_cam.Image, image, cv::Size(0,0), 1/reduction, 1/reduction);
+		}
+		std::vector<uchar> jpgenc, b64enc;
+		cv::imencode(".jpg", image, jpgenc);
+		size_t b64size = jpgenc.size()*4/3+16;
+		b64enc.resize(b64size);
+		base64_encode(reinterpret_cast<char*>(jpgenc.data()), jpgenc.size(), 
+			reinterpret_cast<char*>(b64enc.data()), &b64size, 0);
+		b64enc.resize(b64size);
+		json this_camera_json;
+		this_camera_json["Name"] = this_cam.CameraName;
+		this_camera_json["Data"] = b64enc;
+		Response["Cameras"].push_back(this_camera_json);
+	}
+	return true;
+}
+
 void JsonListener::HandleQuery(const json &Query)
 {
 	const string &ActionStr = Query.value("action", "invalid");
@@ -266,6 +300,12 @@ void JsonListener::HandleQuery(const json &Query)
 			Response["status"] = "wrong or missing filter, must be an array";
 		}
 		
+	}
+	else if (ActionStr == "IMAGE")
+	{
+		double reduction = Query.value("Reduction", 1.0);
+		GetImage(reduction, Response);
+		Response["status"] = "OK";
 	}
 	else if (ActionStr == "PROCESS") //oh no, homework !
 	{

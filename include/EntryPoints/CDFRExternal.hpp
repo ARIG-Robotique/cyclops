@@ -34,6 +34,7 @@ private:
 	bool POIDetection = false;
 	bool YoloDetection = false;
 	bool Denoising = false;
+	bool DistortedDetection = true;
 
 	//Camera manager
 	std::unique_ptr<CameraManager> CameraMan;
@@ -51,7 +52,7 @@ private:
 	int BufferIndex = 0;
 	CDFRTeam LastTeam = CDFRTeam::Unknown;
 	ObjectTracker BlueTracker, YellowTracker, UnknownTracker;
-
+	std::array<std::vector<CameraImageData>, 3> ImageData;
 	std::array<std::vector<CameraFeatureData>, 3> FeatureData;
 	std::array<std::vector<ObjectData>, 3> ObjData;
 
@@ -71,7 +72,13 @@ public:
 
 	void ThreadEntryPoint();
 
-	void GetData(std::vector<CameraFeatureData> &OutFeatureData, std::vector<ObjectData> &OutObjectData);
+	int GetReadBufferIndex() const;
+
+	std::vector<CameraImageData> GetImage() const;
+
+	std::vector<CameraFeatureData> GetFeatureData() const;
+
+	std::vector<ObjectData> GetObjectData() const;
 
 	bool IsKilled()
 	{

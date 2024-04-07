@@ -7,3 +7,6 @@
 [submodule "thirdparty/tensorflow"]
 	path = thirdparty/tensorflow
 	url = https://github.com/tensorflow/tensorflow.git
+[submodule "thirdparty/base64"]
+	path = thirdparty/base64
+	url = git@github.com:aklomp/base64.git
