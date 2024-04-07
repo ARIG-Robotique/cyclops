@@ -56,7 +56,7 @@ CDFRExternal::CDFRExternal(bool InDirect, bool InV3D)
 		auto &tracker = i ? BlueTracker : YellowTracker;
 		for (size_t j = 0; j < PAMINames.size(); j++)
 		{
-			auto pamitracker = make_shared<TopTracker>(i, 0.07, PAMINames[j], 0.112);
+			auto pamitracker = make_shared<TopTracker>(51+i*20+j, 0.07, PAMINames[j], 0.112);
 			tracker.RegisterTrackedObject(pamitracker);
 		}
 	}
