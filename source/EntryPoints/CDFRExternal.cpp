@@ -14,6 +14,9 @@
 
 #include <Communication/Transport/TCPTransport.hpp>
 #include <Communication/Transport/UDPTransport.hpp>
+#include <Cameras/CameraManagerV4L2.hpp>
+#include <Cameras/CameraManagerSimulation.hpp>
+#include <Cameras/VideoCaptureCamera.hpp>
 #include <thread>
 #include <memory>
 
@@ -114,11 +117,11 @@ void CDFRExternal::ThreadEntryPoint()
 	FrameCounter fps;
 	
 	//OpenGLBoard.InspectObject(blue1);
-	if (CDFRCommon::v3d)
+	if (CDFRCommon::ExternalSettings.v3d)
 	{
 		Open3DVisualizer();
 	}
-	if (CDFRCommon::direct)
+	if (CDFRCommon::ExternalSettings.direct)
 	{
 		OpenDirectVisualizer();
 	}
@@ -232,12 +235,12 @@ void CDFRExternal::ThreadEntryPoint()
 		}
 
 		bool RecordThisTick = false;
-		if (RecordTick >= CDFRCommon::RecordInterval-1)
+		if (RecordTick >= CDFRCommon::ExternalSettings.RecordInterval-1)
 		{
 			RecordTick = 0;
-			RecordThisTick = CDFRCommon::record;
+			RecordThisTick = CDFRCommon::ExternalSettings.record;
 		}
-		else if (Cameras.size() > 0 && CDFRCommon::record)
+		else if (Cameras.size() > 0 && CDFRCommon::ExternalSettings.record)
 		{
 			RecordTick++;
 		}
@@ -285,14 +288,14 @@ void CDFRExternal::ThreadEntryPoint()
 					CamerasWithPosition[i] = false;
 					continue;
 				}
-				if (!CDFRCommon::DistortedDetection)
+				if (!CDFRCommon::ExternalSettings.DistortedDetection)
 				{
 					thisprof.EnterSection("CameraUndistort");
 					cam->Undistort();
 				}
 				thisprof.EnterSection("CameraGetFrame");
 				CameraImageData &ImData = ImageDataLocal[i];
-				ImData = cam->GetFrame(CDFRCommon::DistortedDetection);
+				ImData = cam->GetFrame(CDFRCommon::ExternalSettings.DistortedDetection);
 				switch (GetRunType())
 				{
 					case RunType::Normal:
@@ -309,41 +312,8 @@ void CDFRExternal::ThreadEntryPoint()
 						//imwrite("noised.jpg", ImData.Image);
 						break;
 				}
-				if (CDFRCommon::Denoising)
-				{
-					thisprof.EnterSection("Denoise");
-					fastNlMeansDenoising(ImData.Image, ImData.Image, 10);
-					imwrite("denoised.jpg", ImData.Image);
-				}
-				FeatData.CopyEssentials(ImData);
-				if (CDFRCommon::YoloDetection)
-				{
-					thisprof.EnterSection("Detect Yolo");
-					DetectYolo(ImData, FeatData);
-				}
-				thisprof.EnterSection("Detect Aruco");
-				if (CDFRCommon::SegmentedDetection)
-				{
-					DetectArucoSegmented(ImData, FeatData, 200, Size(4,3));
-				}
-				else
-				{
-					DetectAruco(ImData, FeatData);
-				}
-				thisprof.EnterSection("3D Solve Camera");
-				CamerasWithPosition[i] = TrackerToUse->SolveCameraLocation(FeatData);
-				if (CamerasWithPosition[i])
-				{
-					cam->SetLocation(FeatData.CameraTransform, GrabTick);
-					//cout << "Camera has location" << endl;
-				}
-				FeatData.CameraTransform = cam->GetLocation();
-				if (CDFRCommon::POIDetection)
-				{
-					thisprof.EnterSection("Detect Aruco POIs");
-					const auto &POIs = TrackerToUse->GetPointsOfInterest();
-					DetectArucoPOI(ImData, FeatData, POIs);
-				}
+				CamerasWithPosition[i] = CDFRCommon::Detection(CDFRCommon::ExternalSettings, thisprof, cam, ImData, FeatData, *TrackerToUse, GrabTick);
+
 				if (RecordThisTick)
 				{
 					cam->Record(RecordRootPath, RecordIndex);
@@ -465,8 +435,8 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 
 	if (ImGui::Begin("Settings"))
 	{
-		ImGui::InputInt("Record interval", &CDFRCommon::RecordInterval);
-		if(ImGui::Checkbox("Record", &CDFRCommon::record))
+		ImGui::InputInt("Record interval", &CDFRCommon::ExternalSettings.RecordInterval);
+		if(ImGui::Checkbox("Record", &CDFRCommon::ExternalSettings.record))
 		{
 		}
 		if (!OpenGLBoard)
@@ -489,11 +459,11 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 			selfkill=true;
 		}
 		//ImGui::Checkbox("Freeze camera position", nullptr);
-		ImGui::Checkbox("Distorted detection", &CDFRCommon::DistortedDetection);
-		ImGui::Checkbox("Segmented detection", &CDFRCommon::SegmentedDetection);
-		ImGui::Checkbox("POI Detection", &CDFRCommon::POIDetection);
-		ImGui::Checkbox("Yolo detection", &CDFRCommon::YoloDetection);
-		ImGui::Checkbox("Denoising", &CDFRCommon::Denoising);
+		ImGui::Checkbox("Distorted detection", &CDFRCommon::ExternalSettings.DistortedDetection);
+		ImGui::Checkbox("Segmented detection", &CDFRCommon::ExternalSettings.SegmentedDetection);
+		ImGui::Checkbox("POI Detection", &CDFRCommon::ExternalSettings.POIDetection);
+		ImGui::Checkbox("Yolo detection", &CDFRCommon::ExternalSettings.YoloDetection);
+		ImGui::Checkbox("Denoising", &CDFRCommon::ExternalSettings.Denoising);
 		ImGui::Checkbox("Idle", &Idle);
 	}
 	ImGui::End();

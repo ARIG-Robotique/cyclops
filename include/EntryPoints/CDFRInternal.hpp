@@ -12,12 +12,18 @@
 
 class CDFRInternal
 {
+public:
+	struct InternalResult
+	{
+		CameraFeatureData FeatureData;
+		std::vector<ObjectData> ObjData;
+	};
 private:
-	bool direct, v3d;
-	ObjectTracker BlueTracker, YellowTracker;
+	InternalResult Process(CameraImageData InData, CDFRTeam Team);
+
 public:
 	CDFRInternal();
 	~CDFRInternal();
 
-	std::future<CameraFeatureData> Inject(CameraImageData &InData, CDFRTeam Team);
+	std::shared_future<InternalResult> Inject(CameraImageData &InData, CDFRTeam Team);
 };

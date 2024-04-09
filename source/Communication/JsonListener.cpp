@@ -1,6 +1,7 @@
 #include "Communication/JsonListener.hpp"
 #include <Communication/Transport/TCPTransport.hpp>
 #include <EntryPoints/CDFRExternal.hpp>
+#include <EntryPoints/CDFRInternal.hpp>
 #include <Communication/TCPJsonHost.hpp>
 #include <Misc/math3d.hpp>
 #include <Misc/math2d.hpp>
@@ -280,6 +281,8 @@ void JsonListener::ReceiveImage(const json &Query)
 	{
 		return;
 	}
+	//do stuff here
+	//Parent->InternalRunner->Inject()
 }
 
 void JsonListener::HandleQuery(const json &Query)

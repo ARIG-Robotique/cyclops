@@ -1,21 +1,16 @@
 #include "EntryPoints/CDFRCommon.hpp"
+#include <set>
+
 #include <Misc/ManualProfiler.hpp>
+
+#include <ArucoPipeline/StaticObject.hpp>
+#include <ArucoPipeline/TopTracker.hpp>
+#include <ArucoPipeline/SolarPanel.hpp>
 
 namespace CDFRCommon
 {
-	bool direct = true;
-	bool v3d = false;
-	bool record = false;
-	int RecordInterval = 10;
-
-
-	bool SegmentedDetection = true;
-	bool POIDetection = false;
-	bool YoloDetection = false;
-	bool Denoising = false;
-	bool DistortedDetection = true;
-
-	
+	Settings ExternalSettings(true);
+	Settings InternalSettings(false);
 };
 
 

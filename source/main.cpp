@@ -183,9 +183,9 @@ int main(int argc, char** argv )
 		return EXIT_SUCCESS;
 	}
 
-	CDFRCommon::direct = parser.has("direct") ? parser.get<bool>("direct") : false;
-	CDFRCommon::v3d = parser.has("opengl") ? parser.get<bool>("opengl") : true;
-	CDFRCommon::record = parser.has("record");
+	CDFRCommon::ExternalSettings.direct = parser.has("direct") ? parser.get<bool>("direct") : false;
+	CDFRCommon::ExternalSettings.v3d = parser.has("opengl") ? parser.get<bool>("opengl") : true;
+	CDFRCommon::ExternalSettings.record = parser.has("record");
 
 	
 	if (parser.has("map"))

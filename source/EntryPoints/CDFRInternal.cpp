@@ -1,10 +1,8 @@
 #include "EntryPoints/CDFRInternal.hpp"
 #include <EntryPoints/CDFRCommon.hpp>
 
-#include <Visualisation/BoardGL.hpp>
-#include <Communication/Transport/TCPTransport.hpp>
-#include <Communication/Transport/UDPTransport.hpp>
-#include <Communication/Transport/SerialTransport.hpp>
+#include <DetectFeatures/ArucoDetect.hpp>
+#include <DetectFeatures/YoloDetect.hpp>
 
 CDFRInternal::CDFRInternal()
 {
@@ -14,72 +12,29 @@ CDFRInternal::~CDFRInternal()
 {
 }
 
-future<CameraFeatureData> CDFRInternal::Inject(CameraImageData &InData, CDFRTeam Team)
+shared_future<CDFRInternal::InternalResult> CDFRInternal::Inject(CameraImageData &InData, CDFRTeam Team)
 {
-	(void) InData;
-	(void) Team;
-	assert(0);
-	/*CameraManager CameraMan(GetCaptureMethod(), GetCaptureConfig().filter, false);
+	return std::async(std::launch::async, &CDFRInternal::Process, this, InData, Team);
+}
 
-	auto& Detector = GetArucoDetector();
-
-	BoardGL OpenGLBoard;
-	OpenGLBoard.Start();
-	
-	FrameCounter fps;
-
+CDFRInternal::InternalResult CDFRInternal::Process(CameraImageData InData, CDFRTeam Team)
+{
+	cout << "Started internal processing thread " << this_thread::get_id() << endl;
 	ObjectTracker tracker;
-	
-	PositionDataSender sender;
-	{
-		WebsocketConfig wscfg = GetWebsocketConfig();
-		sender.encoder = new MinimalEncoder(GetDefaultAllowMap());
-		sender.transport = new TCPTransport(wscfg.Server, wscfg.IP, wscfg.Port, wscfg.Interface);
-		sender.StartReceiveThread();
-	}
+	CDFRCommon::MakeTrackedObjects(true, {{Team, tracker}});
 
-	StaticObject* boardobj = new StaticObject(true, "board");
-	tracker.RegisterTrackedObject(boardobj);
+	ManualProfiler<false> profiler;
 
-	TrackerCube* robot1 = new TrackerCube({51, 52, 54, 55}, 0.06, 0.0952, "Robot1");
-	TrackerCube* robot2 = new TrackerCube({57, 58, 59, 61}, 0.06, 0.0952, "Robot2");
-	tracker.RegisterTrackedObject(robot1);
-	tracker.RegisterTrackedObject(robot2);
-	
-	int hassent = 0;
-	for (;;)
-	{
-		double deltaTime = fps.GetDeltaTime();
-		CameraMan.Tick<VideoCaptureCamera>();
-		int64 GrabTick = getTickCount();
-		BufferedPipeline(vector<Camera*>(physicalCameras.begin(), physicalCameras.end()), Detector, &tracker);
+	InternalResult response;
 
-		//cout << "Pipeline took " << TimePipeline << "s to run" << endl;
-		
-		vector<CameraFeatureData> arucoDatas;
-		int NumCams = physicalCameras.size();
-		arucoDatas.resize(NumCams);
+	CDFRCommon::Detection(CDFRCommon::InternalSettings, profiler, nullptr, InData, response.FeatureData, tracker, 0);
 
-		for (int i = 0; i < physicalCameras.size(); i++)
-		{
-			Camera* cam = physicalCameras[i];
-			if (!cam->GetMarkerData(arucoDatas[i]))
-			{
-				continue;
-			}
-		}
-		
-		tracker.SolveLocationsPerObject(arucoDatas, GrabTick);
-		vector<ObjectData> ObjData = tracker.GetObjectDataVector(GrabTick);
+	std::vector FDArray({response.FeatureData});
 
-		if (!OpenGLBoard.Tick(ObjectData::ToGLObjects(ObjData)))
-		{
-			break;
-		}
+	tracker.SolveLocationsPerObject(FDArray, 0);
+	response.ObjData = tracker.GetObjectDataVector(0);
 
-		if (waitKey(1) == '\e')
-		{
-			break;
-		}
-	}*/
+	cout << "Done internal processing thread " << this_thread::get_id() << endl;
+
+	return response;
 }
