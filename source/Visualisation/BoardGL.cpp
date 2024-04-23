@@ -15,7 +15,7 @@
 #include <glm/gtx/transform.hpp>
 #include <assimp/Importer.hpp>
 
-#include <GlobalConf.hpp>
+#include <Misc/GlobalConf.hpp>
 #include <Misc/metadata.hpp>
 #include <Misc/ArucoDictSize.hpp>
 #include <Visualisation/openGL/Mesh.hpp>

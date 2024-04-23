@@ -6,9 +6,9 @@
 #include <opencv2/imgproc.hpp>
 
 
-#include <math3d.hpp>
-#include <metadata.hpp>
-#include <GlobalConf.hpp>
+#include <Misc/math3d.hpp>
+#include <Misc/metadata.hpp>
+#include <Misc/GlobalConf.hpp>
 #include <Cameras/Camera.hpp>
 #include <Visualisation/BoardGL.hpp>
 

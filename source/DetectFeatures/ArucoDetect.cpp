@@ -8,10 +8,10 @@
 
 #include <opencv2/imgproc.hpp>
 
-#include <math2d.hpp>
-#include <math3d.hpp>
+#include <Misc/math2d.hpp>
+#include <Misc/math3d.hpp>
 
-#include <GlobalConf.hpp>
+#include <Misc/GlobalConf.hpp>
 
 using namespace cv;
 using namespace std;

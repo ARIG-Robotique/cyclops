@@ -57,7 +57,9 @@ MACRO(HEADER_DIRECTORIES return_list)
 	SET(${return_list} ${dir_list})
 ENDMACRO()
 
-HEADER_DIRECTORIES(INCLUDES)
+#HEADER_DIRECTORIES(INCLUDES)
+
+set(INCLUDES "include")
 
 # Imgui files
 set(imguiroot ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui)

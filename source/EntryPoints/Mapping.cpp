@@ -13,12 +13,12 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/calib3d.hpp>
 
-#include <math3d.hpp>
+#include <Misc/math3d.hpp>
 #include <Misc/metadata.hpp>
-#include <Calibfile.hpp>
-#include <GlobalConf.hpp>
+#include <Cameras/Calibfile.hpp>
+#include <Misc/GlobalConf.hpp>
 #include <ArucoPipeline/TrackedObject.hpp>
-#include <BoardGL.hpp>
+#include <Visualisation/BoardGL.hpp>
 
 using namespace std;
 using namespace cv;

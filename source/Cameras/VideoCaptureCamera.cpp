@@ -18,7 +18,7 @@
 
 #include <ArucoPipeline/TrackedObject.hpp> //CameraView
 #include <ArucoPipeline/ObjectTracker.hpp>
-#include <GlobalConf.hpp>
+#include <Misc/GlobalConf.hpp>
 
 using namespace cv;
 using namespace std;

@@ -2,8 +2,8 @@
 
 #include <ArucoPipeline/ObjectIdentity.hpp>
 
-#include <math3d.hpp>
-#include <metadata.hpp>
+#include <Misc/math3d.hpp>
+#include <Misc/metadata.hpp>
 
 using namespace cv;
 using namespace std;

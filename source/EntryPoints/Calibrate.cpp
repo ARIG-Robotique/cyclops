@@ -23,7 +23,7 @@
 #include <Visualisation/openGL/Texture.hpp>
 
 #include <thirdparty/serialib.h>
-#include <GlobalConf.hpp>
+#include <Misc/GlobalConf.hpp>
 #include <Cameras/Camera.hpp>
 #include <Cameras/VideoCaptureCamera.hpp>
 #include <Cameras/Calibfile.hpp>

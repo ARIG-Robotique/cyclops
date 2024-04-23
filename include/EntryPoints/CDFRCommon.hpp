@@ -6,7 +6,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/photo.hpp>
 
-#include <GlobalConf.hpp>
+#include <Misc/GlobalConf.hpp>
 
 #include <Cameras/ImageTypes.hpp>
 #include <Cameras/Camera.hpp>

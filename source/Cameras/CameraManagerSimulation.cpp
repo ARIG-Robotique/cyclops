@@ -4,7 +4,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <Cameras/Calibfile.hpp>
-#include <GlobalConf.hpp>
+#include <Misc/GlobalConf.hpp>
 
 using namespace std;
 

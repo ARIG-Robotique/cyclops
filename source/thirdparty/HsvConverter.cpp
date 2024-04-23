@@ -22,7 +22,7 @@
 //
 ////////////////////////////////////////////////////////////
 
-#include "HsvConverter.h"
+#include "thirdparty/HsvConverter.h"
 
 namespace HsvConverter
 {

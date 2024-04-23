@@ -11,11 +11,11 @@
 #include <opencv2/highgui.hpp>
 
 
-#include <GlobalConf.hpp>
+#include <Misc/GlobalConf.hpp>
 #include <Cameras/VideoCaptureCamera.hpp>
 #include <Cameras/CameraManagerV4L2.hpp>
 #include <ArucoPipeline/ObjectTracker.hpp>
-#include <Calibrate.hpp>
+#include <EntryPoints/Calibrate.hpp>
 #include <Visualisation/BoardGL.hpp>
 #include <Visualisation/ImguiWindow.hpp>
 #include <EntryPoints/CDFRExternal.hpp>
