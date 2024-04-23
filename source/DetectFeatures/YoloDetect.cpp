@@ -172,7 +172,7 @@ namespace OpenCVDNN
 				}
 			}
 			YoloDetection final_detection;
-			cout << "Found " << maxidx << " at " << det.BoundingBox << " (Confidence " << det.Confidence << ")" << endl;
+			//cout << "Found " << maxidx << " at " << det.BoundingBox << " (Confidence " << det.Confidence << ")" << endl;
 			final_detection.Class = maxidx;
 			final_detection.Confidence = det.Confidence;
 			final_detection.Corners = det.BoundingBox;
