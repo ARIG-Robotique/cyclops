@@ -13,6 +13,7 @@
 #include <ArucoPipeline/ObjectTracker.hpp>
 #include <DetectFeatures/ArucoDetect.hpp>
 #include <DetectFeatures/YoloDetect.hpp>
+#include <DetectFeatures/ColorDetect.hpp>
 
 #include <Misc/FrameCounter.hpp>
 #include <Misc/ManualProfiler.hpp>
@@ -65,6 +66,11 @@ namespace CDFRCommon
 		{
 			profiler.EnterSection("Detect Yolo");
 			DetectYolo(ImData, FeatData);
+		}
+		else
+		{
+			//profiler.EnterSection("Detect Color");
+			//DetectColor(ImData, FeatData);
 		}
 		profiler.EnterSection("Detect Aruco");
 		if (Settings.SegmentedDetection)

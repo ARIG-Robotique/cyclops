@@ -2,23 +2,29 @@
 #include "EntryPoints/CDFRExternal.hpp"
 #include <EntryPoints/CDFRCommon.hpp>
 
+#include <opencv2/photo.hpp> //for denoising
+
+
+#include <Cameras/Calibfile.hpp>
 #include <DetectFeatures/ArucoDetect.hpp>
 #include <DetectFeatures/YoloDetect.hpp>
 
 #include <Visualisation/BoardGL.hpp>
 #include <Visualisation/ImguiWindow.hpp>
+
 #include <Misc/ManualProfiler.hpp>
 #include <Misc/math2d.hpp>
-#include <Cameras/Calibfile.hpp>
-#include <opencv2/photo.hpp>
 
 #include <Communication/Transport/TCPTransport.hpp>
 #include <Communication/Transport/UDPTransport.hpp>
 #include <Cameras/CameraManagerV4L2.hpp>
 #include <Cameras/CameraManagerSimulation.hpp>
 #include <Cameras/VideoCaptureCamera.hpp>
+
 #include <thread>
 #include <memory>
+
+#include <thirdparty/HsvConverter.h>
 
 
 CDFRExternal::CDFRExternal()
@@ -465,8 +471,13 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		ImGui::Checkbox("Yolo detection", &CDFRCommon::ExternalSettings.YoloDetection);
 		ImGui::Checkbox("Denoising", &CDFRCommon::ExternalSettings.Denoising);
 		ImGui::Checkbox("Idle", &Idle);
+
+		ImGui::Checkbox("Show Aruco", &ShowAruco);
+		ImGui::Checkbox("Show Yolo", &ShowYolo);
 	}
 	ImGui::End();
+
+	
 	
 	
 	auto tiles = DistributeViewports(ImageSize, WindowSize, NumDisplays);
@@ -480,8 +491,8 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		}
 		const auto &thisTile = tiles[camidx*DisplaysPerCam];
 		const Camera* thisCamera = Cameras[camidx];
-		auto ImData = thisCamera->GetFrame(true);
-		Size Resolution(ImData.Image.cols, ImData.Image.rows);
+		auto ImData = thisCamera->GetFrame(CDFRCommon::ExternalSettings.DistortedDetection);
+		Size Resolution = ImData.Image.size();
 		DirectTextures[camidx*DisplaysPerCam].LoadFromUMat(ImData.Image);
 		DirectImage->AddImageToBackground(DirectTextures[camidx*DisplaysPerCam], thisTile);
 
@@ -493,49 +504,70 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 			string CameraText = CameraTextStream.str();
 			DrawList->AddText(NULL, 12, ImVec2(thisTile.x, thisTile.y), IM_COL32(255,255,255,255), CameraText.c_str());
 		}
-		//draw aruco
 		const CameraFeatureData &FeatData = FeatureDataLocal[camidx];
 		Rect SourceRemap(Point(0,0), Resolution);
 		Rect DestRemap = tiles[camidx];
-		for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
+		//draw aruco
+		if (ShowAruco)
 		{
-			auto corners = FeatData.ArucoCorners[arucoidx];
-			uint32_t color = IM_COL32(255, 128, 255, 128);
-			if (FeatData.ArucoCornersReprojected[arucoidx].size() != 0)
+			for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
 			{
-				//cout << arucoidx << " is reprojected" << endl;
-				corners = FeatData.ArucoCornersReprojected[arucoidx];
-				color = IM_COL32(128, 255, 255, 128);
-			}
-			
-			Point2d textpos(0,0);
-			for (auto cornerit = corners.cbegin(); cornerit != corners.cend(); cornerit++)
-			{
-				auto vizpos = ImageRemap<double>(SourceRemap, DestRemap, *cornerit);
-				textpos.x = max<double>(textpos.x, vizpos.x);
-				textpos.y = max<double>(textpos.y, vizpos.y);
-				if (cornerit == corners.begin())
+				auto corners = FeatData.ArucoCorners[arucoidx];
+				uint32_t color = IM_COL32(255, 128, 255, 128);
+				if (FeatData.ArucoCornersReprojected[arucoidx].size() != 0)
 				{
-					//corner0 square
-					Point2d size = Point2d(2,2);
-					DrawList->AddRect(vizpos-size, vizpos+size, color);
+					//cout << arucoidx << " is reprojected" << endl;
+					corners = FeatData.ArucoCornersReprojected[arucoidx];
+					color = IM_COL32(128, 255, 255, 128);
 				}
-				//start aruco contour
-				DrawList->PathLineTo(vizpos);
+				
+				Point2d textpos(0,0);
+				for (auto cornerit = corners.cbegin(); cornerit != corners.cend(); cornerit++)
+				{
+					auto vizpos = ImageRemap<double>(SourceRemap, DestRemap, *cornerit);
+					textpos.x = max<double>(textpos.x, vizpos.x);
+					textpos.y = max<double>(textpos.y, vizpos.y);
+					if (cornerit == corners.begin())
+					{
+						//corner0 square
+						Point2d size = Point2d(2,2);
+						DrawList->AddRect(vizpos-size, vizpos+size, color);
+					}
+					//start aruco contour
+					DrawList->PathLineTo(vizpos);
+				}
+				//finish aruco contour
+				DrawList->PathStroke(color, ImDrawFlags_Closed, 2);
+				//text with aruco number
+				string text = to_string(FeatData.ArucoIndices[arucoidx]);
+				DrawList->AddText(nullptr, 16, textpos, color, text.c_str());
 			}
-			//finish aruco contour
-			DrawList->PathStroke(color, ImDrawFlags_Closed, 2);
-			//text with aruco number
-			string text = to_string(FeatData.ArucoIndices[arucoidx]);
-			DrawList->AddText(nullptr, 16, textpos, color, text.c_str());
+			//display segments of segmented detection
+			for (size_t segmentidx = 0; segmentidx < FeatData.ArucoSegments.size(); segmentidx++)
+			{
+				auto &segment = FeatData.ArucoSegments[segmentidx];
+				auto tl = ImageRemap<double>(SourceRemap, DestRemap, segment.tl());
+				auto br = ImageRemap<double>(SourceRemap, DestRemap, segment.br());
+				DrawList->AddRect(tl, br, IM_COL32(255, 255, 255, 64));
+			}
 		}
-		//display segments of segmented detection
-		for (size_t segmentidx = 0; segmentidx < FeatData.ArucoSegments.size(); segmentidx++)
+		if (ShowYolo)
 		{
-			auto &segment = FeatData.ArucoSegments[segmentidx];
-			auto tl = ImageRemap<double>(SourceRemap, DestRemap, segment.tl());
-			auto br = ImageRemap<double>(SourceRemap, DestRemap, segment.br());
-			DrawList->AddRect(tl, br, IM_COL32(255, 255, 255, 64));
+			for (size_t detidx = 0; detidx < FeatData.YoloDetections.size(); detidx++)
+			{
+				auto det = FeatData.YoloDetections[detidx];
+				uint8_t r,g,b;
+				HsvConverter::getRgbFromHSV(360*det.Class/GetYoloNumClasses(), 255, 255, r, g, b);
+				uint32_t color = IM_COL32(r,g,b,255);
+				
+				Point2d textpos(0,0);
+				auto tl = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.tl());
+				auto br = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.br());
+				DrawList->AddRect(tl, br, color);
+				//text with class and confidence
+				string text = GetYoloClassName(det.Class) + string("/") + to_string(det.Confidence);
+				DrawList->AddText(nullptr, 16, tl, color, text.c_str());
+			}
 		}
 		
 	}

@@ -113,7 +113,6 @@ int main(int argc, char** argv )
 		"{calibrate c    |      | start camera calibration wizard}"
 		"{marker m       |      | print out markers}"
 		"{map            |      | runs object mapping, using saved images and calibration}"
-		"{yolotest       |      | run yolo test}"
 		;
 	CommandLineParser parser(argc, argv, keys);
 
@@ -175,12 +174,6 @@ int main(int argc, char** argv )
 		
 		return EXIT_FAILURE;
 		
-	}
-
-	if (parser.has("yolotest"))
-	{
-		YoloTest(CamSett[0]); //TODO : Remove this !
-		return EXIT_SUCCESS;
 	}
 
 	CDFRCommon::ExternalSettings.direct = parser.has("direct") ? parser.get<bool>("direct") : false;

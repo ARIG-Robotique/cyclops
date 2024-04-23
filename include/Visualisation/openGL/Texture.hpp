@@ -28,6 +28,8 @@ public:
 
 	void LoadFromFile(std::filesystem::path path);
 
+	void LoadFromMat(const cv::Mat &Image);
+
 	void LoadFromUMat(const cv::UMat &Image);
 
 	void Bind(); //Send the texture to the GPU

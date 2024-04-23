@@ -189,15 +189,17 @@ bool JsonListener::GetData(const json &filter, json &Response)
 		if (has_filter("yolo"))
 		{
 			cameradata["yolo"] = json::array();
-			for (size_t i = 0; i < data.YoloIndices.size(); i++)
+			for (size_t i = 0; i < data.YoloDetections.size(); i++)
 			{
 				json yolodet;
-				yolodet["index"] = data.YoloIndices[i];
-				auto &Corner = data.YoloCorners[i];
+				auto& det = data.YoloDetections[i];
+				yolodet["index"] = det.Class;
+				auto &Corner = det.Corners;
 				yolodet["tlx"] = Corner.tl().x;
 				yolodet["tly"] = Corner.tl().y;
 				yolodet["brx"] = Corner.br().x;
 				yolodet["bry"] = Corner.br().y;
+				yolodet["confidence"] = det.Confidence;
 				cameradata["yolo"].push_back(yolodet);
 				CameraDetected = true;
 			}

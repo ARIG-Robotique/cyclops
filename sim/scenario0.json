@@ -1,6 +1,6 @@
 [
     {
-        "calibration": "cal.yaml",
-        "video": "sim0.mp4"
+        "calibration": "calreal.yaml",
+        "video": "rec0.mp4"
     }
 ]

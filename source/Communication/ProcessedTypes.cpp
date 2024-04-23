@@ -8,8 +8,7 @@ void CameraFeatureData::Clear()
     ArucoCorners.clear();
     ArucoCornersReprojected.clear();
 
-    YoloIndices.clear();
-    YoloCorners.clear();
+    YoloDetections.clear();
 }
 
 void CameraFeatureData::CopyEssentials(const CameraImageData &source)
@@ -17,5 +16,5 @@ void CameraFeatureData::CopyEssentials(const CameraImageData &source)
     CameraName = source.CameraName;
     CameraMatrix = source.CameraMatrix;
     DistanceCoefficients = source.DistanceCoefficients;
-    FrameSize = cv::Size(source.Image.cols, source.Image.rows);
+    FrameSize = source.Image.size();
 }

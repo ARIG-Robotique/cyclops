@@ -20,6 +20,21 @@ void Texture::LoadFromFile(std::filesystem::path path)
 	valid = true;
 }
 
+void Texture::LoadFromMat(const cv::Mat &Image)
+{
+	Image.copyTo(SourceImage);
+	if (valid)
+	{
+		Refresh();
+	}
+	else
+	{
+		Bind();
+		valid = true;
+	}
+	SourceImage = cv::Mat();
+}
+
 void Texture::LoadFromUMat(const cv::UMat &Image)
 {
 	SourceImage = Image.getMat(cv::AccessFlag::ACCESS_READ | cv::AccessFlag::ACCESS_FAST);
@@ -52,7 +67,7 @@ void Texture::Refresh()
 {
 	glBindTexture(GL_TEXTURE_2D, TextureID);
 
-	cv::Size NewSize(SourceImage.cols, SourceImage.rows);
+	cv::Size NewSize = SourceImage.size();
 	int numchannels = SourceImage.channels();
 	GLenum format = numchannels == 3 ? GL_BGR : GL_R;
 	GLint internal_format = numchannels == 3 ? GL_RGB : GL_R;
@@ -63,11 +78,11 @@ void Texture::Refresh()
 	
 	if (NewSize != LastSize)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, SourceImage.cols, SourceImage.rows, 0, format, GL_UNSIGNED_BYTE, SourceImage.data);
+		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, NewSize.width, NewSize.height, 0, format, GL_UNSIGNED_BYTE, SourceImage.data);
 	}
 	else
 	{
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SourceImage.cols, SourceImage.rows, format, GL_UNSIGNED_BYTE, SourceImage.data);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, NewSize.width, NewSize.height, format, GL_UNSIGNED_BYTE, SourceImage.data);
 	}
 	LastSize = NewSize;
 }

@@ -48,6 +48,9 @@ private:
 	std::array<std::vector<CameraFeatureData>, 3> FeatureData;
 	std::array<std::vector<ObjectData>, 3> ObjData;
 
+	//Show Aruco or Yolo
+	bool ShowAruco = true, ShowYolo = true;
+
 	CDFRTeam GetTeamFromCameraPosition(std::vector<class Camera*> Cameras);
 
 	void UpdateDirectImage(const std::vector<Camera*> &Cameras, const std::vector<CameraFeatureData> &FeatureDataLocal);

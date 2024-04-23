@@ -23,14 +23,19 @@
 using namespace std;
 using namespace cv;
 
-const int numclasses = 2;
+const int numclasses = 4;
 const Size modelSize(640,480);
 
 array<string, numclasses> ClassNames;
 
-string GetName(int index)
+const string& GetYoloClassName(int index)
 {
 	return ClassNames[index];
+}
+
+int GetYoloNumClasses()
+{
+	return numclasses;
 }
 
 namespace OpenCVDNN
@@ -129,7 +134,7 @@ namespace OpenCVDNN
 			}
 		}
 		vector<int> keptIndices;
-		dnn::NMSBoxes(boxes, scores, 0.5, 0.4, keptIndices);
+		dnn::NMSBoxes(boxes, scores, 0.4, 0.5, keptIndices);
 		vector<Detection> OutDetections;
 		OutDetections.reserve(keptIndices.size());
 		for (int kept : keptIndices)
@@ -144,7 +149,7 @@ namespace OpenCVDNN
 		LoadNet();
 
 
-		Preprocess(InData.Image, YoloNet.value(), modelSize, 1.0/255.0, 0, false);
+		Preprocess(InData.Image, YoloNet.value(), modelSize, 1.0/255.0, 0, true);
 		//auto start = chrono::steady_clock::now();
 		vector<Mat> outputBlobs;
 		auto OutputNames = YoloNet->getUnconnectedOutLayersNames();
@@ -154,10 +159,8 @@ namespace OpenCVDNN
 		auto detections = Postprocess(outputBlobs, OutputNames, Rect(0,0,InData.Image.cols, InData.Image.rows));
 		Mat painted; InData.Image.copyTo(painted);
 		int numdetections = detections.size();
-		OutData.YoloCorners.clear();
-		OutData.YoloIndices.clear();
-		OutData.YoloCorners.reserve(numdetections);
-		OutData.YoloCorners.reserve(numdetections);
+		OutData.YoloDetections.clear();
+		OutData.YoloDetections.reserve(numdetections);
 		for (auto &det : detections)
 		{
 			int maxidx = 0;
@@ -168,9 +171,12 @@ namespace OpenCVDNN
 					maxidx = i;
 				}
 			}
+			YoloDetection final_detection;
 			cout << "Found " << maxidx << " at " << det.BoundingBox << " (Confidence " << det.Confidence << ")" << endl;
-			OutData.YoloCorners.push_back(det.BoundingBox);
-			OutData.YoloIndices.push_back(maxidx);
+			final_detection.Class = maxidx;
+			final_detection.Confidence = det.Confidence;
+			final_detection.Corners = det.BoundingBox;
+			OutData.YoloDetections.push_back(final_detection);
 		}
 		return numdetections;
 	}
@@ -275,57 +281,7 @@ int DetectYolo(const CameraImageData &InData, CameraFeatureData& OutData)
 	{
 
 	}
-	#endif
+	#else
 	return OpenCVDNN::DetectYolo(InData, OutData);
-}
-
-#include <opencv2/imgcodecs.hpp>
-#include <Cameras/VideoCaptureCamera.hpp>
-#include <Visualisation/ImguiWindow.hpp>
-#include <Misc/math2d.hpp>
-#include <Visualisation/openGL/Texture.hpp>
-
-void YoloTest(VideoCaptureCameraSettings CamSett)
-{
-	ImguiWindow win;
-	Texture tex;
-	auto resolution = CamSett.Resolution;
-	unique_ptr<Camera> cam = make_unique<VideoCaptureCamera>(make_shared<VideoCaptureCameraSettings>(CamSett));
-	cam->StartFeed();
-	while (1)
-	{
-		if (!cam->Read())
-		{
-			continue;
-		}
-		CameraImageData InData = cam->GetFrame(true);
-		CameraFeatureData OutData;
-		DetectYolo(InData, OutData);
-		cv::Rect impos;
-		ImVec2 imguiwinsize = win.GetWindowSize();
-		win.StartFrame();
-		{
-			cv::Rect Backgroundsize(Point2i(0,0), (Size2i)imguiwinsize);
-			impos = ScaleToFit(resolution, Backgroundsize);
-			Size2f uv_min(0,0), uv_max(1,1);
-			tex.LoadFromUMat(InData.Image);
-			
-			win.AddImageToBackground(tex, impos, uv_min, uv_max);
-		}
-		auto foreground = ImGui::GetForegroundDrawList();
-		for (size_t i = 0; i < OutData.YoloCorners.size(); i++)
-		{
-			auto &this_rect = OutData.YoloCorners[i];
-			auto tl = ImageRemap<float>(Rect(Point(0,0), resolution), impos, this_rect.tl());
-			auto br = ImageRemap<float>(Rect(Point(0,0), resolution), impos, this_rect.br());
-			foreground->AddRect(tl, br, IM_COL32(255,0,0,255));
-			string detstr = GetName(OutData.YoloIndices[i]);
-			foreground->AddText(tl, IM_COL32(255,0,0,255), detstr.c_str());
-		}
-		
-		if(!win.EndFrame())
-		{
-			break;
-		}
-	}
+	#endif
 }
