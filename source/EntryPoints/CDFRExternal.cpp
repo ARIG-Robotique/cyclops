@@ -558,7 +558,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 				auto det = FeatData.YoloDetections[detidx];
 				uint8_t r,g,b;
 				HsvConverter::getRgbFromHSV(1530*det.Class/GetYoloNumClasses(), 255, 255, r, g, b);
-				uint32_t color = IM_COL32(r,g,b,255);
+				uint32_t color = IM_COL32(r,g,b,det.Confidence*255);
 				
 				Point2d textpos(0,0);
 				auto tl = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.tl());
