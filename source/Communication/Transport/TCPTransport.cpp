@@ -336,6 +336,25 @@ vector<string> TCPTransport::AcceptNewConnections()
 			buffer[sizeof(buffer)-1] = 0;
 			connection.name = string(buffer, strlen(buffer));
 			cout << "TCP Client connecting from " << connection.name << " fd=" << connection.filedescriptor << endl;
+			bool unique = true;
+			{
+				shared_lock lock(listenmutex);
+				for (auto &already : connections)
+				{
+					if (already.name == connection.name)
+					{
+						unique = false;
+						break;
+					}
+				}
+				if (!unique)
+				{
+					close(connection.filedescriptor);
+					cerr << "Refusing connection from " << connection.name << " as it's already connected" << endl;
+					continue;
+				}
+			}
+			
 			unique_lock lock(listenmutex);
 			connections.push_back(connection);
 			newconnections.push_back(connection.name);
