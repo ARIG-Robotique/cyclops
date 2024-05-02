@@ -1,5 +1,3 @@
-#config file
-sudo apt-get install -y libconfig++-dev
 #build
 sudo apt-get install -y cmake ninja-build
 #opengl

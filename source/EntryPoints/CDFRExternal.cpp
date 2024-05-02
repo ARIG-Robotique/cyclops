@@ -108,15 +108,14 @@ void CDFRExternal::ThreadEntryPoint()
 	ExternalProfType prof("External Global Profile");
 	ExternalProfType ParallelProfiler("Parallel Cameras Detail");
 	
-	
-	switch (GetRunType())
+	if (GetScenario().size())
 	{
-		case RunType::Normal:
-			CameraMan = make_unique<CameraManagerV4L2>(GetCaptureMethod(), GetCaptureConfig().filter, false);
-			break;
-		case RunType::Simulate:
-			CameraMan = make_unique<CameraManagerSimulation>("../sim/scenario0.json");
-			break;
+		std::filesystem::path basepath("../sim");
+		CameraMan = make_unique<CameraManagerSimulation>(basepath/GetScenario());
+	}
+	else
+	{
+		CameraMan = make_unique<CameraManagerV4L2>(GetCaptureMethod(), GetCaptureConfig().filter, false);
 	}
 
 	//display/debug section
@@ -302,21 +301,16 @@ void CDFRExternal::ThreadEntryPoint()
 				thisprof.EnterSection("CameraGetFrame");
 				CameraImageData &ImData = ImageDataLocal[i];
 				ImData = cam->GetFrame(CDFRCommon::ExternalSettings.DistortedDetection);
-				switch (GetRunType())
+				if (GetScenario().size() && false)
 				{
-					case RunType::Normal:
-						break;
-					//add simulated noise
-					case RunType::Simulate:
-						break;
-						thisprof.EnterSection("Add simulation noise");
-						cv::UMat noise(ImData.Image.size(),ImData.Image.type());
-						float m = 0;
-						float sigma = 20;
-						cv::randn(noise, m, sigma);
-						add(ImData.Image, noise, ImData.Image);
-						//imwrite("noised.jpg", ImData.Image);
-						break;
+					thisprof.EnterSection("Add simulation noise");
+					cv::UMat noise(ImData.Image.size(),ImData.Image.type());
+					float m = 0;
+					float sigma = 20;
+					cv::randn(noise, m, sigma);
+					add(ImData.Image, noise, ImData.Image);
+					//imwrite("noised.jpg", ImData.Image);
+					break;
 				}
 				CamerasWithPosition[i] = CDFRCommon::Detection(CDFRCommon::ExternalSettings, thisprof, cam, ImData, FeatData, *TrackerToUse, GrabTick);
 

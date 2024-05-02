@@ -99,6 +99,14 @@ double GetRotZ(Matx33d rotation)
 	return atan2(Xaxis(1,0), Xaxis(0,0));
 }
 
+Vec3d LinePlaneIntersection(Vec3d LineOrigin, Vec3d LineDirection, Vec3d PlaneOrigin, Vec3d PlaneNormal)
+{
+	LineDirection = NormaliseVector(LineDirection);
+	PlaneNormal = NormaliseVector(PlaneNormal);
+	double t = (PlaneNormal.ddot(PlaneOrigin) - PlaneNormal.ddot(LineOrigin))/PlaneNormal.ddot(LineDirection); 
+	return LineOrigin + LineDirection*t;
+}
+
 Vec3d ProjectPointOnLine(Vec3d Point, Vec3d LineOrig, Vec3d LineDir)
 {
 	Vec3d LineToPoint = Point-LineOrig;
@@ -166,7 +174,7 @@ bool ClosestPointsOnTwoLine(Vec3d Line1Orig, Vec3d Line1Dir, Vec3d Line2Orig, Ve
 	return true;*/
 }
 
-glm::mat4 Affine3DToGLM(cv::Affine3d Location)
+glm::mat4 Affine3DToGLM(Affine3d Location)
 {
 	glm::mat4 outmat;
 	for (int i = 0; i < 4; i++)
@@ -179,19 +187,19 @@ glm::mat4 Affine3DToGLM(cv::Affine3d Location)
 	return outmat;
 }
 
-bool SolvePnPUpright(cv::Matx31d UpVector, double MinColinearity,
-					cv::InputArray objectPoints, cv::InputArray imagePoints,
-					cv::InputArray cameraMatrix, cv::InputArray distCoeffs,
+bool SolvePnPUpright(Matx31d UpVector, double MinColinearity,
+					InputArray objectPoints, InputArray imagePoints,
+					InputArray cameraMatrix, InputArray distCoeffs,
 					Mat& rvecs, Mat& tvecs,
-					bool useExtrinsicGuess, cv::SolvePnPMethod flags,
-					cv::InputArray rvec, cv::InputArray tvec,
-					cv::OutputArray reprojectionError)
+					bool useExtrinsicGuess, SolvePnPMethod flags,
+					InputArray rvec, InputArray tvec,
+					OutputArray reprojectionError)
 {
 	vector<Mat> rvecsArray, tvecsArray;
 	int numsolutions = solvePnPGeneric(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvecsArray, tvecsArray, useExtrinsicGuess, flags, rvec, tvec, reprojectionError);
 	int bestidx = -1;
 	double bestcos = MinColinearity;
-	for (size_t i = 0; i < numsolutions; i++)
+	for (int i = 0; i < numsolutions; i++)
 	{
 		Mat RotationMatrix;
 		Rodrigues(rvecsArray[i], RotationMatrix);

@@ -9,11 +9,6 @@
 
 enum class CameraStartType;
 
-enum class RunType
-{
-	Normal,
-	Simulate
-};
 
 struct CaptureConfig
 {
@@ -29,7 +24,7 @@ extern bool RecordVideo;
 
 std::filesystem::path GetAssetsPath();
 
-RunType GetRunType();
+std::string GetScenario();
 
 const cv::aruco::ArucoDetector& GetArucoDetector();
 

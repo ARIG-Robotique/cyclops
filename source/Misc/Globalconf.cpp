@@ -4,19 +4,18 @@
 #include <Cameras/ImageTypes.hpp>
 
 #include <iostream>
-#include <libconfig.h++>
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 using namespace cv;
-using namespace libconfig;
 
-int ProgramRunType = (int)RunType::Normal;
+string Scenario = "";
 aruco::ArucoDetector ArucoDet;
 bool HasDetector = false;
 vector<UMat> MarkerImages;
 
 bool ConfigInitialised = false;
-Config cfg;
 
 bool RecordVideo = false;
 
@@ -25,95 +24,28 @@ CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, Size(3840,3032), 1.f, 30,
 vector<InternalCameraConfig> CamerasInternal;
 CalibrationConfig CamCalConf = {40, Size(6,4), 0.5, 1.5, Size2d(4.96, 3.72)};
 
-template<class T>
-Setting& EnsureExistCfg(Setting& Location, const char *FieldName, Setting::Type SettingType, T DefaultValue)
+template<class dataType, class accessorType>
+void CopyOrDefaultRef(nlohmann::json &owner, accessorType accessor, dataType &value)
 {
-	if (!Location.exists(FieldName))
+	if (owner.contains(accessor))
 	{
-		Setting& settingloc = Location.add(FieldName, SettingType);
-		switch (SettingType)
-		{
-		case Setting::TypeGroup:
-		case Setting::TypeArray:
-		case Setting::TypeList:
-			/* code */
-			break;
-		
-		default:
-			settingloc = DefaultValue;
-			break;
-		}
-		return settingloc;
-	}
-	return Location[FieldName];
-}
-
-template<class T>
-Setting& CopyDefaultCfg(Setting& Location, const char *FieldName, Setting::Type SettingType, T& DefaultValue)
-{
-	if (!Location.exists(FieldName))
-	{
-		Setting& settingloc = Location.add(FieldName, SettingType);
-		switch (SettingType)
-		{
-		case Setting::TypeGroup:
-		case Setting::TypeArray:
-		case Setting::TypeList:
-			/* code */
-			break;
-		
-		default:
-			settingloc = DefaultValue;
-			break;
-		}
-		return settingloc;
+		value = owner[accessor];
 	}
 	else
 	{
-		DefaultValue = (T)Location[FieldName];
-		return Location[FieldName];
+		owner[accessor] = value;
 	}
 }
 
-template<class T>
-Setting& CopyDefaultVector(Setting& Location, const char *FieldName, Setting::Type SettingType, vector<T>& DefaultValue)
+
+template<class accessorType>
+nlohmann::json& CopyOrDefaultJson(nlohmann::json &owner, accessorType accessor)
 {
-	if(Location.exists(FieldName))
+	if (!owner.contains(accessor))
 	{
-		if (Location[FieldName].isArray())
-		{
-			Setting& Arrayloc = Location[FieldName];
-			DefaultValue.clear();
-			for (int i = 0; i < Arrayloc.getLength(); i++)
-			{
-				DefaultValue.push_back(Arrayloc[i]);
-			}
-			return Arrayloc;
-		}
-		else
-		{
-			Location.remove(FieldName);
-		}
-		
+		owner[accessor] = nlohmann::json();
 	}
-	Setting& settingloc = Location.add(FieldName, Setting::TypeArray);
-	switch (SettingType)
-	{
-	case Setting::TypeGroup:
-	case Setting::TypeArray:
-	case Setting::TypeList:
-		/* code */
-		break;
-	
-	default:
-		for (int i = 0; i < DefaultValue.size(); i++)
-		{
-			settingloc.add(SettingType) = DefaultValue[i];
-		}
-		
-		break;
-	}
-	return settingloc;
+	return owner.at(accessor);
 }
 
 void InitConfig()
@@ -122,95 +54,72 @@ void InitConfig()
 	{
 		return;
 	}
-	
-	bool err = false;
+	string filepath = "../config.json";
+	nlohmann::json configobj;
 	try
 	{
-		cfg.readFile("../config.cfg");
+		ifstream file(filepath);
+		file >> configobj;
 	}
-	catch(const FileIOException &fioex)
+	catch(const std::exception& e)
 	{
-		std::cerr << "I/O error while reading file." << std::endl;
-		err = true;
+		std::cerr << "Error reading config file : " << e.what() << '\n';
 	}
-	catch(const ParseException &pex)
+
+	CopyOrDefaultRef(configobj, "Scenario", Scenario);
+
+	nlohmann::json &Capture = CopyOrDefaultJson(configobj, "Capture");
 	{
-		std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-			<< " - " << pex.getError() << std::endl;
-		err = true;
-	}
-	(void)err;
-
-	Setting& root = cfg.getRoot();
-
-	CopyDefaultCfg(root, "RunType", Setting::TypeInt, ProgramRunType);
-
-	Setting& Capture = EnsureExistCfg(root, "Capture", Setting::Type::TypeGroup, 0);
-	
-	{
-		Setting& Resolution = EnsureExistCfg(Capture, "Resolution", Setting::TypeGroup, 0);
-		CopyDefaultCfg(Resolution, "Width", Setting::TypeInt, CaptureCfg.FrameSize.width);
-		CopyDefaultCfg(Resolution, "Height", Setting::TypeInt, CaptureCfg.FrameSize.height);
-		CopyDefaultCfg(Capture, "Framerate", Setting::TypeInt, CaptureCfg.CaptureFramerate);
-		CopyDefaultCfg(Capture, "FramerateDivider", Setting::TypeInt, CaptureCfg.FramerateDivider);
-		CopyDefaultCfg(Capture, "Method", Setting::TypeInt, CaptureCfg.StartType);
-		CopyDefaultCfg(Resolution, "Reduction", Setting::TypeFloat, CaptureCfg.ReductionFactor);
-		CopyDefaultCfg(Capture, "CameraFilter", Setting::TypeString, CaptureCfg.filter);
+		nlohmann::json& Resolution = CopyOrDefaultJson(Capture, "Resolution");
+		CopyOrDefaultRef(Resolution, 	"Width", 			CaptureCfg.FrameSize.width);
+		CopyOrDefaultRef(Resolution, 	"Height", 			CaptureCfg.FrameSize.height);
+		CopyOrDefaultRef(Capture, 		"Framerate", 		CaptureCfg.CaptureFramerate);
+		CopyOrDefaultRef(Capture, 		"FramerateDivider", CaptureCfg.FramerateDivider);
+		CopyOrDefaultRef(Capture, 		"Method", 			CaptureCfg.StartType);
+		CopyOrDefaultRef(Resolution, 	"Reduction", 		CaptureCfg.ReductionFactor);
+		CopyOrDefaultRef(Capture, 		"CameraFilter", 	CaptureCfg.filter);
 		
 	}
 
-	Setting& CamerasSett = EnsureExistCfg(root, "InternalCameras", Setting::Type::TypeList, 0);
+	nlohmann::json &CamerasSett = CopyOrDefaultJson(configobj, "InternalCameras");
 	{
 		CamerasInternal.clear();
-		for (int i = 0; i < CamerasSett.getLength(); i++)
+		for (size_t i = 0; i < CamerasSett.size(); i++)
 		{
 			CamerasInternal.push_back(InternalCameraConfig());
 			CamerasInternal[i].CameraName = "GarbageFilter";
 			CamerasInternal[i].LocationRelative = Affine3d::Identity().translate(Vec3d(0.1,0.2,0.3));
-			CopyDefaultCfg(CamerasSett[i], "Filter", Setting::TypeString, CamerasInternal[i].CameraName);
-			Setting& Loc = EnsureExistCfg(CamerasSett[i], "Location", Setting::Type::TypeList, 0);
-
-			for (int j = 0; j < 4; j++)
-			{
-				if (Loc.getLength() <= j)
-				{
-					Loc.add(Setting::TypeArray);
-				}
-				while (!Loc[j].isArray())
-				{
-					Loc.remove(j);
-					Loc.add(Setting::TypeArray);
-				}
-				
-				for (int k = 0; k < 4; k++)
-				{
-					double &address = CamerasInternal[i].LocationRelative.matrix(j,k);
-					if (Loc[j].getLength() <= k)
-					{
-						Loc[j].add(Setting::TypeFloat) = address;
-					}
-					else
-					{
-						address = Loc[j][k];
-					}
-				}
-			}
+			CopyOrDefaultRef(CamerasSett[i], "Filter", CamerasInternal[i].CameraName);
+			string Loc;
+			CopyOrDefaultRef(CamerasSett[i], "Location", Loc);
+			ostringstream locstream(Loc);
+			//locstream >> CamerasInternal[i].LocationRelative;
 		}
 	}
 
-	Setting& CalibSett = EnsureExistCfg(root, "Calibration", Setting::Type::TypeGroup, 0);
+	nlohmann::json& CalibSett = CopyOrDefaultJson(configobj, "Calibration");
 	{
-		CopyDefaultCfg(CalibSett, "EdgeSize", Setting::TypeFloat, CamCalConf.SquareSideLength);
-		CopyDefaultCfg(CalibSett, "NumIntersectionsX", Setting::TypeInt, CamCalConf.NumIntersections.width);
-		CopyDefaultCfg(CalibSett, "NumIntersectionsY", Setting::TypeInt, CamCalConf.NumIntersections.height);
-		CopyDefaultCfg(CalibSett, "ReprojectionErrorOffset", Setting::TypeFloat, CamCalConf.ReprojectionErrorOffset);
-		CopyDefaultCfg(CalibSett, "NumImagePower", Setting::TypeFloat, CamCalConf.NumImagePower);
+		CopyOrDefaultRef(CalibSett, "EdgeSize", 				CamCalConf.SquareSideLength);
+		CopyOrDefaultRef(CalibSett, "NumIntersectionsX", 		CamCalConf.NumIntersections.width);
+		CopyOrDefaultRef(CalibSett, "NumIntersectionsY", 		CamCalConf.NumIntersections.height);
+		CopyOrDefaultRef(CalibSett, "ReprojectionErrorOffset", 	CamCalConf.ReprojectionErrorOffset);
+		CopyOrDefaultRef(CalibSett, "NumImagePower", 			CamCalConf.NumImagePower);
 
-		CopyDefaultCfg(CalibSett, "SensorSizeX", Setting::TypeFloat, CamCalConf.SensorSize.width);
-		CopyDefaultCfg(CalibSett, "SensorSizeY", Setting::TypeFloat, CamCalConf.SensorSize.height);
+		CopyOrDefaultRef(CalibSett, "SensorSizeX", 				CamCalConf.SensorSize.width);
+		CopyOrDefaultRef(CalibSett, "SensorSizeY", 				CamCalConf.SensorSize.height);
 	}
 
-	cfg.writeFile("../config.cfg");
+	try
+	{
+		ofstream file(filepath);
+		file << std::setfill('\t') << std::setw(1);
+		file << configobj;
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "Failed to serialize config: " << e.what() << '\n';
+	}
+	
 	
 	ConfigInitialised = true;
 	
@@ -221,10 +130,10 @@ std::filesystem::path GetAssetsPath()
 	return std::filesystem::weakly_canonical(std::filesystem::path("../assets/"));
 }
 
-RunType GetRunType()
+string GetScenario()
 {
 	InitConfig();
-	return (RunType)ProgramRunType;
+	return Scenario;
 }
 
 const aruco::ArucoDetector& GetArucoDetector(){

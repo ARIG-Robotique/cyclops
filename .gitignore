@@ -2,6 +2,6 @@ build/**
 Makefile
 markers/**
 .vscode/**
-config.cfg
+config.*
 *.blend1
 *.mp4
