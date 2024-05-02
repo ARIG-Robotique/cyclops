@@ -316,14 +316,14 @@ void JsonListener::HandleQuery(const json &Query)
 	}
 	if (ActionStr == "ALIVE")
 	{
-		Response["status"] = true;
+		Response["status"] = "OK";
 	}
 	else if (ActionStr == "CONFIG") //idk, do something ?
 	{
 		if (Query.contains("mode"))
 		{
 			string mode = Query.value("mode", "none");
-			Response["status"]["mode"] = "OK";
+			Response["status"] = "OK";
 			if (mode == "MILLIMETER_2D")
 			{
 				ObjectMode = TransformMode::Millimeter2D;
@@ -338,14 +338,13 @@ void JsonListener::HandleQuery(const json &Query)
 			}
 			else
 			{
-				Response["status"]["mode"] = "unknown mode";
+				Response["status"] = "UNKNOWN_MODE";
 			}
-			
 		}
 	}
 	else if (ActionStr == "STATUS") //How are the cameras doing ?
 	{
-		
+		Response["status"] = "UNIMPLEMENTED";
 	}
 	else if (ActionStr == "DATA") //2D or 3D data
 	{
@@ -356,7 +355,8 @@ void JsonListener::HandleQuery(const json &Query)
 		}
 		else
 		{
-			Response["status"] = "wrong or missing filter, must be an array";
+			Response["status"] = "MISSING_FILTER";
+			Response["log"] = "wrong or missing filter, must be an array";
 		}
 		
 	}
@@ -368,16 +368,18 @@ void JsonListener::HandleQuery(const json &Query)
 	}
 	else if (ActionStr == "PROCESS") //oh no, homework !
 	{
-
+		Response["status"] = "UNIMPLEMENTED";
 	}
 	else if (ActionStr == "EXIT")
 	{
 		killed = true;
-		Response["status"] = "OK, COMMITTING SEPPUKU !";
+		Response["status"] = "OK";
+		Response["log"] = "Committing seppuku !";
 	}
 	else
 	{
-		Response["status"] = "you ok there bud ?";
+		Response["status"] = "KO";
+		Response["log"] = "you ok there bud ?";
 	}
 	
 	SendJson(Response);
@@ -436,21 +438,21 @@ void JsonListener::SendJson(const json &object)
 void JsonListener::CheckAlive()
 {
 	auto settings = GetKeepAliveSettings();
-	if (settings.second <= 0)
+	if (settings.kick_delay <= 0)
 	{
 		return;
 	}
 	
 	chrono::duration<double> TimeSinceLastAliveReceived = chrono::steady_clock::now() - LastAliveReceived;
 	chrono::duration<double> TimeSinceLastAliveSent = chrono::steady_clock::now() - LastAliveSent;
-	if (TimeSinceLastAliveReceived.count() > settings.second)
+	if (TimeSinceLastAliveReceived.count() > settings.kick_delay)
 	{
 		cout << "Got no activity from " << ClientName << ", closing..." << endl;
 		killed = true;
 		return;
 	}
 	
-	if (settings.first >= 0 && TimeSinceLastAliveReceived.count() > settings.first && TimeSinceLastAliveSent.count() > settings.first)
+	if (settings.poke_delay >= 0 && TimeSinceLastAliveReceived.count() > settings.poke_delay && TimeSinceLastAliveSent.count() > settings.poke_delay)
 	{
 		//cout << "Asking " << ClientName << " if it's alive..." << endl;
 		LastAliveSent = chrono::steady_clock::now();

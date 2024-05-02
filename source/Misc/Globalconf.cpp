@@ -20,8 +20,7 @@ bool ConfigInitialised = false;
 bool RecordVideo = false;
 
 
-double KeepAliveDelay = 30; //Delay between messages
-double KeepAliveDuration = 3*60; //Delay before kick when no response
+KeepAliveSettings KeepAliveConfig = {30, 3*60}; //Delay between messages, Delay before kick when no response
 
 //Default values
 CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, Size(3840,3032), 1.f, 30, 1, ""};
@@ -113,10 +112,10 @@ void InitConfig()
 		CopyOrDefaultRef(CalibSett, "SensorSizeY", 				CamCalConf.SensorSize.height);
 	}
 
-	nlohmann::json& KeepAliveSettings = CopyOrDefaultJson(configobj, "KeepAlive");
+	nlohmann::json& KeepAliveSett = CopyOrDefaultJson(configobj, "KeepAlive");
 	{
-		CopyOrDefaultRef(KeepAliveSettings, "Delay between queries", KeepAliveDelay);
-		CopyOrDefaultRef(KeepAliveSettings, "Delay to kick", KeepAliveDuration);
+		CopyOrDefaultRef(KeepAliveSett, "Delay between queries", KeepAliveConfig.poke_delay);
+		CopyOrDefaultRef(KeepAliveSett, "Delay to kick", KeepAliveConfig.kick_delay);
 	}
 
 	try
@@ -195,7 +194,7 @@ float GetReductionFactor()
 	return CaptureCfg.ReductionFactor;
 }
 
-std::pair<double, double> GetKeepAliveSettings()
+KeepAliveSettings GetKeepAliveSettings()
 {
 	InitConfig();
 	return {KeepAliveDelay, KeepAliveDuration};

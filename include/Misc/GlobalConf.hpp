@@ -39,7 +39,13 @@ CameraStartType GetCaptureMethod();
 //list of downscales to be done to the aruco detections
 float GetReductionFactor();
 
-std::pair<double, double> GetKeepAliveSettings();
+struct KeepAliveSettings
+{
+	double poke_delay;
+	double kick_delay;
+};
+
+KeepAliveSettings GetKeepAliveSettings();
 
 //list of resolutions in the end
 cv::Size GetArucoReduction();
