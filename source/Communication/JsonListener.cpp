@@ -129,7 +129,7 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	{
 		filterStrings.emplace(elem);
 	}
-	bool hasall = filterStrings.find("all") != filterStrings.end();
+	bool hasall = filterStrings.find("ALL") != filterStrings.end();
 
 	auto has_filter = [&filterStrings, hasall](string match){return filterStrings.find(match) != filterStrings.end() || hasall;};
 	
@@ -169,9 +169,9 @@ bool JsonListener::GetData(const json &filter, json &Response)
 		cv::Size2d fov = GetCameraFOV(data.FrameSize, data.CameraMatrix);
 		cameradata["xfov"] = fov.width;
 		cameradata["yfov"] = fov.height;
-		if (has_filter("aruco"))
+		if (has_filter("ARUCO"))
 		{
-			cameradata["arucos"] = json::array();
+			cameradata["arucoObjects"] = json::array();
 			for (size_t i = 0; i < data.ArucoIndices.size(); i++)
 			{
 				json aruco;
@@ -182,13 +182,13 @@ bool JsonListener::GetData(const json &filter, json &Response)
 					aruco["corners"][j]["x"] = data.ArucoCorners[i][j].x;
 					aruco["corners"][j]["y"] = data.ArucoCorners[i][j].y;
 				}
-				cameradata["arucos"].push_back(aruco);
+				cameradata["arucoObjects"].push_back(aruco);
 				CameraDetected = true;
 			}
 		}
-		if (has_filter("yolo"))
+		if (has_filter("YOLO"))
 		{
-			cameradata["yolo"] = json::array();
+			cameradata["yoloObjects"] = json::array();
 			for (size_t i = 0; i < data.YoloDetections.size(); i++)
 			{
 				json yolodet;
@@ -200,7 +200,7 @@ bool JsonListener::GetData(const json &filter, json &Response)
 				yolodet["brx"] = Corner.br().x;
 				yolodet["bry"] = Corner.br().y;
 				yolodet["confidence"] = det.Confidence;
-				cameradata["yolo"].push_back(yolodet);
+				cameradata["yoloObjects"].push_back(yolodet);
 				CameraDetected = true;
 			}
 		}
