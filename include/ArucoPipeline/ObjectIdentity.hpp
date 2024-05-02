@@ -16,9 +16,9 @@ enum class CDFRTeam
 
 
 const std::map<CDFRTeam, std::string> TeamNames = {
-	{CDFRTeam::Unknown, "UNKNOWN"},
-	{CDFRTeam::Blue, "BLUE"},
-	{CDFRTeam::Yellow, "YELLOW"}
+	{CDFRTeam::Unknown, "Unknown"},
+	{CDFRTeam::Blue, "Blue"},
+	{CDFRTeam::Yellow, "Yellow"}
 };
 
 std::ostream& operator << (std::ostream& out, CDFRTeam Team);
@@ -41,18 +41,18 @@ enum class ObjectType
 
 const std::map<ObjectType, std::string> ObjectTypeNames =
 {
-	{ObjectType::Unknown, 			"UNKNOWN"},
-	{ObjectType::Tag, 				"TAG"},
-	{ObjectType::ReferenceAbsolute, "REFERENCE_ABSOLUTE"},
-	{ObjectType::ReferenceRelative, "REFERENCE_RELATIVE"},
-	{ObjectType::Camera, 			"CAMERA"},
-	{ObjectType::Object, 			"OBJECT"},
-	{ObjectType::Robot, 			"ROBOT"},
-	{ObjectType::TopTracker, 		"TOP_TRACKER"},
-	{ObjectType::TeamTracker, 		"TEAM_TRACKER"},
+	{ObjectType::Unknown, 			"Unknown"},
+	{ObjectType::Tag, 				"Tag"},
+	{ObjectType::ReferenceAbsolute, "Reference Absolute"},
+	{ObjectType::ReferenceRelative, "Reference Relative"},
+	{ObjectType::Camera, 			"Camera"},
+	{ObjectType::Object, 			"Object"},
+	{ObjectType::Robot, 			"Robot"},
+	{ObjectType::TopTracker, 		"Top Tracker"},
+	{ObjectType::TeamTracker, 		"Team Tracker"},
 
-	{ObjectType::SolarPanel, 		"SOLAR_PANEL"},
-	{ObjectType::Team, 				"TEAM"}
+	{ObjectType::SolarPanel, 		"Solar panel"},
+	{ObjectType::Team, 				"Team"}
 };
 
 std::ostream& operator << (std::ostream& out, ObjectType Type);

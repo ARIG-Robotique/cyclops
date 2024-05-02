@@ -39,11 +39,27 @@ JsonListener::~JsonListener()
 	cout << "Json listen thread for " << ClientName << " stoppped" << endl;
 }
 
+string JsonListener::JavaCapitalize(string source)
+{
+	for (auto i = source.begin(); i != source.end(); i++)
+	{
+		if (*i == ' ')
+		{
+			*i = '_';
+		}
+		else if (*i >= 'a' && *i <= 'z')
+		{
+			*i += 'A'-'a';
+		}
+	}
+	return source;
+}
+
 json JsonListener::ObjectToJson(const ObjectData& Object)
 {
 	json objectified;
-	objectified["type"] = ObjectTypeNames.at(Object.type);
-	objectified["name"] = Object.name;
+	objectified["type"] = JavaCapitalize(ObjectTypeNames.at(Object.type));
+	objectified["name"] = JavaCapitalize(Object.name);
 	if (Object.metadata.size() > 0)
 	{
 		objectified["meta"] = Object.metadata;
@@ -51,7 +67,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	
 	bool requireCoord = Object.type != ObjectType::SolarPanel;
 	double rotZ = GetRotZ(Object.location.rotation());
-	double rotZdeg = -rotZ*180.0/M_PI;
+	double rotZdeg = rotZ*180.0/M_PI;
 	switch (ObjectMode)
 	{
 	case TransformMode::Float2D:
@@ -65,11 +81,11 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	case TransformMode::Millimeter2D:
 		if (requireCoord)
 		{
-			objectified["x"] = Object.location.translation()[0]*1000.0+1500.0;
-			objectified["y"] = Object.location.translation()[1]*1000.0+1000.0;
+			objectified["x"] = int(Object.location.translation()[0]*1000.0+1500.0);
+			objectified["y"] = int(Object.location.translation()[1]*1000.0+1000.0);
 		}
 
-		objectified["r"] = rotZdeg;
+		objectified["r"] = int(rotZdeg*10)/10.0;
 		
 		break;
 
@@ -88,25 +104,25 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	}
 	if (Object.type == ObjectType::SolarPanel)
 	{
-		bool teamblue = false, teamyellow = false;
+		bool teamyellow = false, teamblue = false;
 		if (rotZdeg > 5)
 		{
-			teamblue = true;
+			teamyellow = true;
 		}
 		if (rotZdeg < -5)
 		{
-			teamyellow = true;
+			teamblue = true;
 		}
 		if (rotZdeg > 155)
 		{
-			teamyellow = true;
+			teamblue = true;
 		}
 		if (rotZdeg < -155)
 		{
-			teamblue = true;
+			teamyellow = true;
 		}
 		static const array<string, 4> teams = {"NONE", "YELLOW", "BLUE", "BOTH"};
-		objectified["team"] = teams[teamblue*2+teamyellow]; 
+		objectified["team"] = teams[teamyellow*2+teamblue]; 
 	}
 	return objectified;
 }
@@ -136,7 +152,8 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	json jsondataarray = json::array({});
 	for (auto& [type,name] : ObjectTypeNames)
 	{
-		if (has_filter(name))
+		string java_name = JavaCapitalize(name);
+		if (has_filter(java_name))
 		{
 			AllowedTypes.insert(type);
 		}
@@ -163,7 +180,7 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	{
 		bool CameraDetected = false;
 		json cameradata;
-		cameradata["name"] = data.CameraName;
+		cameradata["name"] = JavaCapitalize(data.CameraName);
 		cameradata["width"] = data.FrameSize.width;
 		cameradata["height"] = data.FrameSize.height;
 		cv::Size2d fov = GetCameraFOV(data.FrameSize, data.CameraMatrix);
@@ -179,8 +196,8 @@ bool JsonListener::GetData(const json &filter, json &Response)
 				aruco["corners"] = json::array();
 				for (size_t j = 0; j < data.ArucoCorners[i].size(); j++)
 				{
-					aruco["corners"][j]["x"] = data.ArucoCorners[i][j].x;
-					aruco["corners"][j]["y"] = data.ArucoCorners[i][j].y;
+					aruco["corners"][j]["x"] = int(data.ArucoCorners[i][j].x);
+					aruco["corners"][j]["y"] = int(data.ArucoCorners[i][j].y);
 				}
 				cameradata["arucoObjects"].push_back(aruco);
 				CameraDetected = true;
@@ -195,11 +212,11 @@ bool JsonListener::GetData(const json &filter, json &Response)
 				auto& det = data.YoloDetections[i];
 				yolodet["index"] = det.Class;
 				auto &Corner = det.Corners;
-				yolodet["tlx"] = Corner.tl().x;
-				yolodet["tly"] = Corner.tl().y;
-				yolodet["brx"] = Corner.br().x;
-				yolodet["bry"] = Corner.br().y;
-				yolodet["confidence"] = det.Confidence;
+				yolodet["tlx"] = int(Corner.tl().x);
+				yolodet["tly"] = int(Corner.tl().y);
+				yolodet["brx"] = int(Corner.br().x);
+				yolodet["bry"] = int(Corner.br().y);
+				yolodet["confidence"] = int(det.Confidence*100);
 				cameradata["yoloObjects"].push_back(yolodet);
 				CameraDetected = true;
 			}

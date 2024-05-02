@@ -17,7 +17,7 @@ namespace CDFRCommon
 void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&> Trackers)
 {
 	set<shared_ptr<TrackedObject>> GlobalObjects;
-	GlobalObjects.emplace(make_shared<StaticObject>(Internal, "board"));
+	GlobalObjects.emplace(make_shared<StaticObject>(Internal, "Board"));
 	GlobalObjects.emplace(make_shared<SolarPanel>());
 	for (int i = 1; i < 11; i++)
 	{

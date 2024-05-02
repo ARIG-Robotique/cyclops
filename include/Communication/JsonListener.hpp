@@ -57,6 +57,8 @@ private:
 
 	nlohmann::json ObjectToJson(const struct ObjectData& Object);
 
+	static std::string JavaCapitalize(std::string source);
+
 	//Get data from external monitor
 	bool GetData(const nlohmann::json &filter, nlohmann::json &Response);
 

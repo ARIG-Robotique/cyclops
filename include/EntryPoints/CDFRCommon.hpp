@@ -35,7 +35,7 @@ namespace CDFRCommon
 		bool ArucoDetection = true;
 		bool SegmentedDetection = true;
 		bool POIDetection = false;
-		bool YoloDetection = false;
+		bool YoloDetection = true;
 		bool Denoising = false;
 		bool DistortedDetection = true;
 
