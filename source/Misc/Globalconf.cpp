@@ -19,6 +19,10 @@ bool ConfigInitialised = false;
 
 bool RecordVideo = false;
 
+
+double KeepAliveDelay = 30; //Delay between messages
+double KeepAliveDuration = 3*60; //Delay before kick when no response
+
 //Default values
 CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, Size(3840,3032), 1.f, 30, 1, ""};
 vector<InternalCameraConfig> CamerasInternal;
@@ -109,6 +113,12 @@ void InitConfig()
 		CopyOrDefaultRef(CalibSett, "SensorSizeY", 				CamCalConf.SensorSize.height);
 	}
 
+	nlohmann::json& KeepAliveSettings = CopyOrDefaultJson(configobj, "KeepAlive");
+	{
+		CopyOrDefaultRef(KeepAliveSettings, "Delay between queries", KeepAliveDelay);
+		CopyOrDefaultRef(KeepAliveSettings, "Delay to kick", KeepAliveDuration);
+	}
+
 	try
 	{
 		ofstream file(filepath);
@@ -183,6 +193,12 @@ float GetReductionFactor()
 {
 	InitConfig();
 	return CaptureCfg.ReductionFactor;
+}
+
+std::pair<double, double> GetKeepAliveSettings()
+{
+	InitConfig();
+	return {KeepAliveDelay, KeepAliveDuration};
 }
 
 Size GetArucoReduction()

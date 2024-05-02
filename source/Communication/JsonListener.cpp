@@ -5,6 +5,7 @@
 #include <Communication/TCPJsonHost.hpp>
 #include <Misc/math3d.hpp>
 #include <Misc/math2d.hpp>
+#include <Misc/GlobalConf.hpp>
 
 #include <opencv2/imgcodecs.hpp>
 #include <libbase64.h>
@@ -434,21 +435,27 @@ void JsonListener::SendJson(const json &object)
 
 void JsonListener::CheckAlive()
 {
+	auto settings = GetKeepAliveSettings();
+	if (settings.second <= 0)
+	{
+		return;
+	}
+	
 	chrono::duration<double> TimeSinceLastAliveReceived = chrono::steady_clock::now() - LastAliveReceived;
 	chrono::duration<double> TimeSinceLastAliveSent = chrono::steady_clock::now() - LastAliveSent;
-	if (TimeSinceLastAliveReceived.count() > 3.0)
+	if (TimeSinceLastAliveReceived.count() > settings.second)
 	{
 		cout << "Got no activity from " << ClientName << ", closing..." << endl;
 		killed = true;
 		return;
 	}
 	
-	if (TimeSinceLastAliveReceived.count() > 1.0 && TimeSinceLastAliveSent.count() > 1.0)
+	if (settings.first >= 0 && TimeSinceLastAliveReceived.count() > settings.first && TimeSinceLastAliveSent.count() > settings.first)
 	{
 		//cout << "Asking " << ClientName << " if it's alive..." << endl;
 		LastAliveSent = chrono::steady_clock::now();
 		json query;
-		query["action"] = "alive";
+		query["action"] = "ALIVE";
 		query["index"] = sendIndex++;
 		SendJson(query);
 	}

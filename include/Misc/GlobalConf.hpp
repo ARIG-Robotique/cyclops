@@ -39,6 +39,8 @@ CameraStartType GetCaptureMethod();
 //list of downscales to be done to the aruco detections
 float GetReductionFactor();
 
+std::pair<double, double> GetKeepAliveSettings();
+
 //list of resolutions in the end
 cv::Size GetArucoReduction();
 
