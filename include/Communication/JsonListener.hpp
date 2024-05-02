@@ -37,9 +37,9 @@ public:
 	std::chrono::steady_clock::time_point LastAliveSent, LastAliveReceived;
 	enum class TransformMode
 	{
-		Float2D,
-		Millimeter2D,
-		Float3D
+		FLOAT_2D,
+		MILLIMETER_2D,
+		FLOAT_3D
 	};
 	TransformMode ObjectMode = TransformMode::Millimeter2D;
 

@@ -41,18 +41,18 @@ enum class ObjectType
 
 const std::map<ObjectType, std::string> ObjectTypeNames = 
 {
-	{ObjectType::Unknown, 			"Unknown"},
-	{ObjectType::Tag, 				"Tag"},
-	{ObjectType::ReferenceAbsolute, "Reference Absolute"},
-	{ObjectType::ReferenceRelative, "Reference Relative"},
-	{ObjectType::Camera, 			"Camera"},
-	{ObjectType::Object, 			"Object"},
-	{ObjectType::Robot, 			"Robot"},
-	{ObjectType::TopTracker, 		"Top Tracker"},
-	{ObjectType::TeamTracker, 		"Team Tracker"},
+	{ObjectType::Unknown, 			"UNKNOWN"},
+	{ObjectType::Tag, 				"TAG"},
+	{ObjectType::ReferenceAbsolute, "REFERENCE_ABSOLUTE"},
+	{ObjectType::ReferenceRelative, "REFERENCE_RELATIVE"},
+	{ObjectType::Camera, 			"CAMERA"},
+	{ObjectType::Object, 			"OBJECT"},
+	{ObjectType::Robot, 			"ROBOT"},
+	{ObjectType::TopTracker, 		"TOP_TRACKER"},
+	{ObjectType::TeamTracker, 		"TEAM_TRACKER"},
 
-	{ObjectType::SolarPanel, 		"Solar Panel"},
-	{ObjectType::Team, 				"Team"}
+	{ObjectType::SolarPanel, 		"SOLAR_PANEL"},
+	{ObjectType::Team, 				"TEAM"}
 };
 
 std::ostream& operator << (std::ostream& out, ObjectType Type);
