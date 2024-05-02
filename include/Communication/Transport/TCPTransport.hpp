@@ -6,6 +6,7 @@
 #include <memory>
 #include <shared_mutex>
 #include <vector>
+#include <functional>
 #include <netinet/in.h>
 
 //TCP transport layer
@@ -21,6 +22,7 @@ private:
 		sockaddr_in address;
 		std::string name;
 	};
+
 	bool Server;
 	std::string IP, Interface;
 	int Port;

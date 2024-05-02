@@ -438,28 +438,25 @@ void JsonListener::SendJson(const json &object)
 void JsonListener::CheckAlive()
 {
 	auto settings = GetKeepAliveSettings();
-	if (settings.kick_delay <= 0)
-	{
-		return;
-	}
 	
 	chrono::duration<double> TimeSinceLastAliveReceived = chrono::steady_clock::now() - LastAliveReceived;
 	chrono::duration<double> TimeSinceLastAliveSent = chrono::steady_clock::now() - LastAliveSent;
-	if (TimeSinceLastAliveReceived.count() > settings.kick_delay)
+	if (settings.kick_delay > 0 && TimeSinceLastAliveReceived.count() > settings.kick_delay)
 	{
 		cout << "Got no activity from " << ClientName << ", closing..." << endl;
 		killed = true;
 		return;
 	}
 	
-	if (settings.poke_delay >= 0 && TimeSinceLastAliveReceived.count() > settings.poke_delay && TimeSinceLastAliveSent.count() > settings.poke_delay)
+	if (settings.poke_delay > 0 && TimeSinceLastAliveReceived.count() > settings.poke_delay && TimeSinceLastAliveSent.count() > settings.poke_delay)
 	{
-		//cout << "Asking " << ClientName << " if it's alive..." << endl;
 		LastAliveSent = chrono::steady_clock::now();
-		json query;
-		query["action"] = "ALIVE";
-		query["index"] = sendIndex++;
-		SendJson(query);
+		if (!Transport->Send(" ", 1, ClientName))
+		{
+			cout << "Client " << ClientName << " disconnect while checking alive, closing..." << endl;
+			killed = true;
+		}
+		
 	}
 }
 

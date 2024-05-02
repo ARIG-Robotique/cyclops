@@ -248,7 +248,8 @@ bool TCPTransport::Send(const void* buffer, int length, string client)
 		bool failed = false;
 		{
 			shared_lock lock(listenmutex);
-			for (size_t i = 0; i < connections.size(); i++)
+			size_t i;
+			for (i = 0; i < connections.size(); i++)
 			{
 				if (client != connections[i].name && client != BroadcastClient)
 				{
@@ -261,6 +262,7 @@ bool TCPTransport::Send(const void* buffer, int length, string client)
 					if (errnocp == EPIPE)
 					{
 						DisconnectedClients.emplace(connections[i].name);
+						failed = true;
 					}
 					else
 					{
@@ -269,7 +271,17 @@ bool TCPTransport::Send(const void* buffer, int length, string client)
 					}
 					
 				}
+				if (client != BroadcastClient)
+				{
+					break;
+				}
 			}
+			//If nothing was sent because no client matched 
+			if (i == connections.size() && client != BroadcastClient)
+			{
+				failed = true;
+			}
+			
 		}
 		for (auto & client : DisconnectedClients) //Disconnection must be done outside of loop because the listenmutex is taken
 		{
@@ -354,7 +366,8 @@ void TCPTransport::DisconnectClient(std::string client)
 		{
 			continue;
 		}
-		cout << "TCP Client " << connections[i].name << " disconnected." <<endl;
+		cout << "TCP Client " << connections[i].name << "@fd" << connections[i].filedescriptor << " disconnected." <<endl;
+		
 		ServerDeleteSocket(i);
 		i--;
 	}

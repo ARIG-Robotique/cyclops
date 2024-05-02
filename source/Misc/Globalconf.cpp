@@ -197,7 +197,7 @@ float GetReductionFactor()
 KeepAliveSettings GetKeepAliveSettings()
 {
 	InitConfig();
-	return {KeepAliveDelay, KeepAliveDuration};
+	return KeepAliveConfig;
 }
 
 Size GetArucoReduction()
