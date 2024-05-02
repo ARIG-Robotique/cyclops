@@ -306,15 +306,15 @@ void JsonListener::HandleQuery(const json &Query)
 		{
 			string mode = Query.value("mode", "none");
 			Response["status"]["mode"] = "OK";
-			if (mode == "millimeter2D")
+			if (mode == "MILLIMETER_2D")
 			{
 				ObjectMode = TransformMode::Millimeter2D;
 			}
-			else if (mode == "float2D")
+			else if (mode == "FLOAT_2D")
 			{
 				ObjectMode = TransformMode::Float2D;
 			}
-			else if (mode == "float3D")
+			else if (mode == "FLOAT_3D")
 			{
 				ObjectMode = TransformMode::Float3D;
 			}
