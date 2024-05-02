@@ -155,7 +155,7 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	}
 	if (Has3DData)
 	{
-		Response["3dData"] = jsondataarray;
+		Response["data3D"] = jsondataarray;
 	}
 	
 	bool Has2DData = false;
@@ -213,7 +213,7 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	}
 	if (Has2DData)
 	{
-		Response["2dData"] = jsonfeaturearray;
+		Response["data2D"] = jsonfeaturearray;
 		if (has_filter("yolo"))
 		{
 			Response["yoloClassNames"] = json::array();
