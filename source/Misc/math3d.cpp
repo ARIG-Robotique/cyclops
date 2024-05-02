@@ -178,3 +178,35 @@ glm::mat4 Affine3DToGLM(cv::Affine3d Location)
 	}
 	return outmat;
 }
+
+bool SolvePnPUpright(cv::Matx31d UpVector, double MinColinearity,
+					cv::InputArray objectPoints, cv::InputArray imagePoints,
+					cv::InputArray cameraMatrix, cv::InputArray distCoeffs,
+					Mat& rvecs, Mat& tvecs,
+					bool useExtrinsicGuess, cv::SolvePnPMethod flags,
+					cv::InputArray rvec, cv::InputArray tvec,
+					cv::OutputArray reprojectionError)
+{
+	vector<Mat> rvecsArray, tvecsArray;
+	int numsolutions = solvePnPGeneric(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvecsArray, tvecsArray, useExtrinsicGuess, flags, rvec, tvec, reprojectionError);
+	int bestidx = -1;
+	double bestcos = MinColinearity;
+	for (size_t i = 0; i < numsolutions; i++)
+	{
+		Mat RotationMatrix;
+		Rodrigues(rvecsArray[i], RotationMatrix);
+		double Colinearity = GetAxis(RotationMatrix, 2).ddot(UpVector);
+		if (Colinearity > bestcos)
+		{
+			bestcos = Colinearity;
+			bestidx = i;
+		}
+	}
+	if (bestidx >= 0)
+	{
+		rvecs = rvecsArray[bestidx];
+		tvecs = tvecsArray[bestidx];
+		return true;
+	}
+	return false;
+}

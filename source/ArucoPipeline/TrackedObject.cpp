@@ -229,8 +229,8 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 	vector<Point3d> flatobj;
 	vector<Point2f> flatimg;
 	//vector<Point2d> flatreproj;
-	flatobj.reserve(nummarkersseen * 4);
-	flatimg.reserve(nummarkersseen * 4);
+	flatobj.reserve(nummarkersseen * ARUCO_CORNERS_PER_TAG);
+	flatimg.reserve(nummarkersseen * ARUCO_CORNERS_PER_TAG);
 	Mat rvec = Mat::zeros(3, 1, CV_64F), tvec = Mat::zeros(3, 1, CV_64F);
 	Affine3d objectToMarker;
 	int flags = 0;
@@ -245,8 +245,8 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 	}
 	else
 	{
-		flatobj.reserve(nummarkersseen*4);
-		flatimg.reserve(nummarkersseen*4);
+		flatobj.reserve(nummarkersseen*ARUCO_CORNERS_PER_TAG);
+		flatimg.reserve(nummarkersseen*ARUCO_CORNERS_PER_TAG);
 		for (int i = 0; i < nummarkersseen; i++)
 		{
 			for (int j = 0; j < ARUCO_CORNERS_PER_TAG; j++)

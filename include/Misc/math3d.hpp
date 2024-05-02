@@ -3,6 +3,7 @@
 #include <vector>
 #include <opencv2/core.hpp>
 #include <opencv2/core/affine.hpp>
+#include <opencv2/calib3d.hpp>
 #include <glm/glm.hpp>
 
 
@@ -52,3 +53,11 @@ cv::Vec3d ProjectPointOnLine(cv::Vec3d Point, cv::Vec3d LineOrig, cv::Vec3d Line
 bool ClosestPointsOnTwoLine(cv::Vec3d Line1Orig, cv::Vec3d Line1Dir, cv::Vec3d Line2Orig, cv::Vec3d Line2Dir, cv::Vec3d& Line1Point, cv::Vec3d& Line2Point);
 
 glm::mat4 Affine3DToGLM(cv::Affine3d Location);
+
+bool SolvePnPUpright(cv::Matx31d UpVector, double MinColinearity,
+					cv::InputArray objectPoints, cv::InputArray imagePoints,
+					cv::InputArray cameraMatrix, cv::InputArray distCoeffs,
+					cv::Mat& rvecs, cv::Mat& tvecs,
+					bool useExtrinsicGuess = false, cv::SolvePnPMethod flags = cv::SOLVEPNP_ITERATIVE,
+					cv::InputArray rvec = cv::noArray(), cv::InputArray tvec = cv::noArray(),
+					cv::OutputArray reprojectionError = cv::noArray());

@@ -32,7 +32,7 @@ namespace CDFRCommon
 		bool record = false;
 		int RecordInterval = 10;
 
-
+		bool ArucoDetection = true;
 		bool SegmentedDetection = true;
 		bool POIDetection = false;
 		bool YoloDetection = false;
@@ -61,25 +61,24 @@ namespace CDFRCommon
 			profiler.EnterSection("Denoise");
 			cv::fastNlMeansDenoising(ImData.Image, ImData.Image, 10);
 		}
+		FeatData.Clear();
 		FeatData.CopyEssentials(ImData);
 		if (Settings.YoloDetection)
 		{
 			profiler.EnterSection("Detect Yolo");
 			DetectYolo(ImData, FeatData);
 		}
-		else
+		if (Settings.ArucoDetection)
 		{
-			//profiler.EnterSection("Detect Color");
-			//DetectColor(ImData, FeatData);
-		}
-		profiler.EnterSection("Detect Aruco");
-		if (Settings.SegmentedDetection)
-		{
-			DetectArucoSegmented(ImData, FeatData, 200, Size(4,3));
-		}
-		else
-		{
-			DetectAruco(ImData, FeatData);
+			profiler.EnterSection("Detect Aruco");
+			if (Settings.SegmentedDetection)
+			{
+				DetectArucoSegmented(ImData, FeatData, 200, Size(4,3));
+			}
+			else
+			{
+				DetectAruco(ImData, FeatData);
+			}
 		}
 		
 		if (cam)

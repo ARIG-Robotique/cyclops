@@ -7,6 +7,7 @@ void CameraFeatureData::Clear()
     ArucoIndices.clear();
     ArucoCorners.clear();
     ArucoCornersReprojected.clear();
+    ArucoSegments.clear();
 
     YoloDetections.clear();
 }

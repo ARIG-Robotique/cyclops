@@ -36,6 +36,7 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 	Affine3d WorldToCam = CameraData.CameraTransform.inv();
 	vector<Point2d> ImageSolarPanels;
 	projectPoints(PanelPositions, WorldToCam.rvec(), WorldToCam.translation(), CameraData.CameraMatrix, CameraData.DistanceCoefficients, ImageSolarPanels);
+	auto UpVector = GetAxis(WorldToCam.rotation(), 2);
 	for (auto &marker : SeenMarkers)
 	{
 		auto& flatimg = marker.CameraCornerPositions;
@@ -63,37 +64,23 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 			continue;
 		}
 		
-		vector<Mat> rvecs, tvecs;
+		Mat rvec = Mat::zeros(3, 1, CV_64F), tvec = Mat::zeros(3, 1, CV_64F);
+		bool solved = false;
 		try
 		{
-			solvePnPGeneric(flatobj, flatimg, CameraData.CameraMatrix, CameraData.DistanceCoefficients, rvecs, tvecs, false, SOLVEPNP_IPPE_SQUARE);
+			solved = SolvePnPUpright(UpVector, 0.8, flatobj, flatimg, CameraData.CameraMatrix, CameraData.DistanceCoefficients, rvec, tvec, false, SOLVEPNP_IPPE_SQUARE);
+			//solvePnPGeneric(flatobj, flatimg, CameraData.CameraMatrix, CameraData.DistanceCoefficients, rvecs, tvecs, false, SOLVEPNP_IPPE_SQUARE);
 		}
 		catch(const std::exception& e)
 		{
 			std::cerr << e.what() << '\n';
 			continue;
 		}
-		Mat rvec = Mat::zeros(3, 1, CV_64F), tvec = Mat::zeros(3, 1, CV_64F);
-		size_t i;
-		for (i = 0; i < rvecs.size(); i++)
+		if (!solved)
 		{
-			Matx33d rotationMatrix; //Matrice de rotation Camera -> Tag
-			Rodrigues(rvecs[i], rotationMatrix);
-
-			Matx33d WorldRot = CameraData.CameraTransform.rotation() * rotationMatrix;
-			if (GetAxis(WorldRot, 2).ddot(Vec3d(0,0,1)) > 0.8)
-			{
-				//cout << "Solar Panel " << closest << " matrix :\n" << WorldTransform.matrix << endl; 
-				rvec = rvecs[i];
-				tvec = tvecs[i];
-				break;
-			}
-		}
-		if (i >= rvecs.size())
-		{
-			cout << "Panel " << closest << " did not find a solution" << endl;
 			continue;
 		}
+		
 		
 		solvePnPRefineLM(flatobj, flatimg, CameraData.CameraMatrix, CameraData.DistanceCoefficients, rvec, tvec);
 

@@ -240,11 +240,11 @@ void CDFRExternal::ThreadEntryPoint()
 			break;
 		}
 
-		bool RecordThisTick = false;
+		bool RecordThisTick = ForceRecordNext;
 		if (RecordTick >= CDFRCommon::ExternalSettings.RecordInterval-1)
 		{
 			RecordTick = 0;
-			RecordThisTick = CDFRCommon::ExternalSettings.record;
+			RecordThisTick |= CDFRCommon::ExternalSettings.record;
 		}
 		else if (Cameras.size() > 0 && CDFRCommon::ExternalSettings.record)
 		{
@@ -441,10 +441,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 
 	if (ImGui::Begin("Settings"))
 	{
-		ImGui::InputInt("Record interval", &CDFRCommon::ExternalSettings.RecordInterval);
-		if(ImGui::Checkbox("Record", &CDFRCommon::ExternalSettings.record))
-		{
-		}
+		
 		if (!OpenGLBoard)
 		{
 			if (ImGui::Button("Open 3D vizualiser"))
@@ -464,12 +461,31 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		{
 			selfkill=true;
 		}
-		//ImGui::Checkbox("Freeze camera position", nullptr);
-		ImGui::Checkbox("Distorted detection", &CDFRCommon::ExternalSettings.DistortedDetection);
-		ImGui::Checkbox("Segmented detection", &CDFRCommon::ExternalSettings.SegmentedDetection);
-		ImGui::Checkbox("POI Detection", &CDFRCommon::ExternalSettings.POIDetection);
-		ImGui::Checkbox("Yolo detection", &CDFRCommon::ExternalSettings.YoloDetection);
-		ImGui::Checkbox("Denoising", &CDFRCommon::ExternalSettings.Denoising);
+
+		map<const char *, CDFRCommon::Settings&> settingsmap({{"External", CDFRCommon::ExternalSettings}, {"Internal", CDFRCommon::InternalSettings}});
+		ForceRecordNext = ImGui::Button("Capture next frame");
+
+		for (auto &entry : settingsmap)
+		{
+			if (!ImGui::CollapsingHeader(entry.first))
+			{
+				continue;
+			}
+			ImGui::InputInt("Record interval", &entry.second.RecordInterval);
+			if(ImGui::Checkbox("Record", &entry.second.record))
+			{
+			}
+			//ImGui::Checkbox("Freeze camera position", nullptr);
+			ImGui::Checkbox("Aruco Detection", &entry.second.ArucoDetection);
+			ImGui::Checkbox("Distorted detection", &entry.second.DistortedDetection);
+			ImGui::Checkbox("Segmented detection", &entry.second.SegmentedDetection);
+			ImGui::Checkbox("POI Detection", &entry.second.POIDetection);
+			ImGui::Checkbox("Yolo detection", &entry.second.YoloDetection);
+			ImGui::Checkbox("Denoising", &entry.second.Denoising);
+			ImGui::Spacing();
+		}
+		
+		
 		ImGui::Checkbox("Idle", &Idle);
 
 		ImGui::Checkbox("Show Aruco", &ShowAruco);
