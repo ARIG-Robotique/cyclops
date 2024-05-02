@@ -5,7 +5,6 @@
 #include <Communication/TCPJsonHost.hpp>
 #include <Misc/math3d.hpp>
 #include <Misc/math2d.hpp>
-#include <DetectFeatures/YoloDetect.hpp>
 
 #include <opencv2/imgcodecs.hpp>
 #include <libbase64.h>
@@ -214,15 +213,6 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	if (Has2DData)
 	{
 		Response["data2D"] = jsonfeaturearray;
-		if (has_filter("yolo"))
-		{
-			Response["yoloClassNames"] = json::array();
-			for (int i = 0; i < GetYoloNumClasses(); i++)
-			{
-				Response["yoloClassNames"].push_back(GetYoloClassName(i));
-			}
-		}
-		
 	}
 	
 	return true;
