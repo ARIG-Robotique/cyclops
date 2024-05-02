@@ -122,7 +122,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 			teamyellow = true;
 		}
 		static const array<string, 4> teams = {"NONE", "YELLOW", "BLUE", "BOTH"};
-		objectified["team"] = teams[teamyellow*2+teamblue]; 
+		objectified["team"] = teams[teamblue*2+teamyellow]; 
 	}
 	return objectified;
 }
