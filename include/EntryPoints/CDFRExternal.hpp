@@ -23,7 +23,7 @@ private:
 	bool Sleep = false, LastSleep = false;
 
 	//Settings
-	bool FocusPeaking = false;
+	bool FocusPeeking = false;
 	int RecordTick = 0, RecordIndex=0;
 	bool ForceRecordNext = false;
 	std::filesystem::path RecordRootPath;

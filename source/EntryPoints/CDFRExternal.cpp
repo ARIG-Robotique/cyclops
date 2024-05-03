@@ -498,7 +498,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		ImGui::Checkbox("Show Aruco", &ShowAruco);
 		ImGui::Checkbox("Show Yolo", &ShowYolo);
 
-		ImGui::Checkbox("Focus peaking", &FocusPeaking);
+		ImGui::Checkbox("Focus peeking", &FocusPeeking);
 		
 	}
 	ImGui::End();
@@ -519,7 +519,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		const Camera* thisCamera = Cameras[camidx];
 		auto ImData = thisCamera->GetFrame(CDFRCommon::ExternalSettings.DistortedDetection);
 		Size Resolution = ImData.Image.size();
-		if (FocusPeaking)
+		if (FocusPeeking)
 		{
 			auto POIs = UnknownTracker.GetPointsOfInterest();
 			auto POIRects = GetPOIRects(POIs, Resolution, GetFeatureData()[camidx].CameraTransform, 
@@ -546,7 +546,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		Rect SourceRemap(Point(0,0), Resolution);
 		Rect DestRemap = tiles[camidx];
 		//draw aruco
-		if (ShowAruco && !FocusPeaking)
+		if (ShowAruco && !FocusPeeking)
 		{
 			for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
 			{
@@ -589,7 +589,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 				DrawList->AddRect(tl, br, IM_COL32(255, 255, 255, 64));
 			}
 		}
-		if (ShowYolo && !FocusPeaking)
+		if (ShowYolo && !FocusPeeking)
 		{
 			for (size_t detidx = 0; detidx < FeatData.YoloDetections.size(); detidx++)
 			{

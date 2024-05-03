@@ -88,15 +88,21 @@ namespace CDFRCommon
 		if (cam)
 		{
 			profiler.EnterSection("3D Solve Camera");
+			bool HasPosition = false;
 			if (Settings.SolveCameraLocation)
 			{
-				bool HasPosition = Tracker.SolveCameraLocation(FeatData);
+				HasPosition = Tracker.SolveCameraLocation(FeatData);
 				if (HasPosition)
 				{
 					cam->SetLocation(FeatData.CameraTransform, GrabTick);
 					//cout << "Camera has location" << endl;
 				}
 			}
+			else
+			{
+				HasPosition = true;
+			}
+			
 			
 			FeatData.CameraTransform = cam->GetLocation();
 			
