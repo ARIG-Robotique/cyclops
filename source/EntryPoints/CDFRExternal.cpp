@@ -266,7 +266,7 @@ void CDFRExternal::ThreadEntryPoint()
 		
 		
 		prof.EnterSection("Camera Gather Frames");
-		int64 GrabTick = getTickCount();
+		auto GrabTick = chrono::steady_clock::now();
 		
 		for (size_t i = 0; i < Cameras.size(); i++)
 		{

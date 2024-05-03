@@ -51,15 +51,10 @@ TrackedObject::TrackedObject()
 	cv::setIdentity(LocationFilter.errorCovPost, cv::Scalar::all(1));
 };
 
-bool TrackedObject::SetLocation(Affine3d InLocation, uint64_t Tick)
+bool TrackedObject::SetLocation(Affine3d InLocation, TimePoint Tick)
 {
-	if (Tick == UINT64_MAX)
-	{
-		Location = InLocation;
-		return true;
-	}
 	Location = InLocation;
-	double dt = (Tick - LastSeenTick);
+	double dt = chrono::duration<double>(Tick - LastSeenTick).count();
 	LastSeenTick = Tick;
 	if (1) //disable kalman filtering
 	{
@@ -96,9 +91,10 @@ bool TrackedObject::SetLocation(Affine3d InLocation, uint64_t Tick)
 	return true;
 }
 
-bool TrackedObject::ShouldBeDisplayed(uint64_t Tick) const
+bool TrackedObject::ShouldBeDisplayed(TimePoint Tick) const
 {
-	return Tick < LastSeenTick + getTickFrequency()*0.1;
+	(void) Tick;
+	return LastSeenTick != TimePoint();
 }
 
 Affine3d TrackedObject::GetLocation() const

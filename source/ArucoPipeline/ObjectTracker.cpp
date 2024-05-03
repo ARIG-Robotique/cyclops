@@ -92,7 +92,7 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 	return score >0;
 }
 
-void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraData, uint64_t Tick)
+void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraData, TrackedObject::TimePoint Tick)
 {
 	const int NumCameras = CameraData.size();
 	//const int NumObjects = objects.size();
@@ -172,14 +172,14 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 	}
 }
 
-vector<ObjectData> ObjectTracker::GetObjectDataVector(uint64_t Tick)
+vector<ObjectData> ObjectTracker::GetObjectDataVector(TrackedObject::TimePoint Tick)
 {
 	vector<ObjectData> ObjectDatas;
 	ObjectDatas.reserve(objects.size()*2);
 
 	for (size_t i = 0; i < objects.size(); i++)
 	{
-		if (Tick != 0 && !objects[i]->ShouldBeDisplayed(Tick)) //not seen, do not display
+		if (!objects[i]->ShouldBeDisplayed(Tick)) //not seen, do not display
 		{
 			continue;
 		}

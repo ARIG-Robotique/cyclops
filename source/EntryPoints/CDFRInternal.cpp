@@ -25,12 +25,14 @@ CDFRInternal::InternalResult CDFRInternal::Process(CameraImageData InData, CDFRT
 
 	InternalResult response;
 
-	CDFRCommon::ImageToFeatureData(CDFRCommon::InternalSettings, nullptr, InData, response.FeatureData, tracker, 0);
+	auto GrabTick = TrackedObject::Clock::now();
+
+	CDFRCommon::ImageToFeatureData(CDFRCommon::InternalSettings, nullptr, InData, response.FeatureData, tracker, GrabTick);
 
 	std::vector FDArray({response.FeatureData});
 
-	tracker.SolveLocationsPerObject(FDArray, 0);
-	response.ObjData = tracker.GetObjectDataVector(0);
+	tracker.SolveLocationsPerObject(FDArray, GrabTick);
+	response.ObjData = tracker.GetObjectDataVector(GrabTick);
 
 	cout << "Done internal processing thread " << this_thread::get_id() << endl;
 

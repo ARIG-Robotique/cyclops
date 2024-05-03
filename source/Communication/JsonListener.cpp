@@ -81,6 +81,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	{
 		objectified["meta"] = Object.metadata;
 	}
+	objectified["age"] = chrono::duration_cast<chrono::milliseconds>(ObjectData::Clock::now() - Object.LastSeen).count();
 	
 	bool requireCoord = Object.type != ObjectType::SolarPanel;
 	double rotZ = GetRotZ(Object.location.rotation());
@@ -144,7 +145,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	return objectified;
 }
 
-bool JsonListener::GetData(const json &filter, json &Response)
+bool JsonListener::GetData(const json &Query, json &Response)
 {
 	if (!Parent)
 	{
@@ -154,6 +155,14 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	{
 		return false;
 	}
+	auto &filter = Query["filter"];
+	int maxagems = Query.value("maxAge", 0);
+	ObjectData::TimePoint OldCutoff;
+	if (maxagems >0)
+	{
+		OldCutoff = ObjectData::Clock::now() - chrono::milliseconds(maxagems);
+	}
+	 
 	vector<CameraFeatureData> FeatureData = Parent->ExternalRunner->GetFeatureData();
 	vector<ObjectData> ObjData = Parent->ExternalRunner->GetObjectData();
 	set<ObjectType> AllowedTypes;
@@ -179,6 +188,10 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	for (auto &Object : ObjData)
 	{
 		if (AllowedTypes.find(Object.type) == AllowedTypes.end())
+		{
+			continue;
+		}
+		if (Object.LastSeen < OldCutoff)
 		{
 			continue;
 		}
@@ -474,7 +487,7 @@ void JsonListener::HandleQuery(const json &Query)
 		{
 			if (Query.contains("filter") && Query.at("filter").is_array())
 			{
-				GetData(Query["filter"], Response);
+				GetData(Query, Response);
 				Response["status"] = "OK";
 			}
 			else

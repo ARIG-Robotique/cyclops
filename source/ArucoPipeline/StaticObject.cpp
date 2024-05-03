@@ -36,7 +36,7 @@ StaticObject::~StaticObject()
 {
 }
 
-bool StaticObject::SetLocation(Affine3d InLocation, uint64_t Tick)
+bool StaticObject::SetLocation(Affine3d InLocation, TimePoint Tick)
 {
 	if (Relative)
 	{
@@ -47,7 +47,7 @@ bool StaticObject::SetLocation(Affine3d InLocation, uint64_t Tick)
 	return false;
 }
 
-bool StaticObject::ShouldBeDisplayed(uint64_t Tick) const
+bool StaticObject::ShouldBeDisplayed(TimePoint Tick) const
 {
 	if (Relative)
 	{
@@ -61,10 +61,8 @@ bool StaticObject::ShouldBeDisplayed(uint64_t Tick) const
 
 vector<ObjectData> StaticObject::ToObjectData() const
 {
-	ObjectData packet;
-	packet.type = Relative ? ObjectType::ReferenceRelative : ObjectType::ReferenceAbsolute;
-	packet.name = Name;
-	packet.location = Location;
+	ObjectData packet(Relative ? ObjectType::ReferenceRelative : ObjectType::ReferenceAbsolute,
+		Name, Location, Relative ? LastSeenTick : Clock::now());
 	packet.Childs = GetMarkersAndChilds();
 	return {packet};
 }

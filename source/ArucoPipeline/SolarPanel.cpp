@@ -35,8 +35,9 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 	ReprojectionError = 0;
 	Affine3d WorldToCam = CameraData.CameraTransform.inv();
 	vector<Point2d> ImageSolarPanels;
-	projectPoints(PanelPositions, WorldToCam.rvec(), WorldToCam.translation(), CameraData.CameraMatrix, CameraData.DistanceCoefficients, ImageSolarPanels);
+	cv::projectPoints(PanelPositions, WorldToCam.rvec(), WorldToCam.translation(), CameraData.CameraMatrix, CameraData.DistanceCoefficients, ImageSolarPanels);
 	auto UpVector = GetAxis(WorldToCam.rotation(), 2);
+	PanelSeenLastTick.fill(false);
 	for (auto &marker : SeenMarkers)
 	{
 		auto& flatimg = marker.CameraCornerPositions;
@@ -87,6 +88,7 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 		Matx33d rotationMatrix; //Matrice de rotation Camera -> Tag
 		Rodrigues(rvec, rotationMatrix);
 		Matx33d RefinedRotation = CameraData.CameraTransform.rotation() * rotationMatrix;
+		PanelSeenLastTick[closest] = true;
 		auto & rot = PanelRotations[closest];
 		rot = GetRotZ(RefinedRotation);
 		//cout << "Panel " << closest << " has a rotation of " << PanelRotations[closest]*180.0/M_PI << " deg" << endl;
@@ -103,6 +105,19 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 	return Affine3d::Identity();
 }
 
+bool SolarPanel::SetLocation(cv::Affine3d InLocation, TimePoint Tick)
+{
+	(void) InLocation;
+	for (size_t i = 0; i < PanelLastSeenTime.size(); i++)
+	{
+		if (PanelSeenLastTick[i])
+		{
+			PanelLastSeenTime[i] = Tick;
+		}
+	}
+	return true;
+}
+
 vector<ObjectData> SolarPanel::ToObjectData() const
 {
 	vector<ObjectData> objects;
@@ -110,7 +125,7 @@ vector<ObjectData> SolarPanel::ToObjectData() const
 	{
 		double rot = PanelRotations[i];
 		Affine3d location(MakeRotationFromZX(Vec3d(0,0,1), Vec3d(cos(rot),sin(rot),0)), PanelPositions[i]);
-		objects.emplace_back(ObjectType::SolarPanel, "Solar Panel " + to_string(i), location);
+		objects.emplace_back(ObjectType::SolarPanel, "Solar Panel " + to_string(i), location, PanelLastSeenTime[i]);
 	}
 	return objects;
 }

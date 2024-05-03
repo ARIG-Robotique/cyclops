@@ -56,6 +56,8 @@ public:
 class TrackedObject
 {
 public: 
+	typedef ObjectData::Clock Clock;
+	typedef ObjectData::TimePoint TimePoint;
 	struct ArucoViewCameraLocal
 	{
 		cv::Affine3d AccumulatedTransform; //transform to marker, not including the marker's transform relative to it's parent
@@ -73,7 +75,7 @@ public:
 
 protected:
 	cv::Affine3d Location;
-	unsigned long LastSeenTick = 0;
+	TimePoint LastSeenTick;
 	cv::KalmanFilter LocationFilter;
 
 public:
@@ -81,10 +83,10 @@ public:
 	TrackedObject();
 
 	//Set location. Bypass kalman filter if tick is UINT64_MAX
-	virtual bool SetLocation(cv::Affine3d InLocation, uint64_t Tick);
-	unsigned long GetLastSeenTick() const { return LastSeenTick; }
+	virtual bool SetLocation(cv::Affine3d InLocation, TimePoint Tick);
+	TimePoint GetLastSeenTick() const { return LastSeenTick; }
 
-	virtual bool ShouldBeDisplayed(uint64_t Tick) const;
+	virtual bool ShouldBeDisplayed(TimePoint Tick) const;
 	virtual cv::Affine3d GetLocation() const;
 
 	//Find the parameters and the accumulated transform of the tag in the component and it's childs

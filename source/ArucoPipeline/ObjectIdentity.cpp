@@ -4,6 +4,7 @@
 #include <Visualisation/BoardGL.hpp>
 #include <cassert>
 #include <map>
+#include <iostream>
 using namespace std;
 
 std::ostream& operator << (std::ostream& out, CDFRTeam Team)
@@ -45,19 +46,26 @@ std::optional<GLObject> ObjectData::ToGLObject() const
 	return obj;
 }
 
-vector<GLObject> ObjectData::ToGLObjects(const vector<ObjectData>& data)
+vector<GLObject> ObjectData::ToGLObjects(const vector<ObjectData>& data, Clock::duration maxAge)
 {
 	vector<GLObject> outobj;
 	outobj.reserve(data.size());
+	TimePoint OldCutoff = Clock::now() - maxAge;
 	for (size_t i = 0; i < data.size(); i++)
 	{
-		auto obj = data[i].ToGLObject();
+		auto &object = data[i];
+		if (object.LastSeen < OldCutoff)
+		{
+			//cout << "Filtering " << object.name << " because it's " << chrono::duration<double>(Clock::now() - object.LastSeen).count() << "s old" << endl;
+			continue;
+		}
+		auto obj = object.ToGLObject();
 		if (!obj.has_value())
 		{
 			continue;
 		}
 		outobj.push_back(obj.value());
-		vector<GLObject> childs = ObjectData::ToGLObjects(data[i].Childs);
+		vector<GLObject> childs = ObjectData::ToGLObjects(object.Childs);
 		for (size_t i = 0; i < childs.size(); i++)
 		{
 			childs[i].location = obj.value().location * childs[i].location; //apply parent transform to child

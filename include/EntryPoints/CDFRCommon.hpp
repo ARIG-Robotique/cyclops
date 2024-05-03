@@ -57,7 +57,7 @@ namespace CDFRCommon
 
 	bool ImageToFeatureData(const CDFRCommon::Settings &Settings,  
 		Camera* cam, const CameraImageData& ImData, CameraFeatureData& FeatData, 
-		ObjectTracker& Tracker, uint64_t GrabTick, YoloDetect *YoloDetector = nullptr);
+		ObjectTracker& Tracker, std::chrono::steady_clock::time_point GrabTick, YoloDetect *YoloDetector = nullptr);
 };
 
 string TimeToStr();

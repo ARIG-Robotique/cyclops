@@ -24,10 +24,10 @@ public:
 
 	bool SolveCameraLocation(CameraFeatureData& CameraData);
 
-	void SolveLocationsPerObject(std::vector<CameraFeatureData>& CameraData, uint64_t Tick);
+	void SolveLocationsPerObject(std::vector<CameraFeatureData>& CameraData, TrackedObject::TimePoint Tick);
 
 
-	std::vector<ObjectData> GetObjectDataVector(uint64_t Tick);
+	std::vector<ObjectData> GetObjectDataVector(TrackedObject::TimePoint Tick);
 
 	//only needed for the center
 	void SetArucoSize(int number, double SideLength);

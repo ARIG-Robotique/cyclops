@@ -90,10 +90,7 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 
 vector<ObjectData> TopTracker::ToObjectData() const
 {
-	ObjectData tracker;
-	tracker.name = Name;
-	tracker.type = ObjectType::TopTracker;
-	tracker.location = Location;
+	ObjectData tracker(ObjectType::TopTracker, Name, Location, LastSeenTick);
 	//tracker.Childs = GetMarkersAndChilds();
 	return {tracker};
 }

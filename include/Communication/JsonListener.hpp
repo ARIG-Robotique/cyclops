@@ -63,7 +63,7 @@ private:
 	static std::string JavaCapitalize(std::string source);
 
 	//Get data from external monitor
-	bool GetData(const nlohmann::json &filter, nlohmann::json &Response);
+	bool GetData(const nlohmann::json &Query, nlohmann::json &Response);
 
 	bool GetImage(double reduction, nlohmann::json &Response);
 

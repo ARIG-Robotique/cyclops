@@ -1,5 +1,6 @@
 #include "EntryPoints/CDFRCommon.hpp"
 #include <set>
+#include <thread>
 
 #include <Misc/ManualProfiler.hpp>
 
@@ -22,7 +23,6 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 	for (int i = 1; i < 11; i++)
 	{
 		optional<double> height = 0.450;
-		CDFRTeam color = i<6 ? CDFRTeam::Blue : CDFRTeam::Yellow;
 
 		GlobalObjects.emplace(make_shared<TopTracker>(i, 0.0695, "Robot " + std::to_string(i), height));
 	}
@@ -67,37 +67,20 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 
 bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,  
 		Camera* cam, const CameraImageData& ImData, CameraFeatureData& FeatData, 
-		ObjectTracker& Tracker, uint64_t GrabTick, YoloDetect *YoloDetector)
+		ObjectTracker& Tracker, std::chrono::steady_clock::time_point GrabTick, YoloDetect *YoloDetector)
 {
 	FeatData.Clear();
 	FeatData.CopyEssentials(ImData);
 	bool doYolo = Settings.YoloDetection && YoloDetector;
 	bool doAruco = Settings.ArucoDetection;
-	if (doAruco && doYolo)
+	unique_ptr<thread> yoloThread;
+	if (doYolo)
 	{
-		parallel_for_(Range(0,2), [&](Range InRange){
-			for (int i = InRange.start; i < InRange.end; i++)
-			{
-				if (i == 0)
-				{
-					YoloDetector->Detect(ImData, FeatData);
-				}
-				else if (i == 1)
-				{
-					if (Settings.SegmentedDetection)
-					{
-						DetectArucoSegmented(ImData, FeatData, 200, Size(4,3));
-					}
-					else
-					{
-						DetectAruco(ImData, FeatData);
-					}
-				}
-				
-			}
-		});
+		yoloThread = make_unique<thread>(&YoloDetect::Detect, YoloDetector, 
+			std::cref(ImData), std::ref(FeatData));
+		//YoloDetector->Detect(ImData, FeatData);
 	}
-	else if (doAruco)
+	if (doAruco)
 	{
 		if (Settings.SegmentedDetection)
 		{
@@ -108,17 +91,12 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 			DetectAruco(ImData, FeatData);
 		}
 	}
-	else if (doYolo)
-	{
-		YoloDetector->Detect(ImData, FeatData);
-	}
 	
 	if (cam)
 	{
-		bool HasPosition = false;
 		if (Settings.SolveCameraLocation)
 		{
-			HasPosition = Tracker.SolveCameraLocation(FeatData);
+			bool HasPosition = Tracker.SolveCameraLocation(FeatData);
 			if (HasPosition)
 			{
 				cam->SetLocation(FeatData.CameraTransform, GrabTick);
@@ -127,7 +105,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		}
 		else
 		{
-			HasPosition = true;
+			cam->SetLocation(cam->GetLocation(), GrabTick); //update grabtick
 		}
 		
 		
@@ -138,12 +116,16 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 			const auto &POIs = Tracker.GetPointsOfInterest();
 			DetectArucoPOI(ImData, FeatData, POIs);
 		}
-		return HasPosition;
 	}
 	else
 	{
 		FeatData.CameraTransform = Affine3d::Identity();
 	}
+	if (yoloThread)
+	{
+		yoloThread->join();
+	}
+	
 	return false;
 }
 

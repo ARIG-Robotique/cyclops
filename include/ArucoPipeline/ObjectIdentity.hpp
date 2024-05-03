@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 #include <map>
+#include <chrono>
 #include <opencv2/core/affine.hpp>
 
 enum class CDFRTeam
@@ -36,6 +37,12 @@ enum class ObjectType
 	TeamTracker,
 
 	SolarPanel,
+
+	Fragile,
+	Resistant,
+	Pot,
+	PottedPlant,
+
 	Team
 };
 
@@ -59,15 +66,19 @@ std::ostream& operator << (std::ostream& out, ObjectType Type);
 
 struct ObjectData
 {
+	typedef std::chrono::steady_clock Clock;
+	typedef Clock::time_point TimePoint;
 	ObjectType type;
 	std::string name;
 	std::string metadata;
 	cv::Affine3d location;
+	TimePoint LastSeen;
 
 	std::vector<ObjectData> Childs;
 
-	ObjectData(ObjectType InType = ObjectType::Unknown, const std::string InName = "None", cv::Affine3d InLocation = cv::Affine3d::Identity())
-		:type(InType), name(InName), location(InLocation)
+	ObjectData(ObjectType InType = ObjectType::Unknown, const std::string InName = "None", 
+		cv::Affine3d InLocation = cv::Affine3d::Identity(), TimePoint InLastSeen = Clock::now())
+		:type(InType), name(InName), location(InLocation), LastSeen(InLastSeen)
 	{}
 
 	ObjectData(ObjectType InType, const std::string InName, double posX, double posY, double posZ)
@@ -79,5 +90,5 @@ struct ObjectData
 
 	std::optional<struct GLObject> ToGLObject() const;
 
-	static std::vector<GLObject> ToGLObjects(const std::vector<ObjectData>& data);
+	static std::vector<GLObject> ToGLObjects(const std::vector<ObjectData>& data, Clock::duration maxAge = std::chrono::milliseconds(500));
 };

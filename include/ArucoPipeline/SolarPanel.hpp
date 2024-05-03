@@ -9,6 +9,8 @@ class SolarPanel : public TrackedObject
 private:
 	std::array<double, 9> PanelRotations; //Solar panels, X increasing (so going from blue to yellow side)
 	std::array<cv::Point3d, 9> PanelPositions;
+	std::array<TimePoint, 9> PanelLastSeenTime;
+	std::array<bool, 9> PanelSeenLastTick;
 public:
 	SolarPanel();
 
@@ -25,11 +27,13 @@ public:
 	virtual cv::Affine3d GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
 		std::map<int, ArucoCornerArray> &ReprojectedCorners) override;
 
-	virtual bool ShouldBeDisplayed(uint64_t Tick) const override
+	virtual bool ShouldBeDisplayed(TimePoint Tick) const override
 	{
 		(void) Tick;
 		return true;
 	}
+
+	virtual bool SetLocation(cv::Affine3d InLocation, TimePoint Tick) override;
 
 	virtual std::vector<ObjectData> ToObjectData() const override;
 

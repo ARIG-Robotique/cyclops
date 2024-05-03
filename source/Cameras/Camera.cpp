@@ -132,10 +132,7 @@ CameraImageData Camera::GetFrame(bool Distorted) const
 
 vector<ObjectData> Camera::ToObjectData() const
 {
-	ObjectData camera;
-	camera.name = Name;
-	camera.type = ObjectType::Camera;
-	camera.location = Location;
+	ObjectData camera(ObjectType::Camera, Name, Location, LastSeenTick);
 	return {camera};
 }
 
