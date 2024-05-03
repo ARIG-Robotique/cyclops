@@ -55,71 +55,9 @@ namespace CDFRCommon
 
 	void MakeTrackedObjects(bool Internal, std::map<CDFRTeam, ObjectTracker&> Trackers);
 
-	template<bool ProfilerEnabled> 
-	bool Detection(const CDFRCommon::Settings &Settings, ManualProfiler<ProfilerEnabled> &profiler, 
+	bool ImageToFeatureData(const CDFRCommon::Settings &Settings,  
 		Camera* cam, const CameraImageData& ImData, CameraFeatureData& FeatData, 
-		ObjectTracker& Tracker, uint64_t GrabTick, YoloDetect *YoloDetector = nullptr)
-	{
-		if (Settings.Denoising)
-		{
-			profiler.EnterSection("Denoise");
-			cv::fastNlMeansDenoising(ImData.Image, ImData.Image, 10);
-		}
-		FeatData.Clear();
-		FeatData.CopyEssentials(ImData);
-		if (Settings.YoloDetection && YoloDetector)
-		{
-			profiler.EnterSection("Detect Yolo");
-			YoloDetector->Detect(ImData, FeatData);
-		}
-		if (Settings.ArucoDetection)
-		{
-			profiler.EnterSection("Detect Aruco");
-			if (Settings.SegmentedDetection)
-			{
-				DetectArucoSegmented(ImData, FeatData, 200, Size(4,3));
-			}
-			else
-			{
-				DetectAruco(ImData, FeatData);
-			}
-		}
-		
-		if (cam)
-		{
-			profiler.EnterSection("3D Solve Camera");
-			bool HasPosition = false;
-			if (Settings.SolveCameraLocation)
-			{
-				HasPosition = Tracker.SolveCameraLocation(FeatData);
-				if (HasPosition)
-				{
-					cam->SetLocation(FeatData.CameraTransform, GrabTick);
-					//cout << "Camera has location" << endl;
-				}
-			}
-			else
-			{
-				HasPosition = true;
-			}
-			
-			
-			FeatData.CameraTransform = cam->GetLocation();
-			
-			if (Settings.POIDetection)
-			{
-				profiler.EnterSection("Detect Aruco POIs");
-				const auto &POIs = Tracker.GetPointsOfInterest();
-				DetectArucoPOI(ImData, FeatData, POIs);
-			}
-			return HasPosition;
-		}
-		else
-		{
-			FeatData.CameraTransform = Affine3d::Identity();
-		}
-		return false;
-	}
+		ObjectTracker& Tracker, uint64_t GrabTick, YoloDetect *YoloDetector = nullptr);
 };
 
 string TimeToStr();

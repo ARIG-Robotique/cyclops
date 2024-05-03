@@ -27,7 +27,7 @@ CDFRInternal::InternalResult CDFRInternal::Process(CameraImageData InData, CDFRT
 
 	InternalResult response;
 
-	CDFRCommon::Detection(CDFRCommon::InternalSettings, profiler, nullptr, InData, response.FeatureData, tracker, 0);
+	CDFRCommon::ImageToFeatureData(CDFRCommon::InternalSettings, profiler, nullptr, InData, response.FeatureData, tracker, 0);
 
 	std::vector FDArray({response.FeatureData});
 

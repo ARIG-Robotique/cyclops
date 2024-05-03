@@ -276,11 +276,9 @@ void CDFRExternal::ThreadEntryPoint()
 		int NumCams = Cameras.size();
 		vector<CameraImageData> &ImageDataLocal = ImageData[BufferIndex];
 		vector<CameraFeatureData> &FeatureDataLocal = FeatureData[BufferIndex];
-		vector<bool> CamerasWithPosition;
 		vector<ExternalProfType> ParallelProfilers;
 		ImageDataLocal.resize(NumCams);
 		FeatureDataLocal.resize(NumCams);
-		CamerasWithPosition.resize(NumCams);
 		ParallelProfilers.resize(NumCams);
 		prof.EnterSection("Parallel Cameras");
 
@@ -303,7 +301,6 @@ void CDFRExternal::ThreadEntryPoint()
 				if(!cam->Read())
 				{
 					FeatData.Clear();
-					CamerasWithPosition[i] = false;
 					continue;
 				}
 				if (!CDFRCommon::ExternalSettings.DistortedDetection)
@@ -325,7 +322,7 @@ void CDFRExternal::ThreadEntryPoint()
 					//imwrite("noised.jpg", ImData.Image);
 					break;
 				}
-				CamerasWithPosition[i] = CDFRCommon::Detection(CDFRCommon::ExternalSettings, thisprof, cam, ImData, FeatData, *TrackerToUse, GrabTick, YoloDetector.get());
+				CDFRCommon::ImageToFeatureData(CDFRCommon::ExternalSettings, cam, ImData, FeatData, *TrackerToUse, GrabTick, YoloDetector.get());
 
 				if (RecordThisTick)
 				{
