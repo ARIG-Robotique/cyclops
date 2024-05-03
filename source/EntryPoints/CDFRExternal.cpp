@@ -486,6 +486,9 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 
 		ImGui::Checkbox("Show Aruco", &ShowAruco);
 		ImGui::Checkbox("Show Yolo", &ShowYolo);
+
+		ImGui::Checkbox("Focus peaking", &FocusPeaking);
+		
 	}
 	ImGui::End();
 
@@ -501,10 +504,22 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		{
 			continue;
 		}
-		const auto &thisTile = tiles[camidx*DisplaysPerCam];
+		auto &thisTile = tiles[camidx*DisplaysPerCam];
 		const Camera* thisCamera = Cameras[camidx];
 		auto ImData = thisCamera->GetFrame(CDFRCommon::ExternalSettings.DistortedDetection);
 		Size Resolution = ImData.Image.size();
+		if (FocusPeaking)
+		{
+			auto POIs = UnknownTracker.GetPointsOfInterest();
+			auto POIRects = GetPOIRects(POIs, Resolution, GetFeatureData()[camidx].CameraTransform, 
+				ImData.CameraMatrix, ImData.DistanceCoefficients);
+			auto POI = POIRects[POIs.size()/2];
+			thisTile.height = ImageSize.height;
+			thisTile.width = ImageSize.width;
+			thisTile.x = -POI.x+(WindowSize.width-POI.width)/2;
+			thisTile.y = -POI.y+(WindowSize.height-POI.height)/2;
+		}
+		
 		DirectTextures[camidx*DisplaysPerCam].LoadFromUMat(ImData.Image);
 		DirectImage->AddImageToBackground(DirectTextures[camidx*DisplaysPerCam], thisTile);
 
@@ -520,7 +535,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		Rect SourceRemap(Point(0,0), Resolution);
 		Rect DestRemap = tiles[camidx];
 		//draw aruco
-		if (ShowAruco)
+		if (ShowAruco && !FocusPeaking)
 		{
 			for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
 			{
@@ -563,7 +578,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 				DrawList->AddRect(tl, br, IM_COL32(255, 255, 255, 64));
 			}
 		}
-		if (ShowYolo)
+		if (ShowYolo && !FocusPeaking)
 		{
 			for (size_t detidx = 0; detidx < FeatData.YoloDetections.size(); detidx++)
 			{
