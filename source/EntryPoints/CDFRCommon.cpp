@@ -21,7 +21,10 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 	GlobalObjects.emplace(make_shared<SolarPanel>());
 	for (int i = 1; i < 11; i++)
 	{
-		GlobalObjects.emplace(make_shared<TopTracker>(i, 0.0695, "Robot " + std::to_string(i), 0.450));
+		optional<double> height = 0.450;
+		CDFRTeam color = i<6 ? CDFRTeam::Blue : CDFRTeam::Yellow;
+
+		GlobalObjects.emplace(make_shared<TopTracker>(i, 0.0695, "Robot " + std::to_string(i), height));
 	}
 	for (auto &Tracker : Trackers)
 	{

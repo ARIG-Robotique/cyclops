@@ -270,7 +270,7 @@ bool JsonListener::GetImage(double reduction, json &Response)
 		b64enc.resize(b64size);
 		json this_camera_json;
 		this_camera_json["name"] = this_cam.CameraName;
-		this_camera_json["data"] = b64enc;
+		this_camera_json["data"] = reinterpret_cast<char*>(b64enc.data());
 		Response["cameras"].push_back(this_camera_json);
 	}
 	return true;

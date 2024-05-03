@@ -1,14 +1,15 @@
 #pragma once
 
 #include <ArucoPipeline/TrackedObject.hpp>
+#include <optional>
 
 //A cube with 4 tags, one on each side
 class TopTracker : public TrackedObject
 {
 private:
-	double ExpectedHeight;
+	std::optional<double> ExpectedHeight;
 public:
-	TopTracker(int MarkerIdx, double MarkerSize, std::string InName, double InExpectedHeight);
+	TopTracker(int MarkerIdx, double MarkerSize, std::string InName, std::optional<double> InExpectedHeight);
 	~TopTracker();
 
 	virtual cv::Affine3d GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
