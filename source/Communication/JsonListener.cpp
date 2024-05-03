@@ -1,8 +1,9 @@
 #include "Communication/JsonListener.hpp"
 #include <Communication/Transport/TCPTransport.hpp>
+#include <Communication/TCPJsonHost.hpp>
+#include <Cameras/ImageTypes.hpp>
 #include <EntryPoints/CDFRExternal.hpp>
 #include <EntryPoints/CDFRInternal.hpp>
-#include <Communication/TCPJsonHost.hpp>
 #include <Misc/math3d.hpp>
 #include <Misc/math2d.hpp>
 #include <Misc/GlobalConf.hpp>

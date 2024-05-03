@@ -4,13 +4,11 @@
 #include <vector>
 #include <array>
 #include <memory>
+#include <filesystem>
 
 #include <Communication/ProcessedTypes.hpp>
 #include <ArucoPipeline/ObjectIdentity.hpp>
 #include <ArucoPipeline/ObjectTracker.hpp>
-#include <Cameras/CameraManager.hpp>
-#include <Visualisation/BoardGL.hpp>
-#include <Visualisation/ImguiWindow.hpp>
 
 class CDFRExternal
 {
@@ -29,17 +27,19 @@ private:
 	bool ForceRecordNext = false;
 	std::filesystem::path RecordRootPath;
 
+	std::unique_ptr<class YoloDetect> YoloDetector;
+
 	//Camera manager
-	std::unique_ptr<CameraManager> CameraMan;
+	std::unique_ptr<class CameraManager> CameraMan;
 	//Running thread handle
 	std::unique_ptr<std::thread> ThreadHandle;
 
 	//3D viz
-	std::unique_ptr<BoardGL> OpenGLBoard;
+	std::unique_ptr<class BoardGL> OpenGLBoard;
 
 	//2D viz
-	std::vector<Texture> DirectTextures;
-	std::unique_ptr<ImguiWindow> DirectImage;
+	std::vector<struct Texture> DirectTextures;
+	std::unique_ptr<class ImguiWindow> DirectImage;
 
 	//data
 	int BufferIndex = 0;
@@ -54,7 +54,7 @@ private:
 
 	CDFRTeam GetTeamFromCameraPosition(std::vector<class Camera*> Cameras);
 
-	void UpdateDirectImage(const std::vector<Camera*> &Cameras, const std::vector<CameraFeatureData> &FeatureDataLocal);
+	void UpdateDirectImage(const std::vector<class Camera*> &Cameras, const std::vector<CameraFeatureData> &FeatureDataLocal);
 
 	void Open3DVisualizer();
 

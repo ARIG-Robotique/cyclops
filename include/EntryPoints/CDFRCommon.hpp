@@ -54,7 +54,9 @@ namespace CDFRCommon
 	void MakeTrackedObjects(bool Internal, std::map<CDFRTeam, ObjectTracker&> Trackers);
 
 	template<bool ProfilerEnabled> 
-	bool Detection(const CDFRCommon::Settings &Settings, ManualProfiler<ProfilerEnabled> &profiler, Camera* cam, const CameraImageData& ImData, CameraFeatureData& FeatData, ObjectTracker& Tracker, uint64_t GrabTick)
+	bool Detection(const CDFRCommon::Settings &Settings, ManualProfiler<ProfilerEnabled> &profiler, 
+		Camera* cam, const CameraImageData& ImData, CameraFeatureData& FeatData, 
+		ObjectTracker& Tracker, uint64_t GrabTick, YoloDetect *YoloDetector = nullptr)
 	{
 		if (Settings.Denoising)
 		{
@@ -63,10 +65,10 @@ namespace CDFRCommon
 		}
 		FeatData.Clear();
 		FeatData.CopyEssentials(ImData);
-		if (Settings.YoloDetection)
+		if (Settings.YoloDetection && YoloDetector)
 		{
 			profiler.EnterSection("Detect Yolo");
-			DetectYolo(ImData, FeatData);
+			YoloDetector->Detect(ImData, FeatData);
 		}
 		if (Settings.ArucoDetection)
 		{

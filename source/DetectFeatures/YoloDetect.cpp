@@ -7,7 +7,6 @@
 #include <array>
 
 #include <opencv2/imgproc.hpp>
-#include <opencv2/dnn.hpp>
 
 #ifdef WITH_CORAL
 #include <edgetpu.h>
@@ -23,164 +22,154 @@
 using namespace std;
 using namespace cv;
 
-const int numclasses = 4;
 const Size modelSize(640,480);
 
-array<string, numclasses> ClassNames;
+YoloDetect::YoloDetect(string inModelName, int inNumclasses)
+	:ModelName(inModelName)
+{
+	ClassNames.resize(inNumclasses);
+	loadNames();
+	loadNet();
+}
 
-const string& GetYoloClassName(int index)
+YoloDetect::~YoloDetect()
+{
+}
+
+filesystem::path YoloDetect::GetNetworkPath(string extension) const
+{
+	return GetAssetsPath()/"dnn"/(ModelName+extension);
+}
+
+void YoloDetect::loadNames()
+{
+	ifstream NamesFile(GetNetworkPath(".names"));
+	for (size_t i = 0; i < ClassNames.size(); i++)
+	{
+		NamesFile >> ClassNames[i];
+		cout << "Yolo class " << i << " is " << ClassNames[i] << endl;
+	}
+}
+
+void YoloDetect::loadNet()
+{
+	auto backends = dnn::getAvailableBackends();
+	cout << "Listing available backends and targets" << endl;
+	for (auto &&backend : backends)
+	{
+		cout << "Backend " << backend.first << " is available with target " << backend.second << endl;
+	}
+	network = dnn::readNetFromDarknet(GetNetworkPath(".cfg"), GetNetworkPath(".weights"));
+}
+
+void YoloDetect::Preprocess(const UMat& frame, dnn::Net& net, Size inpSize, float scale, const Scalar& mean, bool swapRB)
+{
+	static Mat blob;
+	// Create a 4D blob from a frame.
+	if (inpSize.width <= 0) inpSize.width = frame.cols;
+	if (inpSize.height <= 0) inpSize.height = frame.rows;
+	dnn::blobFromImage(frame, blob, 1.0, inpSize, Scalar(), swapRB, false);
+	//cout << "Input has size " << blob.size << endl;
+	// Run a model.
+	net.setInput(blob, "", scale, mean);
+}
+
+
+vector<YoloDetect::Detection> YoloDetect::Postprocess(vector<Mat> outputBlobs, vector<string> layerNames, Rect window)
+{
+	vector<Rect> boxes;
+	vector<float> scores;
+	vector<vector<float>> classes;
+	int numclasses = ClassNames.size();
+	for (size_t blobidx = 0; blobidx < outputBlobs.size(); blobidx++)
+	{
+		auto& blob = outputBlobs[blobidx];
+		auto& layername = layerNames[blobidx];
+		(void) layername;
+		int numdet = 1;
+		for (int i = 0; i < blob.size.dims()-1; i++)
+		{
+			numdet*=blob.size[i];
+		}
+		int numelem = blob.size[blob.size.dims()-1];
+		assert(numelem == numclasses +4 +1); //x, y, width, height, confidence, classes...
+		//cout << "Layer " << layername << " has " << numdet << " detections and " << numelem << " elements/detection" << endl;
+		size_t newnum = boxes.size() + numdet;
+		boxes.reserve(newnum);
+		scores.reserve(newnum);
+		classes.reserve(newnum);
+		int stride = blob.elemSize1() * numelem;
+		assert(blob.elemSize1() == sizeof(float));
+		//cout << "stride is " << stride << " bytes/detection" << endl;
+		for (const uint8_t* ptr = blob.data; ptr < blob.dataend; ptr+=stride)
+		{
+			auto recast = reinterpret_cast<const float*>(ptr);
+			float cx = recast[0]*window.width+window.x;
+			float cy = recast[1]*window.height+window.y;
+			float w = recast[2]*window.width;
+			float h = recast[3]*window.height;
+			boxes.emplace_back(cx-w/2, cy-h/2, w, h);
+			scores.emplace_back(recast[4]);
+			auto& classesloc = classes.emplace_back();
+			classesloc.resize(numclasses);
+			copy(&recast[5], &recast[numelem], classesloc.data());
+		}
+	}
+	vector<int> keptIndices;
+	dnn::NMSBoxes(boxes, scores, 0.4, 0.5, keptIndices);
+	vector<Detection> OutDetections;
+	OutDetections.reserve(keptIndices.size());
+	for (int kept : keptIndices)
+	{
+		OutDetections.emplace_back(boxes[kept], scores[kept], classes[kept]);
+	}
+	return OutDetections;
+}
+
+
+const string& YoloDetect::GetClassName(int index) const
 {
 	return ClassNames[index];
 }
 
-int GetYoloNumClasses()
+int YoloDetect::GetNumClasses() const
 {
-	return numclasses;
+	return ClassNames.size();
 }
 
-namespace OpenCVDNN
+int YoloDetect::Detect(const CameraImageData &InData, CameraFeatureData& OutData)
 {
-	optional<dnn::Net> YoloNet;
-
-	void LoadNames()
+	Preprocess(InData.Image, network, modelSize, 1.0/255.0, 0, true);
+	//auto start = chrono::steady_clock::now();
+	vector<Mat> outputBlobs;
+	auto OutputNames = network.getUnconnectedOutLayersNames();
+	network.forward(outputBlobs, OutputNames);
+	//auto stop = chrono::steady_clock::now();
+	//cout << "Inference took " << chrono::duration<double>(stop-start).count() << " s" << endl;
+	auto detections = Postprocess(outputBlobs, OutputNames, Rect(0,0,InData.Image.cols, InData.Image.rows));
+	Mat painted; InData.Image.copyTo(painted);
+	int numdetections = detections.size();
+	OutData.YoloDetections.clear();
+	OutData.YoloDetections.reserve(numdetections);
+	for (auto &det : detections)
 	{
-		ifstream NamesFile(GetAssetsPath()/"dnn"/"cdfr.names");
-		for (size_t i = 0; i < numclasses; i++)
+		int maxidx = 0;
+		for (size_t i = 1; i < det.Classes.size(); i++)
 		{
-			NamesFile >> ClassNames[i];
-			cout << "Yolo class " << i << " is " << ClassNames[i] << endl;
-		}
-	}
-
-	void LoadNet()
-	{
-		if (YoloNet.has_value())
-		{
-			return;
-		}
-		LoadNames();
-		auto backends = dnn::getAvailableBackends();
-		cout << "Listing available backends and targets" << endl;
-		for (auto &&backend : backends)
-		{
-			cout << "Backend " << backend.first << " is available with target " << backend.second << endl;
-		}
-		//YoloNet = dnn::readNet(GetAssetsPath() / "dnn" / "run2_float32.onnx");
-		auto dnnpath = GetAssetsPath() / "dnn";
-		YoloNet = dnn::readNetFromDarknet(dnnpath/"cdfr.cfg", dnnpath/"cdfr.weights");
-	}
-
-	void Preprocess(const UMat& frame, dnn::Net& net, Size inpSize, float scale, const Scalar& mean, bool swapRB)
-	{
-		static Mat blob;
-		// Create a 4D blob from a frame.
-		if (inpSize.width <= 0) inpSize.width = frame.cols;
-		if (inpSize.height <= 0) inpSize.height = frame.rows;
-		dnn::blobFromImage(frame, blob, 1.0, inpSize, Scalar(), swapRB, false);
-		//cout << "Input has size " << blob.size << endl;
-		// Run a model.
-		net.setInput(blob, "", scale, mean);
-	}
-
-
-	struct Detection
-	{
-		Rect BoundingBox;
-		float Confidence;
-		array<float, numclasses> Classes;
-
-		Detection(const Rect &InBoundingBox, float InConfidence, const array<float, numclasses> &InClasses)
-			:BoundingBox(InBoundingBox), Confidence(InConfidence), Classes(InClasses)
-		{}
-	};
-
-
-	vector<Detection> Postprocess(vector<Mat> outputBlobs, vector<string> layerNames, Rect window)
-	{
-		vector<Rect> boxes;
-		vector<float> scores;
-		vector<array<float, numclasses>> classes;
-		for (size_t blobidx = 0; blobidx < outputBlobs.size(); blobidx++)
-		{
-			auto& blob = outputBlobs[blobidx];
-			auto& layername = layerNames[blobidx];
-			(void) layername;
-			int numdet = 1;
-			for (int i = 0; i < blob.size.dims()-1; i++)
+			if (det.Classes[i] > det.Classes[maxidx])
 			{
-				numdet*=blob.size[i];
-			}
-			int numelem = blob.size[blob.size.dims()-1];
-			assert(numelem == numclasses +4 +1); //x, y, width, height, confidence, classes...
-			//cout << "Layer " << layername << " has " << numdet << " detections and " << numelem << " elements/detection" << endl;
-			size_t newnum = boxes.size() + numdet;
-			boxes.reserve(newnum);
-			scores.reserve(newnum);
-			classes.reserve(newnum);
-			int stride = blob.elemSize1() * numelem;
-			assert(blob.elemSize1() == sizeof(float));
-			//cout << "stride is " << stride << " bytes/detection" << endl;
-			for (const uint8_t* ptr = blob.data; ptr < blob.dataend; ptr+=stride)
-			{
-				auto recast = reinterpret_cast<const float*>(ptr);
-				float cx = recast[0]*window.width+window.x;
-				float cy = recast[1]*window.height+window.y;
-				float w = recast[2]*window.width;
-				float h = recast[3]*window.height;
-				boxes.emplace_back(cx-w/2, cy-h/2, w, h);
-				scores.emplace_back(recast[4]);
-				auto& classesloc = classes.emplace_back();
-				copy(&recast[5], &recast[numelem], classesloc.data());
+				maxidx = i;
 			}
 		}
-		vector<int> keptIndices;
-		dnn::NMSBoxes(boxes, scores, 0.4, 0.5, keptIndices);
-		vector<Detection> OutDetections;
-		OutDetections.reserve(keptIndices.size());
-		for (int kept : keptIndices)
-		{
-			OutDetections.emplace_back(boxes[kept], scores[kept], classes[kept]);
-		}
-		return OutDetections;
+		YoloDetection final_detection;
+		//cout << "Found " << maxidx << " at " << det.BoundingBox << " (Confidence " << det.Confidence << ")" << endl;
+		final_detection.Class = maxidx;
+		final_detection.Confidence = det.Confidence;
+		final_detection.Corners = det.BoundingBox;
+		OutData.YoloDetections.push_back(final_detection);
 	}
-
-	int DetectYolo(const CameraImageData &InData, CameraFeatureData& OutData)
-	{
-		LoadNet();
-
-
-		Preprocess(InData.Image, YoloNet.value(), modelSize, 1.0/255.0, 0, true);
-		//auto start = chrono::steady_clock::now();
-		vector<Mat> outputBlobs;
-		auto OutputNames = YoloNet->getUnconnectedOutLayersNames();
-		YoloNet->forward(outputBlobs, OutputNames);
-		//auto stop = chrono::steady_clock::now();
-		//cout << "Inference took " << chrono::duration<double>(stop-start).count() << " s" << endl;
-		auto detections = Postprocess(outputBlobs, OutputNames, Rect(0,0,InData.Image.cols, InData.Image.rows));
-		Mat painted; InData.Image.copyTo(painted);
-		int numdetections = detections.size();
-		OutData.YoloDetections.clear();
-		OutData.YoloDetections.reserve(numdetections);
-		for (auto &det : detections)
-		{
-			int maxidx = 0;
-			for (size_t i = 1; i < det.Classes.size(); i++)
-			{
-				if (det.Classes[i] > det.Classes[maxidx])
-				{
-					maxidx = i;
-				}
-			}
-			YoloDetection final_detection;
-			//cout << "Found " << maxidx << " at " << det.BoundingBox << " (Confidence " << det.Confidence << ")" << endl;
-			final_detection.Class = maxidx;
-			final_detection.Confidence = det.Confidence;
-			final_detection.Corners = det.BoundingBox;
-			OutData.YoloDetections.push_back(final_detection);
-		}
-		return numdetections;
-	}
-} // namespace OpenCVDNN
+	return numdetections;
+}
 
 #ifdef WITH_CORAL
 namespace EdgeDNN
@@ -272,16 +261,3 @@ namespace EdgeDNN
 
 } // namespace EdgeDNN
 #endif
-
-
-int DetectYolo(const CameraImageData &InData, CameraFeatureData& OutData)
-{
-	#ifdef WITH_CORAL
-	if(EdgeDNN::LoadNet())
-	{
-
-	}
-	#else
-	return OpenCVDNN::DetectYolo(InData, OutData);
-	#endif
-}

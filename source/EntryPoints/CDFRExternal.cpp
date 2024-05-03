@@ -118,6 +118,8 @@ void CDFRExternal::ThreadEntryPoint()
 		CameraMan = make_unique<CameraManagerV4L2>(GetCaptureMethod(), GetCaptureConfig().filter, false);
 	}
 
+	YoloDetector = make_unique<YoloDetect>("cdfr", 4);
+
 	//display/debug section
 	FrameCounter fps;
 	
@@ -312,7 +314,7 @@ void CDFRExternal::ThreadEntryPoint()
 					//imwrite("noised.jpg", ImData.Image);
 					break;
 				}
-				CamerasWithPosition[i] = CDFRCommon::Detection(CDFRCommon::ExternalSettings, thisprof, cam, ImData, FeatData, *TrackerToUse, GrabTick);
+				CamerasWithPosition[i] = CDFRCommon::Detection(CDFRCommon::ExternalSettings, thisprof, cam, ImData, FeatData, *TrackerToUse, GrabTick, YoloDetector.get());
 
 				if (RecordThisTick)
 				{
@@ -567,7 +569,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 			{
 				auto det = FeatData.YoloDetections[detidx];
 				uint8_t r,g,b;
-				HsvConverter::getRgbFromHSV(1530*det.Class/GetYoloNumClasses(), 255, 255, r, g, b);
+				HsvConverter::getRgbFromHSV(1530*det.Class/YoloDetector->GetNumClasses(), 255, 255, r, g, b);
 				uint32_t color = IM_COL32(r,g,b,det.Confidence*255);
 				
 				Point2d textpos(0,0);
@@ -575,7 +577,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 				auto br = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.br());
 				DrawList->AddRect(tl, br, color);
 				//text with class and confidence
-				string text = GetYoloClassName(det.Class) + string("/") + to_string(det.Confidence);
+				string text = YoloDetector->GetClassName(det.Class) + string("/") + to_string(det.Confidence);
 				DrawList->AddText(nullptr, 16, tl, color, text.c_str());
 			}
 		}
