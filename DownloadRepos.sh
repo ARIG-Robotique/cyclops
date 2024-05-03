@@ -1,6 +1,13 @@
+#!/bin/bash
 echo "Déverouillage admin, ca sert pour installer"
 export STARTDIR=`pwd`
-./InstallRequirement.sh
+source /etc/os-release
+if echo $PRETTY_NAME | grep -q Debian; then
+  ./InstallRequirementDebian.sh
+fi
+if echo $PRETTY_NAME | grep -q Fedora; then
+  ./InstallRequirementFedora.sh
+fi
 cd ..
 #sudo usermod -a -G dialout $USER
 #git clone https://gitlab.kitware.com/vtk/vtk.git || echo "Failed to clone vtk : already exists"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 
 template<class T>
 T& GetTypeFromMetadata(std::string &data, size_t pos)
