@@ -318,8 +318,9 @@ void JsonListener::HandleQuery(const json &Query)
 	if (ActionStr == "ALIVE")
 	{
 		Response["status"] = "OK";
+		goto send;
 	}
-	else if (ActionStr == "CONFIG") //idk, do something ?
+	if (ActionStr == "CONFIG") //idk, do something ?
 	{
 		if (Query.contains("mode"))
 		{
@@ -342,47 +343,115 @@ void JsonListener::HandleQuery(const json &Query)
 				Response["status"] = "UNKNOWN_MODE";
 			}
 		}
+		goto send;
 	}
-	else if (ActionStr == "STATUS") //How are the cameras doing ?
-	{
-		Response["status"] = "UNIMPLEMENTED";
-	}
-	else if (ActionStr == "DATA") //2D or 3D data
-	{
-		if (Query.contains("filter") && Query.at("filter").is_array())
-		{
-			GetData(Query["filter"], Response);
-			Response["status"] = "OK";
-		}
-		else
-		{
-			Response["status"] = "MISSING_FILTER";
-			Response["log"] = "wrong or missing filter, must be an array";
-		}
-
-	}
-	else if (ActionStr == "IMAGE")
-	{
-		double reduction = Query.value("Reduction", 1.0);
-		GetImage(reduction, Response);
-		Response["status"] = "OK";
-	}
-	else if (ActionStr == "PROCESS") //oh no, homework !
-	{
-		Response["status"] = "UNIMPLEMENTED";
-	}
-	else if (ActionStr == "EXIT")
+	if (ActionStr == "EXIT")
 	{
 		killed = true;
 		Response["status"] = "OK";
 		Response["log"] = "Committing seppuku !";
+		goto send;
 	}
-	else
+	if (ActionStr == "STATUS") 
+	{
+		Response["status"] = "OK";
+		ostringstream statusbuilder;
+		if (!Parent)
+		{
+			statusbuilder << "Json Listener missing parent; ";
+		}
+		else 
+		{
+			if (!Parent->ExternalRunner)
+			{
+				statusbuilder << "Json Listener missing external runner; ";
+			}
+			else
+			{
+				statusbuilder << "External runner doing fine; ";
+			}
+			
+			if (!Parent->InternalRunner)
+			{
+				statusbuilder << "Json Listener missing internal runner; ";
+			}
+			else
+			{
+				statusbuilder << "Internal runner doing fine; ";
+			}
+		}
+		Response["log"] = statusbuilder.str();
+		
+		goto send;
+	}
+	if (Parent && Parent->InternalRunner)
+	{
+		if (ActionStr == "PROCESS") //oh no, homework !
+		{
+			Response["status"] = "UNIMPLEMENTED";
+			goto send;
+		}
+	}
+
+	if (Parent && Parent->ExternalRunner)
+	{	
+		if (ActionStr == "DATA") //2D or 3D data
+		{
+			if (Query.contains("filter") && Query.at("filter").is_array())
+			{
+				GetData(Query["filter"], Response);
+				Response["status"] = "OK";
+			}
+			else
+			{
+				Response["status"] = "MISSING_FILTER";
+				Response["log"] = "wrong or missing filter, must be an array";
+			}
+			goto send;
+		}
+		if (ActionStr == "IMAGE")
+		{
+			double reduction = Query.value("Reduction", 1.0);
+			GetImage(reduction, Response);
+			Response["status"] = "OK";
+			goto send;
+		}
+		if (ActionStr == "IDLE")
+		{
+			Parent->ExternalRunner->SetIdle(Response.value("value", false));
+			Response["status"] = "OK";
+			goto send;
+		}
+		if (ActionStr == "TEAM")
+		{
+			string value = JavaCapitalize(Response.value("value", ""));
+			CDFRTeam Team = CDFRTeam::Unknown;
+			for (auto &i : TeamNames)
+			{
+				if (value == JavaCapitalize(i.second))
+				{
+					Team = i.first;
+					break;
+				}
+			}
+			Parent->ExternalRunner->SetTeamLock(Team);
+			Response["status"] = "OK";
+			goto send;
+		}
+		if (ActionStr == "LOCK_CAMERA")
+		{
+			Parent->ExternalRunner->SetCameraLock(Response.value("value", false));
+			Response["status"] = "OK";
+			goto send;
+		}
+	}
+	
 	{
 		Response["status"] = "KO";
 		Response["log"] = "you ok there bud ?";
+		goto send;
 	}
-
+send:
 	SendJson(Response);
 }
 
@@ -467,8 +536,8 @@ void JsonListener::ThreadEntryPoint()
 	{
 		CheckAlive();
 
-		char bufferraw[1<<10];
-		int numreceived = Transport->Receive(bufferraw, sizeof(bufferraw), ClientName, false);
+		array<char, 1<<10> bufferraw;
+		int numreceived = Transport->Receive(bufferraw.data(), bufferraw.size(), ClientName, false);
 		if (numreceived < 0)
 		{
 			this_thread::sleep_for(chrono::microseconds(500));
@@ -480,7 +549,7 @@ void JsonListener::ThreadEntryPoint()
 		int rcvbufstartpos = 0;
 		int rcvbufinsertpos = ReceiveBuffer.size();
 
-		ReceiveBuffer.insert(ReceiveBuffer.end(), bufferraw, bufferraw+numreceived);
+		ReceiveBuffer.insert(ReceiveBuffer.end(), bufferraw.data(), bufferraw.data() + numreceived);
 
 		for (size_t i = rcvbufinsertpos; i < ReceiveBuffer.size(); i++)
 		{

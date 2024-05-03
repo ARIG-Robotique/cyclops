@@ -44,7 +44,8 @@ private:
 
 	//data
 	int BufferIndex = 0;
-	CDFRTeam LastTeam = CDFRTeam::Unknown;
+	CDFRTeam LastTeam = CDFRTeam::Unknown, LockedTeam = CDFRTeam::Unknown;
+	bool LockedCamera = false; //lock camera position
 	ObjectTracker BlueTracker, YellowTracker, UnknownTracker;
 	std::array<std::vector<CameraImageData>, 3> ImageData;
 	std::array<std::vector<CameraFeatureData>, 3> FeatureData;
@@ -65,6 +66,18 @@ public:
 	void SetHasNoClients(bool value)
 	{
 		HasNoClients = value;
+	}
+
+	void SetIdle(bool value)
+	{
+		Idle = value;
+	}
+
+	void SetCameraLock(bool value);
+
+	void SetTeamLock(CDFRTeam value)
+	{
+		LockedTeam = value;
 	}
 
 	void ThreadEntryPoint();

@@ -38,11 +38,13 @@ namespace CDFRCommon
 		bool YoloDetection = true;
 		bool Denoising = false;
 		bool DistortedDetection = true;
+		bool SolveCameraLocation = true;
 
 		Settings(bool External)
 			:direct(External),
 			SegmentedDetection(External),
-			DistortedDetection(External)
+			DistortedDetection(External),
+			SolveCameraLocation(External)
 		{
 
 		}
@@ -86,12 +88,16 @@ namespace CDFRCommon
 		if (cam)
 		{
 			profiler.EnterSection("3D Solve Camera");
-			bool HasPosition = Tracker.SolveCameraLocation(FeatData);
-			if (HasPosition)
+			if (Settings.SolveCameraLocation)
 			{
-				cam->SetLocation(FeatData.CameraTransform, GrabTick);
-				//cout << "Camera has location" << endl;
+				bool HasPosition = Tracker.SolveCameraLocation(FeatData);
+				if (HasPosition)
+				{
+					cam->SetLocation(FeatData.CameraTransform, GrabTick);
+					//cout << "Camera has location" << endl;
+				}
 			}
+			
 			FeatData.CameraTransform = cam->GetLocation();
 			
 			if (Settings.POIDetection)

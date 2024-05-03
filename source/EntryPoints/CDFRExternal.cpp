@@ -101,6 +101,12 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 	return bestTeam;
 }
 
+void CDFRExternal::SetCameraLock(bool value)
+{
+	LockedCamera = value;
+	CDFRCommon::ExternalSettings.SolveCameraLocation = !value;
+}
+
 using ExternalProfType = ManualProfiler<false>;
 
 void CDFRExternal::ThreadEntryPoint()
@@ -150,6 +156,11 @@ void CDFRExternal::ThreadEntryPoint()
 	
 	CameraMan->RegisterCamera = [this](shared_ptr<Camera> cam) -> void
 	{
+		if (LockedCamera)
+		{
+			LockedCamera = false;
+			cerr << "New camera registered, but the cameras were locked, removing the lock..." << endl;
+		}
 		BlueTracker.RegisterTrackedObject(cam);
 		YellowTracker.RegisterTrackedObject(cam);
 		cout << "Registering new camera @" << cam << ", name " << cam->GetName() << endl;
@@ -217,10 +228,10 @@ void CDFRExternal::ThreadEntryPoint()
 		
 		
 		
-		CDFRTeam Team = GetTeamFromCameraPosition(Cameras);
-		if (Team != LastTeam && Cameras.size() > 0)
+		CDFRTeam Team = LockedTeam == CDFRTeam::Unknown ? GetTeamFromCameraPosition(Cameras) : LockedTeam;
+		if (Team != LastTeam && Cameras.size() > 0 && LockedTeam == CDFRTeam::Unknown)
 		{
-			cout << "Detected team change : to " << Team <<endl;
+			cout << "Detected team change : to " << Team << endl;
 			LastTeam = Team;
 		}
 		ObjectTracker* TrackerToUse;
