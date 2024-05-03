@@ -104,7 +104,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 		}
 
 		objectified["r"] = int(rotZdeg*10)/10.0;
-		
+
 		break;
 
 	case TransformMode::Float3D:
@@ -155,8 +155,8 @@ bool JsonListener::GetData(const json &Query, json &Response)
 	{
 		return false;
 	}
-	auto &filter = Query["filter"];
-	int maxagems = Query.value("maxAge", 0);
+	auto &filter = Query["data"]["filters"];
+	int maxagems = Query["data"].value("maxAge", 0);
 	ObjectData::TimePoint OldCutoff;
 	if (maxagems >0)
 	{
@@ -179,7 +179,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 	for (auto& [type,name] : ObjectTypeNames)
 	{
 		string java_name = JavaCapitalize(name);
-		if (has_filter(java_name))
+		if (has_filter(java_name) && java_name != "CAMERA")
 		{
 			AllowedTypes.insert(type);
 		}
@@ -201,7 +201,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 	}
 	if (Has3DData)
 	{
-		Response["data3D"] = jsondataarray;
+		Response["data"]["data3D"] = jsondataarray;
 	}
 
 	bool Has2DData = false;
@@ -259,7 +259,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 	}
 	if (Has2DData)
 	{
-		Response["data2D"] = jsonfeaturearray;
+		Response["data"]["data2D"] = jsonfeaturearray;
 	}
 
 	return true;
@@ -276,7 +276,7 @@ bool JsonListener::GetImage(double reduction, json &Response)
 		return false;
 	}
 	auto cameras = Parent->ExternalRunner->GetImage();
-	Response["cameras"] = json::array({});
+	Response["data"]["cameras"] = json::array({});
 	for (size_t i = 0; i < cameras.size(); i++)
 	{
 		cv::UMat image;
@@ -299,7 +299,7 @@ bool JsonListener::GetImage(double reduction, json &Response)
 		json this_camera_json;
 		this_camera_json["name"] = this_cam.CameraName;
 		this_camera_json["data"] = reinterpret_cast<char*>(b64enc.data());
-		Response["cameras"].push_back(this_camera_json);
+		Response["data"]["cameras"].push_back(this_camera_json);
 	}
 	return true;
 }
@@ -363,7 +363,7 @@ bool JsonListener::GetStartingZone(const nlohmann::json query, nlohmann::json &r
 		{
 			position += "_SOUTH";
 		}
-		
+
 		response["status"] = "OK";
 		response["zone"] = position;
 		return true;
@@ -418,9 +418,9 @@ void JsonListener::HandleQuery(const json &Query)
 	}
 	if (ActionStr == "CONFIG") //idk, do something ?
 	{
-		if (Query.contains("mode"))
+		if (Query.contains("data") && Query["data"].contains("mode"))
 		{
-			string mode = Query.value("mode", "none");
+			string mode = Query["data"].value("mode", "none");
 			Response["status"] = "OK";
 			if (mode == "MILLIMETER_2D")
 			{
@@ -436,7 +436,8 @@ void JsonListener::HandleQuery(const json &Query)
 			}
 			else
 			{
-				Response["status"] = "UNKNOWN_MODE";
+                Response["status"] = "ERROR";
+                Response["errorMessage"] = "Unknown Mode";
 			}
 		}
 		goto send;
@@ -445,24 +446,25 @@ void JsonListener::HandleQuery(const json &Query)
 	{
 		killed = true;
 		Response["status"] = "OK";
-		Response["log"] = "Committing seppuku !";
 		goto send;
 	}
-	if (ActionStr == "STATUS") 
+	if (ActionStr == "STATUS")
 	{
 		Response["status"] = "OK";
+        Response["data"]["parent"] = Parent ? "OK" : "ERROR";
+        Response["data"]["team"] = "NONE";
+        Response["data"]["idle"] = false;
 		ostringstream statusbuilder;
-		Response["parent"] = Parent ? "OK" : "KO";
 		if (!Parent)
 		{
 			statusbuilder << "Json Listener missing parent; ";
-			Response["externalRunner"] = "KO";
-			Response["internalRunner"] = "KO";
+			Response["data"]["externalRunner"] = "ERROR";
+			Response["data"]["internalRunner"] = "ERROR";
 		}
-		else 
+		else
 		{
-			Response["externalRunner"] = Parent->ExternalRunner ? "OK" : "KO";
-			Response["internalRunner"] = Parent->InternalRunner ? "OK" : "KO";
+			Response["data"]["externalRunner"] = Parent->ExternalRunner ? "OK" : "ERROR";
+			Response["data"]["internalRunner"] = Parent->InternalRunner ? "OK" : "ERROR";
 			if (!Parent->ExternalRunner)
 			{
 				statusbuilder << "Json Listener missing external runner; ";
@@ -470,8 +472,10 @@ void JsonListener::HandleQuery(const json &Query)
 			else
 			{
 				statusbuilder << "External runner doing fine; ";
+                Response["data"]["team"] = JavaCapitalize(TeamNames.at(Parent->ExternalRunner->GetTeam()));
+                Response["data"]["idle"] = Parent->ExternalRunner->GetIdle();
 			}
-			
+
 			if (!Parent->InternalRunner)
 			{
 				statusbuilder << "Json Listener missing internal runner; ";
@@ -481,57 +485,72 @@ void JsonListener::HandleQuery(const json &Query)
 				statusbuilder << "Internal runner doing fine; ";
 			}
 		}
-		Response["log"] = statusbuilder.str();
-		
+		Response["data"]["statusMessage"] = statusbuilder.str();
+
+        Response["data"]["mode"] = TransformModeNames.at(ObjectMode);
+
 		goto send;
 	}
 	if (Parent && Parent->InternalRunner)
 	{
 		if (ActionStr == "PROCESS") //oh no, homework !
 		{
-			Response["status"] = "UNIMPLEMENTED";
+			Response["status"] = "ERROR";
+            Response["errorMessage"] = "Not implemented";
 			goto send;
 		}
 	}
 
 	if (Parent && Parent->ExternalRunner)
-	{	
+	{
 		if (ActionStr == "DATA") //2D or 3D data
 		{
-			if (Query.contains("filter") && Query.at("filter").is_array())
+			if (Query.contains("data") && Query["data"].contains("filters") && Query["data"].at("filters").is_array())
 			{
 				GetData(Query, Response);
 				Response["status"] = "OK";
 			}
 			else
 			{
-				Response["status"] = "MISSING_FILTER";
-				Response["log"] = "wrong or missing filter, must be an array";
+                Response["status"] = "ERROR";
+				Response["errorMessage"] = "Wrong or missing filters, must be an array";
 			}
 			goto send;
 		}
 		if (ActionStr == "IMAGE")
 		{
-			double reduction = Query.value("Reduction", 1.0);
+            double reduction = 1.0;
+            if (Query.contains("data")) {
+                reduction = Query["data"].value("reduction", 1.0);
+            }
 			GetImage(reduction, Response);
 			Response["status"] = "OK";
 			goto send;
 		}
 		if (ActionStr == "IDLE")
 		{
-			Parent->ExternalRunner->SetIdle(Response.value("value", false));
+            bool value = false;
+            if (Query.contains("data")) {
+                value = Query["data"].value("value", false);
+            }
+			Parent->ExternalRunner->SetIdle(value);
 			Response["status"] = "OK";
 			goto send;
 		}
 		if (ActionStr == "TEAM")
 		{
-			Parent->ExternalRunner->SetTeamLock(StringToTeam(Response.value("value", "")));
-			Response["status"] = "OK";
-			goto send;
+            if (!Query.contains("data") || !Query["data"].contains("team")) {
+                Response["status"] = "ERROR";
+                Response["errorMessage"] = "Error: data.value: Team must be specified";
+            } else {
+                Parent->ExternalRunner->SetTeamLock(StringToTeam(Query["data"]["team"]));
+                Response["status"] = "OK";
+            }
+            goto send;
 		}
 		if (ActionStr == "LOCK_CAMERA")
 		{
-			Parent->ExternalRunner->SetCameraLock(Response.value("value", false));
+			Parent->ExternalRunner->SetCameraLock(Query.value("data.value", false));
 			Response["status"] = "OK";
 			goto send;
 		}
@@ -540,12 +559,12 @@ void JsonListener::HandleQuery(const json &Query)
 			GetStartingZone(Query, Response);
 			goto send;
 		}
-		
+
 	}
-	
+
 	{
-		Response["status"] = "KO";
-		Response["log"] = "you ok there bud ?";
+		Response["status"] = "ERROR";
+		Response["log"] = "Action not recognized";
 		goto send;
 	}
 send:

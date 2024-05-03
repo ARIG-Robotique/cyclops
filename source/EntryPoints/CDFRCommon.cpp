@@ -23,8 +23,15 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 	for (int i = 1; i < 11; i++)
 	{
 		optional<double> height = 0.450;
+        CDFRTeam team = CDFRTeam::Unknown;
 
-		GlobalObjects.emplace(make_shared<TopTracker>(i, 0.0695, "Robot " + std::to_string(i), height));
+        if (i >= 1 && i < 6) {
+            team = CDFRTeam::Blue;
+        } else if ( i >= 6 && i < 11) {
+            team = CDFRTeam::Yellow;
+        }
+
+		GlobalObjects.emplace(make_shared<TopTracker>(i, 0.0695, TeamNames.at(team), height));
 	}
 	for (auto &Tracker : Trackers)
 	{

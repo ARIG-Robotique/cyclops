@@ -86,6 +86,10 @@ public:
 
 	int GetReadBufferIndex() const;
 
+    bool GetIdle() const {
+        return Idle;
+    };
+
 	std::vector<CameraImageData> GetImage() const;
 
 	std::vector<CameraFeatureData> GetFeatureData() const;

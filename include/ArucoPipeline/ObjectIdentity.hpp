@@ -18,8 +18,8 @@ enum class CDFRTeam
 
 const std::map<CDFRTeam, std::string> TeamNames = {
 	{CDFRTeam::Unknown, "Unknown"},
-	{CDFRTeam::Blue, "Blue"},
-	{CDFRTeam::Yellow, "Yellow"}
+	{CDFRTeam::Blue, "Bleu"},
+	{CDFRTeam::Yellow, "Jaune"}
 };
 
 std::ostream& operator << (std::ostream& out, CDFRTeam Team);

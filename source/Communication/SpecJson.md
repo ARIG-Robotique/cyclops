@@ -68,3 +68,105 @@ field "yolo" contains array of objects with :
 - tlx, tly (top left) (in image space, pixels)
 - brx, bry (bottom right)
 
+### Example requests (to put on one line)
+
+#### Keep-alive
+```json
+{
+  "index": 1,
+  "action": "ALIVE"
+}
+```
+
+#### Data All
+```json
+{
+  "action": "DATA",
+  "filter": [
+    "all"
+  ],
+  "mode": "MILLIMETER_2D"
+}
+```
+
+#### Data Options
+```json
+{
+  "action": "DATA",
+  "filter": [
+    "TAG",
+    "REFERENCE_ABSOLUTE",
+    "REFERENCE_RELATIVE",
+    "CAMERA",
+    "OBJECT",
+    "ROBOT",
+    "TOP_TRACKER",
+    "TEAM_TRACKER",
+    "SOLAR_PANEL",
+    "TEAM",
+    "ARUCO",
+    "YOLO"
+  ],
+  "mode": "FLOAT_2D"
+}
+```
+
+#### Image
+```json
+{
+  "action": "IMAGE"
+}
+```
+
+### Example responses
+
+#### Mode: Millimeter2D, Float2D
+```json
+{
+  "index": 0,
+  "status": "OK",
+  "action": "DATA",
+  "data2D": [
+    {
+      "name": "",
+      "width": 0,
+      "height": 0,
+      "xfov": 0,
+      "yfov": 0,
+      "arucoObjects": [
+        {
+          "index": 0,
+          "corners": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      ],
+      "yoloObjects": [
+        {
+          "index": 0,
+          "tlx": 0.0,
+          "tly": 0.0,
+          "brx": 0.0,
+          "bry": 0.0,
+          "confidence": 0.0
+        }
+      ]
+    }
+  ]
+}
+```
