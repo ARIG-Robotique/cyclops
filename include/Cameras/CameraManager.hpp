@@ -54,6 +54,8 @@ public:
 	//Call Tick to remove misbehaving cameras and get the current cameras
 	virtual std::vector<Camera*> Tick();
 
+	std::vector<Camera*> GetCameras();
+
 	void StartScanThread();
 
 protected:

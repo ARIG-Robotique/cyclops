@@ -309,9 +309,22 @@ bool JsonListener::GetStartingZone(const nlohmann::json query, nlohmann::json &r
 	CDFRTeam team = StringToTeam(query.value("team", ""));
 	if (team == CDFRTeam::Unknown)
 	{
-		response["status"] = "ERROR";
-		response["errorMessage"] = "No team selected";
-		return false;
+		CDFRTeam SavedTeam = Parent->ExternalRunner->GetTeam();
+		switch (SavedTeam)
+		{
+		case CDFRTeam::Yellow :
+			team = CDFRTeam::Blue;
+			break;
+		case CDFRTeam::Blue : 
+			team = CDFRTeam::Yellow;
+			break;
+		default:
+			response["status"] = "ERROR";
+			response["errorMessage"] = "No team selected";
+			return false;
+		}
+		
+		
 	}
 	auto data = Parent->ExternalRunner->GetObjectData();
 	ObjectData robot;

@@ -80,6 +80,8 @@ public:
 		LockedTeam = value;
 	}
 
+	CDFRTeam GetTeam();
+
 	void ThreadEntryPoint();
 
 	int GetReadBufferIndex() const;

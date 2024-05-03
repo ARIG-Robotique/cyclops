@@ -27,6 +27,11 @@ vector<Camera*> CameraManager::Tick()
 		}
 		NewCameras.clear();
 	}
+	return GetCameras();
+}
+
+std::vector<Camera*> CameraManager::GetCameras()
+{
 	vector<Camera*> OutCams;
 	OutCams.reserve(Cameras.size());
 	for (auto &cam : Cameras)

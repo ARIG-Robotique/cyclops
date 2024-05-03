@@ -107,6 +107,13 @@ void CDFRExternal::SetCameraLock(bool value)
 	CDFRCommon::ExternalSettings.SolveCameraLocation = !value;
 }
 
+CDFRTeam CDFRExternal::GetTeam()
+{
+	auto Cameras = CameraMan->GetCameras();
+	CDFRTeam Team = LockedTeam == CDFRTeam::Unknown ? GetTeamFromCameraPosition(Cameras) : LockedTeam;
+	return Team;
+}
+
 using ExternalProfType = ManualProfiler<false>;
 
 void CDFRExternal::ThreadEntryPoint()
@@ -228,7 +235,7 @@ void CDFRExternal::ThreadEntryPoint()
 		
 		
 		
-		CDFRTeam Team = LockedTeam == CDFRTeam::Unknown ? GetTeamFromCameraPosition(Cameras) : LockedTeam;
+		CDFRTeam Team = GetTeam();
 		if (Team != LastTeam && Cameras.size() > 0 && LockedTeam == CDFRTeam::Unknown)
 		{
 			cout << "Detected team change : to " << Team << endl;
