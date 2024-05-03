@@ -190,16 +190,13 @@ int TCPTransport::Receive(void *buffer, int maxlength, string client, bool block
 				}
 				//errno = 0;
 				n = recv(connections[i].filedescriptor, buffer, maxlength, flags);
-				if (n > 0/*|| errno == EWOULDBLOCK || errno == EAGAIN*/)
-				{
-					//cout << "Received " << n << " bytes..." << endl;
-					//printBuffer(dataReceived, n);
-					return n;
-				}
-				/*else
+				if (n == 0/*|| errno == EWOULDBLOCK || errno == EAGAIN*/)
 				{
 					DisconnectedClients.emplace(connections[i].name);
-				}*/
+				} else if (n < 0) {
+                    continue;
+                }
+                return n;
 			}
 		}
 		for (auto & client : DisconnectedClients) //Disconnection must be done outside of loop because the listenmutex is taken

@@ -124,7 +124,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 			teamyellow = true;
 		}
 		static const array<string, 4> teams = {"NONE", "YELLOW", "BLUE", "BLUE_YELLOW"};
-		objectified["team"] = teams[teamblue*2+teamyellow]; 
+		objectified["team"] = teams[teamblue*2+teamyellow];
 	}
 	return objectified;
 }
@@ -139,7 +139,7 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	{
 		return false;
 	}
-	vector<CameraFeatureData> FeatureData = Parent->ExternalRunner->GetFeatureData(); 
+	vector<CameraFeatureData> FeatureData = Parent->ExternalRunner->GetFeatureData();
 	vector<ObjectData> ObjData = Parent->ExternalRunner->GetObjectData();
 	set<ObjectType> AllowedTypes;
 	set<string> filterStrings;
@@ -150,7 +150,7 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	bool hasall = filterStrings.find("ALL") != filterStrings.end();
 
 	auto has_filter = [&filterStrings, hasall](string match){return filterStrings.find(match) != filterStrings.end() || hasall;};
-	
+
 	json jsondataarray = json::array({});
 	for (auto& [type,name] : ObjectTypeNames)
 	{
@@ -175,7 +175,7 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	{
 		Response["data3D"] = jsondataarray;
 	}
-	
+
 	bool Has2DData = false;
 	json jsonfeaturearray = json::array();
 	for (auto& data : FeatureData)
@@ -233,7 +233,7 @@ bool JsonListener::GetData(const json &filter, json &Response)
 	{
 		Response["data2D"] = jsonfeaturearray;
 	}
-	
+
 	return true;
 }
 
@@ -265,7 +265,7 @@ bool JsonListener::GetImage(double reduction, json &Response)
 		cv::imencode(".jpg", image, jpgenc);
 		size_t b64size = jpgenc.size()*4/3+16;
 		b64enc.resize(b64size);
-		base64_encode(reinterpret_cast<char*>(jpgenc.data()), jpgenc.size(), 
+		base64_encode(reinterpret_cast<char*>(jpgenc.data()), jpgenc.size(),
 			reinterpret_cast<char*>(b64enc.data()), &b64size, 0);
 		b64enc.resize(b64size);
 		json this_camera_json;
@@ -359,7 +359,7 @@ void JsonListener::HandleQuery(const json &Query)
 			Response["status"] = "MISSING_FILTER";
 			Response["log"] = "wrong or missing filter, must be an array";
 		}
-		
+
 	}
 	else if (ActionStr == "IMAGE")
 	{
@@ -382,7 +382,7 @@ void JsonListener::HandleQuery(const json &Query)
 		Response["status"] = "KO";
 		Response["log"] = "you ok there bud ?";
 	}
-	
+
 	SendJson(Response);
 }
 
@@ -408,8 +408,8 @@ void JsonListener::HandleJson(const string &command)
 		std::cerr << e.what() << '\n';
 		return;
 	}
-	
-	
+
+
 	if (parsed.is_discarded())
 	{
 		return;
@@ -439,7 +439,7 @@ void JsonListener::SendJson(const json &object)
 void JsonListener::CheckAlive()
 {
 	auto settings = GetKeepAliveSettings();
-	
+
 	chrono::duration<double> TimeSinceLastAliveReceived = chrono::steady_clock::now() - LastAliveReceived;
 	chrono::duration<double> TimeSinceLastAliveSent = chrono::steady_clock::now() - LastAliveSent;
 	if (settings.kick_delay > 0 && TimeSinceLastAliveReceived.count() > settings.kick_delay)
@@ -448,7 +448,7 @@ void JsonListener::CheckAlive()
 		killed = true;
 		return;
 	}
-	
+
 	if (settings.poke_delay > 0 && TimeSinceLastAliveReceived.count() > settings.poke_delay && TimeSinceLastAliveSent.count() > settings.poke_delay)
 	{
 		LastAliveSent = chrono::steady_clock::now();
@@ -457,7 +457,7 @@ void JsonListener::CheckAlive()
 			cout << "Client " << ClientName << " disconnect while checking alive, closing..." << endl;
 			killed = true;
 		}
-		
+
 	}
 }
 
@@ -466,19 +466,22 @@ void JsonListener::ThreadEntryPoint()
 	while (!killed)
 	{
 		CheckAlive();
-		
+
 		char bufferraw[1<<10];
 		int numreceived = Transport->Receive(bufferraw, sizeof(bufferraw), ClientName, false);
-		if (numreceived <= 0)
+		if (numreceived < 0)
 		{
 			this_thread::sleep_for(chrono::microseconds(500));
 			continue;
-		}
+		} else if (numreceived == 0) {
+            killed = true;
+            break;
+        }
 		int rcvbufstartpos = 0;
 		int rcvbufinsertpos = ReceiveBuffer.size();
 
 		ReceiveBuffer.insert(ReceiveBuffer.end(), bufferraw, bufferraw+numreceived);
-		
+
 		for (size_t i = rcvbufinsertpos; i < ReceiveBuffer.size(); i++)
 		{
 			if (ReceiveBuffer[i] != '\n')
@@ -488,7 +491,7 @@ void JsonListener::ThreadEntryPoint()
 			int commandlen = i-rcvbufstartpos-1;
 			if (commandlen<2)
 			{
-				
+
 			}
 			else
 			{
