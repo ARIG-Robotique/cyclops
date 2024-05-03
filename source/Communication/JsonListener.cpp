@@ -57,6 +57,21 @@ string JsonListener::JavaCapitalize(string source)
 	return source;
 }
 
+CDFRTeam JsonListener::StringToTeam(string team)
+{
+	string value = JavaCapitalize(team);
+	CDFRTeam Team = CDFRTeam::Unknown;
+	for (auto &i : TeamNames)
+	{
+		if (value == JavaCapitalize(i.second))
+		{
+			Team = i.first;
+			break;
+		}
+	}
+	return Team;
+}
+
 json JsonListener::ObjectToJson(const ObjectData& Object)
 {
 	json objectified;
@@ -276,6 +291,61 @@ bool JsonListener::GetImage(double reduction, json &Response)
 	return true;
 }
 
+bool JsonListener::GetStartingZone(const nlohmann::json query, nlohmann::json &response)
+{
+	CDFRTeam team = StringToTeam(query.value("team", ""));
+	if (team == CDFRTeam::Unknown)
+	{
+		response["status"] = "KO";
+		response["log"] = "No team selected";
+		return false;
+	}
+	auto data = Parent->ExternalRunner->GetObjectData();
+	ObjectData robot;
+	for (auto &&i : data)
+	{
+		if (i.type != ObjectType::TopTracker)
+		{
+			continue;
+		}
+		if (i.name.rfind("Robot", 0) != 0) //must start with robot
+		{
+			continue;
+		}
+		int robotidx;
+		try
+		{
+			robotidx = atoi(i.name.c_str() + strlen("Robot "));
+		}
+		catch(const std::exception& e)
+		{
+			std::cerr << "Failed to parse robot index : " << e.what() << '\n';
+			continue;
+		}
+		CDFRTeam robotTeam = robotidx < 6 ? CDFRTeam::Blue : CDFRTeam::Yellow;
+		if (robotTeam != team)
+		{
+			continue;
+		}
+		string position = "";
+		position += i.location.translation()[0] > 0 ? "EAST" : "WEST";
+		if (i.location.translation()[1]>0.38)
+		{
+			position += "_NORTH";
+		}
+		else if (i.location.translation()[1]<-0.38)
+		{
+			position += "_SOUTH";
+		}
+		
+		response["status"] = "OK";
+		response["zone"] = position;
+		return true;
+	}
+	response["status"] = "NO_DATA";
+	return true;
+}
+
 void JsonListener::ReceiveImage(const json &Query)
 {
 	if (!Query.contains("data"))
@@ -356,12 +426,17 @@ void JsonListener::HandleQuery(const json &Query)
 	{
 		Response["status"] = "OK";
 		ostringstream statusbuilder;
+		Response["parent"] = Parent ? "OK" : "KO";
 		if (!Parent)
 		{
 			statusbuilder << "Json Listener missing parent; ";
+			Response["externalRunner"] = "KO";
+			Response["internalRunner"] = "KO";
 		}
 		else 
 		{
+			Response["externalRunner"] = Parent->ExternalRunner ? "OK" : "KO";
+			Response["internalRunner"] = Parent->InternalRunner ? "OK" : "KO";
 			if (!Parent->ExternalRunner)
 			{
 				statusbuilder << "Json Listener missing external runner; ";
@@ -424,17 +499,7 @@ void JsonListener::HandleQuery(const json &Query)
 		}
 		if (ActionStr == "TEAM")
 		{
-			string value = JavaCapitalize(Response.value("value", ""));
-			CDFRTeam Team = CDFRTeam::Unknown;
-			for (auto &i : TeamNames)
-			{
-				if (value == JavaCapitalize(i.second))
-				{
-					Team = i.first;
-					break;
-				}
-			}
-			Parent->ExternalRunner->SetTeamLock(Team);
+			Parent->ExternalRunner->SetTeamLock(StringToTeam(Response.value("value", "")));
 			Response["status"] = "OK";
 			goto send;
 		}
@@ -444,6 +509,12 @@ void JsonListener::HandleQuery(const json &Query)
 			Response["status"] = "OK";
 			goto send;
 		}
+		if (ActionStr == "STARTING_ZONE")
+		{
+			GetStartingZone(Query, Response);
+			goto send;
+		}
+		
 	}
 	
 	{

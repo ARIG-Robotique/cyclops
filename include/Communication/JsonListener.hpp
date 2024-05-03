@@ -8,6 +8,7 @@
 #include <chrono>
 #include <opencv2/core/affine.hpp>
 #include <nlohmann/json.hpp>
+#include <ArucoPipeline/ObjectIdentity.hpp>
 
 class TCPTransport;
 
@@ -55,6 +56,8 @@ public:
 
 private:
 
+	static CDFRTeam StringToTeam(std::string team);
+
 	nlohmann::json ObjectToJson(const struct ObjectData& Object);
 
 	static std::string JavaCapitalize(std::string source);
@@ -63,6 +66,8 @@ private:
 	bool GetData(const nlohmann::json &filter, nlohmann::json &Response);
 
 	bool GetImage(double reduction, nlohmann::json &Response);
+
+	bool GetStartingZone(const nlohmann::json query, nlohmann::json &response);
 
 	void ReceiveImage(const nlohmann::json &Query);
 
