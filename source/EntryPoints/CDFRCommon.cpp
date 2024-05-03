@@ -64,7 +64,7 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 
 bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,  
 		Camera* cam, const CameraImageData& ImData, CameraFeatureData& FeatData, 
-		ObjectTracker& Tracker, uint64_t GrabTick, YoloDetect *YoloDetector = nullptr)
+		ObjectTracker& Tracker, uint64_t GrabTick, YoloDetect *YoloDetector)
 {
 	FeatData.Clear();
 	FeatData.CopyEssentials(ImData);

@@ -23,11 +23,9 @@ CDFRInternal::InternalResult CDFRInternal::Process(CameraImageData InData, CDFRT
 	ObjectTracker tracker;
 	CDFRCommon::MakeTrackedObjects(true, {{Team, tracker}});
 
-	ManualProfiler<false> profiler;
-
 	InternalResult response;
 
-	CDFRCommon::ImageToFeatureData(CDFRCommon::InternalSettings, profiler, nullptr, InData, response.FeatureData, tracker, 0);
+	CDFRCommon::ImageToFeatureData(CDFRCommon::InternalSettings, nullptr, InData, response.FeatureData, tracker, 0);
 
 	std::vector FDArray({response.FeatureData});
 
