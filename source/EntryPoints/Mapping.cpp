@@ -14,7 +14,6 @@
 #include <opencv2/calib3d.hpp>
 
 #include <Misc/math3d.hpp>
-#include <Misc/metadata.hpp>
 #include <Cameras/Calibfile.hpp>
 #include <Misc/GlobalConf.hpp>
 #include <ArucoPipeline/TrackedObject.hpp>
@@ -146,7 +145,8 @@ void MappingSolve(void)
 		ObjectData d;
 		d.type = ObjectType::Tag;
 		d.name = referenceMarker.number;
-		d.metadata = MakeTag(referenceMarker.sideLength, referenceMarker.number);
+		d.metadata["sideLength"] = referenceMarker.sideLength;
+		d.metadata["number"] = referenceMarker.number;
 		d.location = referenceMarker.Pose;
 		vizdata.push_back(d);
 	}
@@ -344,7 +344,8 @@ void MappingSolve(void)
 			ObjectData d;
 			d.type = ObjectType::Tag;
 			d.name = marker.number;
-			d.metadata = MakeTag(marker.sideLength, marker.number);
+			d.metadata["sideLength"] = marker.sideLength;
+			d.metadata["number"] = marker.number;
 			d.location = marker.Pose;
 			vizdata.push_back(d);
 		}

@@ -7,6 +7,7 @@
 #include <map>
 #include <chrono>
 #include <opencv2/core/affine.hpp>
+#include <nlohmann/json.hpp>
 
 enum class CDFRTeam
 {
@@ -60,10 +61,10 @@ const std::map<ObjectType, std::string> ObjectTypeNames =
 
 	{ObjectType::SolarPanel, 		"Solar panel"},
 
-	{ObjectType::Fragile, 			"Fragile"},
-	{ObjectType::Resistant, 		"Resistant"},
-	{ObjectType::Pot, 				"Pot"},
-	{ObjectType::PottedPlant, 		"Plante Pot"},
+	{ObjectType::Fragile, 			"Yolo"},
+	{ObjectType::Resistant, 		"Yolo"},
+	{ObjectType::Pot, 				"Yolo"},
+	{ObjectType::PottedPlant, 		"Yolo"},
 
 	{ObjectType::Team, 				"Team"}
 };
@@ -76,9 +77,9 @@ struct ObjectData
 	typedef Clock::time_point TimePoint;
 	ObjectType type;
 	std::string name;
-	std::string metadata;
 	cv::Affine3d location;
 	TimePoint LastSeen;
+	nlohmann::json metadata;
 
 	std::vector<ObjectData> Childs;
 

@@ -353,7 +353,7 @@ void CDFRExternal::ThreadEntryPoint()
 		ObjDataLocal.insert(ObjDataLocal.begin(), TeamPacket); //insert team as the first object
 		for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
 		{
-			auto YoloObjects = YoloDetect::Project(ImageDataLocal[camidx], FeatureDataLocal[camidx]);
+			auto YoloObjects = YoloDetector->Project(ImageDataLocal[camidx], FeatureDataLocal[camidx]);
 			ObjDataLocal.insert(ObjDataLocal.end(), YoloObjects.begin(), YoloObjects.end());
 		}
 

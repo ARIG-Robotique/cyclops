@@ -39,7 +39,7 @@ public:
 
 	int Detect(CameraImageData InData, CameraFeatureData *OutData);
 
-	static std::vector<ObjectData> Project(const CameraImageData &ImageData, const CameraFeatureData& FeatureData);
+	std::vector<ObjectData> Project(const CameraImageData &ImageData, const CameraFeatureData& FeatureData);
 };
 
 

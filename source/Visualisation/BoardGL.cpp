@@ -16,7 +16,6 @@
 #include <assimp/Importer.hpp>
 
 #include <Misc/GlobalConf.hpp>
-#include <Misc/metadata.hpp>
 #include <Misc/ArucoDictSize.hpp>
 #include <Visualisation/openGL/Mesh.hpp>
 
@@ -392,11 +391,7 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 					}
 					break;
 				}
-				int number = -1; float scale = 1.f;
-				if(!GetTag(odata.metadata, scale, number))
-				{
-					break;
-				}
+				int number = odata.metadata.at("number"); float scale = odata.metadata.at("sideLength");
 				if (number >= (int)TagTextures.size() || number < 0)
 				{
 					cerr << "Tried to display tag #" << number << " !" <<endl;

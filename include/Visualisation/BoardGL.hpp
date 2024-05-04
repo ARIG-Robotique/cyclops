@@ -9,6 +9,8 @@
 #include <Visualisation/openGL/Mesh.hpp>
 #include <Visualisation/openGL/Shader.hpp>
 
+#include <nlohmann/json.hpp>
+
 class GLFWwindow;
 class TrackedObject;
 
@@ -34,9 +36,9 @@ struct GLObject
 {
 	MeshNames type;
 	glm::mat4 location;
-	std::string metadata;
+	nlohmann::json metadata;
 
-	GLObject(MeshNames InType = MeshNames::unknown, glm::mat4 InLoc = glm::mat4(1), std::string InMetadata = "")
+	GLObject(MeshNames InType = MeshNames::unknown, glm::mat4 InLoc = glm::mat4(1), nlohmann::json InMetadata = nlohmann::json())
 		:type(InType), location(InLoc), metadata(InMetadata)
 	{
 

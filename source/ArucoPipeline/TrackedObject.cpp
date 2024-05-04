@@ -7,7 +7,6 @@
 
 
 #include <Misc/math3d.hpp>
-#include <Misc/metadata.hpp>
 #include <Misc/GlobalConf.hpp>
 #include <Cameras/Camera.hpp>
 #include <Visualisation/BoardGL.hpp>
@@ -293,7 +292,8 @@ vector<ObjectData> TrackedObject::GetMarkersAndChilds() const
 		ObjectData d;
 		d.name = m.number;
 		d.type = ObjectType::Tag;
-		d.metadata = MakeTag(m.sideLength, m.number);
+		d.metadata["sideLength"] = m.sideLength;
+		d.metadata["number"] = m.number;
 		d.location = m.Pose;
 		datas.push_back(d);
 	}

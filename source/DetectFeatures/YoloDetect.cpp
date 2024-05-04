@@ -191,9 +191,10 @@ vector<ObjectData> YoloDetect::Project(const CameraImageData &ImageData, const C
 			*reinterpret_cast<Vec3d*>(&WorldVector), Vec3d(0,0,0.02), Vec3d(0,0,1));
 		WorldPosition[2] = 0;
 		ObjectType type = (ObjectType)((int)ObjectType::Fragile + Detection.Class);
-		const auto &name = ObjectTypeNames.at(type);
+		const auto &name = GetClassName(Detection.Class);
 		ObjectData object(type, name, 
 			Affine3d(Vec3d::all(0), WorldPosition));
+		object.metadata["confidence"] = int(Detection.Confidence*100);
 		objects.emplace_back(object);
 		//imshow("Yolo ROI", ROI);
 		//waitKey(10);

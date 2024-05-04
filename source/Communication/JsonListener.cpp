@@ -79,7 +79,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	objectified["name"] = JavaCapitalize(Object.name);
 	if (Object.metadata.size() > 0)
 	{
-		objectified["meta"] = Object.metadata;
+		objectified["metadata"] = Object.metadata;
 	}
 	objectified["age"] = chrono::duration_cast<chrono::milliseconds>(ObjectData::Clock::now() - Object.LastSeen).count();
 	

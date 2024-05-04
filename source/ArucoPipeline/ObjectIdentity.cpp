@@ -1,6 +1,5 @@
 #include "ArucoPipeline/ObjectIdentity.hpp"
 #include <Misc/math3d.hpp>
-#include <Misc/metadata.hpp>
 #include <Visualisation/BoardGL.hpp>
 #include <cassert>
 #include <map>
