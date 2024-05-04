@@ -19,6 +19,7 @@
 #endif
 
 #include <Misc/GlobalConf.hpp>
+#include <Misc/math3d.hpp>
 
 using namespace std;
 using namespace cv;
@@ -172,16 +173,32 @@ int YoloDetect::Detect(CameraImageData InData, CameraFeatureData *OutData)
 	return numdetections;
 }
 
+static_assert(sizeof(Matx31d) == sizeof(Vec3d));
 vector<ObjectData> YoloDetect::Project(const CameraImageData &ImageData, const CameraFeatureData& FeatureData)
 {
+	vector<ObjectData> objects;
+	objects.reserve(FeatureData.YoloDetections.size());
+	const Matx33d InvCameraMatrix = Mat(ImageData.CameraMatrix.inv());
 	for (size_t i = 0; i < FeatureData.YoloDetections.size(); i++)
 	{
 		auto &Detection = FeatureData.YoloDetections[i];
-		auto ROI = ImageData.Image(Detection.Corners);
+		//auto ROI = ImageData.Image(Detection.Corners);
+		auto center = (Detection.Corners.tl() + Detection.Corners.br())/2.0;
+		Matx31d position = {center.x, center.y, 1};
+		Matx31d vector(InvCameraMatrix * position); //TODO: This doesn't take into account distortion coeffs
+		Matx31d WorldVector = FeatureData.CameraTransform.rotation() * vector;
+		Vec3d WorldPosition = LinePlaneIntersection(FeatureData.CameraTransform.translation(), 
+			*reinterpret_cast<Vec3d*>(&WorldVector), Vec3d(0,0,0.02), Vec3d(0,0,1));
+		WorldPosition[2] = 0;
+		ObjectType type = (ObjectType)((int)ObjectType::Fragile + Detection.Class);
+		const auto &name = ObjectTypeNames.at(type);
+		ObjectData object(type, name, 
+			Affine3d(Vec3d::all(0), WorldPosition));
+		objects.emplace_back(object);
 		//imshow("Yolo ROI", ROI);
 		//waitKey(10);
 	}
-	return {};
+	return objects;
 }
 
 #ifdef WITH_CORAL

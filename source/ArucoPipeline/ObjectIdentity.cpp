@@ -30,7 +30,11 @@ std::optional<GLObject> ObjectData::ToGLObject() const
 		{ObjectType::Tag, MeshNames::tag},
 		{ObjectType::TopTracker, MeshNames::toptracker},
 		{ObjectType::TeamTracker, MeshNames::trackercube},
-		{ObjectType::SolarPanel, MeshNames::solarpanel}
+		{ObjectType::SolarPanel, MeshNames::solarpanel},
+		{ObjectType::Fragile, MeshNames::fragile},
+		{ObjectType::Resistant, MeshNames::resistant},
+		{ObjectType::Pot, MeshNames::pot},
+		{ObjectType::PottedPlant, MeshNames::potted_plant}
 	};
 
 	auto foundmesh = PacketToMesh.find(type);

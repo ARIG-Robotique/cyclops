@@ -59,6 +59,12 @@ const std::map<ObjectType, std::string> ObjectTypeNames =
 	{ObjectType::TeamTracker, 		"Team Tracker"},
 
 	{ObjectType::SolarPanel, 		"Solar panel"},
+
+	{ObjectType::Fragile, 			"Fragile"},
+	{ObjectType::Resistant, 		"Resistant"},
+	{ObjectType::Pot, 				"Pot"},
+	{ObjectType::PottedPlant, 		"Plante Pot"},
+
 	{ObjectType::Team, 				"Team"}
 };
 

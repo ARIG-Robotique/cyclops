@@ -23,7 +23,11 @@ enum class MeshNames
 	axis,
 	trackercube,
 	toptracker,
-	solarpanel
+	solarpanel,
+	fragile,
+	resistant,
+	pot,
+	potted_plant
 };
 
 struct GLObject

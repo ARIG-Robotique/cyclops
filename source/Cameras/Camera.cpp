@@ -140,7 +140,7 @@ void Camera::Record(filesystem::path rootPath, int RecordIdx)
 {
 	string folderstr = Name.substr(0, std::min<size_t>(Name.find(' '), 10));
 	char buffer[16]= {0};
-	snprintf(buffer, sizeof(buffer)-1, "%4d", RecordIdx);
+	snprintf(buffer, sizeof(buffer)-1, "%04d", RecordIdx);
 	auto writepath = rootPath/folderstr/(string(buffer) + string(".jpg"));
 	filesystem::create_directories(writepath.parent_path());
 	imwrite(writepath.string(), GetFrame(true).Image);

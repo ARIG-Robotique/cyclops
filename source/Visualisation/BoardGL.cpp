@@ -239,16 +239,22 @@ void BoardGL::LoadModels()
 	auto assetspath = GetAssetsPath() / "models";
 	static const map<MeshNames, string> meshpathes = 
 	{
-		{MeshNames::arena, "board"},
-		{MeshNames::robot, "robot"},
-		{MeshNames::axis, "axis"},
-		{MeshNames::brio, "brio"},
-		{MeshNames::skybox, "skybox"},
-		{MeshNames::tag, "tag"},
-		{MeshNames::trackercube, "tracker"},
-		{MeshNames::toptracker, "top tracker"},
+		{MeshNames::arena,			"board"},
+		{MeshNames::robot,			"robot"},
+		{MeshNames::axis,			"axis"},
+		{MeshNames::brio,			"brio"},
+		{MeshNames::skybox,			"skybox"},
+		{MeshNames::tag, 			"tag"},
+		{MeshNames::trackercube,	"tracker"},
+		{MeshNames::toptracker,		"top tracker"},
 
-		{MeshNames::solarpanel,	"solar panel"}
+		{MeshNames::solarpanel,		"solar panel"},
+
+		{MeshNames::fragile,		"fragile"},
+		{MeshNames::resistant,		"resistant"},
+		{MeshNames::pot,			"pot"},
+		{MeshNames::potted_plant,	"potted_plant"}
+
 	};
 	//cout << "Loading meshes" << endl;
 

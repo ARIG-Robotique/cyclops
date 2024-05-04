@@ -349,13 +349,13 @@ void CDFRExternal::ThreadEntryPoint()
 		TrackerToUse->SolveLocationsPerObject(FeatureDataLocal, GrabTick);
 		vector<ObjectData> &ObjDataLocal = ObjData[BufferIndex]; 
 		ObjDataLocal = TrackerToUse->GetObjectDataVector(GrabTick);
-		for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
-		{
-			//auto YoloObjects = YoloDetect::Project(ImageDataLocal[camidx], FeatureDataLocal[camidx]);
-			//ObjDataLocal.insert(ObjDataLocal.end(), YoloObjects.begin(), YoloObjects.end());
-		}
 		ObjectData TeamPacket(ObjectType::Team, TeamNames.at(Team));
 		ObjDataLocal.insert(ObjDataLocal.begin(), TeamPacket); //insert team as the first object
+		for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
+		{
+			auto YoloObjects = YoloDetect::Project(ImageDataLocal[camidx], FeatureDataLocal[camidx]);
+			ObjDataLocal.insert(ObjDataLocal.end(), YoloObjects.begin(), YoloObjects.end());
+		}
 
 
 		BufferIndex = (BufferIndex+1)%ObjData.size();
@@ -612,7 +612,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 				auto br = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.br());
 				DrawList->AddRect(tl, br, color);
 				//text with class and confidence
-				string text = YoloDetector->GetClassName(det.Class) + string("/") + to_string(det.Confidence);
+				string text = YoloDetector->GetClassName(det.Class) + string("\n") + to_string(int(det.Confidence*100));
 				DrawList->AddText(nullptr, 16, tl, color, text.c_str());
 			}
 		}
