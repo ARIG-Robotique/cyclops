@@ -139,7 +139,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 		{
 			teamyellow = true;
 		}
-		static const array<string, 4> teams = {"NONE", "YELLOW", "BLUE", "BLUE_YELLOW"};
+		static const array<string, 4> teams = {"NEUTRE", "JAUNE", "BLEU", "BLEU_JAUNE"};
 		objectified["team"] = teams[teamblue*2+teamyellow];
 	}
 	return objectified;
@@ -465,7 +465,7 @@ void JsonListener::HandleQuery(const json &Query)
 	{
 		Response["status"] = "OK";
 		Response["data"]["parent"] = Parent ? "OK" : "ERROR";
-		Response["data"]["team"] = "NONE";
+		Response["data"]["team"] = "INCONNUE";
 		Response["data"]["idle"] = false;
 		ostringstream statusbuilder;
 		if (!Parent)
