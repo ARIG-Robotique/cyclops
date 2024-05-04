@@ -449,8 +449,8 @@ void JsonListener::HandleQuery(const json &Query)
 			}
 			else
 			{
-                Response["status"] = "ERROR";
-                Response["errorMessage"] = "Unknown Mode";
+				Response["status"] = "ERROR";
+				Response["errorMessage"] = "Unknown Mode";
 			}
 		}
 		goto send;
@@ -464,9 +464,9 @@ void JsonListener::HandleQuery(const json &Query)
 	if (ActionStr == "STATUS")
 	{
 		Response["status"] = "OK";
-        Response["data"]["parent"] = Parent ? "OK" : "ERROR";
-        Response["data"]["team"] = "NONE";
-        Response["data"]["idle"] = false;
+		Response["data"]["parent"] = Parent ? "OK" : "ERROR";
+		Response["data"]["team"] = "NONE";
+		Response["data"]["idle"] = false;
 		ostringstream statusbuilder;
 		if (!Parent)
 		{
@@ -485,8 +485,8 @@ void JsonListener::HandleQuery(const json &Query)
 			else
 			{
 				statusbuilder << "External runner doing fine; ";
-                Response["data"]["team"] = JavaCapitalize(TeamNames.at(Parent->ExternalRunner->GetTeam()));
-                Response["data"]["idle"] = Parent->ExternalRunner->GetIdle();
+				Response["data"]["team"] = JavaCapitalize(TeamNames.at(Parent->ExternalRunner->GetTeam()));
+				Response["data"]["idle"] = Parent->ExternalRunner->GetIdle();
 			}
 
 			if (!Parent->InternalRunner)
@@ -500,7 +500,7 @@ void JsonListener::HandleQuery(const json &Query)
 		}
 		Response["data"]["statusMessage"] = statusbuilder.str();
 
-        Response["data"]["mode"] = TransformModeNames.at(ObjectMode);
+		Response["data"]["mode"] = TransformModeNames.at(ObjectMode);
 
 		goto send;
 	}
@@ -509,7 +509,7 @@ void JsonListener::HandleQuery(const json &Query)
 		if (ActionStr == "PROCESS") //oh no, homework !
 		{
 			Response["status"] = "ERROR";
-            Response["errorMessage"] = "Not implemented";
+			Response["errorMessage"] = "Not implemented";
 			goto send;
 		}
 	}
@@ -525,41 +525,41 @@ void JsonListener::HandleQuery(const json &Query)
 			}
 			else
 			{
-                Response["status"] = "ERROR";
+				Response["status"] = "ERROR";
 				Response["errorMessage"] = "Wrong or missing filters, must be an array";
 			}
 			goto send;
 		}
 		if (ActionStr == "IMAGE")
 		{
-            double reduction = 1.0;
-            if (Query.contains("data")) {
-                reduction = Query["data"].value("reduction", 1.0);
-            }
+			double reduction = 1.0;
+			if (Query.contains("data")) {
+				reduction = Query["data"].value("reduction", 1.0);
+			}
 			GetImage(reduction, Response);
 			Response["status"] = "OK";
 			goto send;
 		}
 		if (ActionStr == "IDLE")
 		{
-            bool value = false;
-            if (Query.contains("data")) {
-                value = Query["data"].value("value", false);
-            }
+			bool value = false;
+			if (Query.contains("data")) {
+				value = Query["data"].value("value", false);
+			}
 			Parent->ExternalRunner->SetIdle(value);
 			Response["status"] = "OK";
 			goto send;
 		}
 		if (ActionStr == "TEAM")
 		{
-            if (!Query.contains("data") || !Query["data"].contains("team")) {
-                Response["status"] = "ERROR";
-                Response["errorMessage"] = "Error: data.value: Team must be specified";
-            } else {
-                Parent->ExternalRunner->SetTeamLock(StringToTeam(Query["data"]["team"]));
-                Response["status"] = "OK";
-            }
-            goto send;
+			if (!Query.contains("data") || !Query["data"].contains("team")) {
+				Response["status"] = "ERROR";
+				Response["errorMessage"] = "Error: data.value: Team must be specified";
+			} else {
+				Parent->ExternalRunner->SetTeamLock(StringToTeam(Query["data"]["team"]));
+				Response["status"] = "OK";
+			}
+			goto send;
 		}
 		if (ActionStr == "LOCK_CAMERA")
 		{
@@ -672,9 +672,9 @@ void JsonListener::ThreadEntryPoint()
 			this_thread::sleep_for(chrono::microseconds(500));
 			continue;
 		} else if (numreceived == 0) {
-            killed = true;
-            break;
-        }
+			killed = true;
+			break;
+		}
 		int rcvbufstartpos = 0;
 		int rcvbufinsertpos = ReceiveBuffer.size();
 

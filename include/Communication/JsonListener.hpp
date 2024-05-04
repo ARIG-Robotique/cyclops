@@ -42,11 +42,11 @@ public:
 		Millimeter2D,
 		Float3D
 	};
-    const std::map<TransformMode, std::string> TransformModeNames = {
-            {TransformMode::Float2D, "FLOAT_2D"},
-            {TransformMode::Millimeter2D, "MILLIMETER_2D"},
-            {TransformMode::Float3D, "FLOAT_3D"}
-    };
+	const std::map<TransformMode, std::string> TransformModeNames = {
+			{TransformMode::Float2D, "FLOAT_2D"},
+			{TransformMode::Millimeter2D, "MILLIMETER_2D"},
+			{TransformMode::Float3D, "FLOAT_3D"}
+	};
 	TransformMode ObjectMode = TransformMode::Millimeter2D;
 
 
