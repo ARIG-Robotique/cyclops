@@ -328,6 +328,7 @@ bool JsonListener::GetStartingZone(const nlohmann::json query, nlohmann::json &r
 	}
 	auto data = Parent->ExternalRunner->GetObjectData();
 	ObjectData robot;
+	robot.LastSeen = ObjectData::TimePoint();
 	for (auto &&i : data)
 	{
 		if (i.type != ObjectType::TopTracker)
@@ -353,23 +354,35 @@ bool JsonListener::GetStartingZone(const nlohmann::json query, nlohmann::json &r
 		{
 			continue;
 		}
-		string position = "";
-		position += i.location.translation()[0] > 0 ? "EAST" : "WEST";
-		if (i.location.translation()[1]>0.38)
+		if (i.LastSeen < robot.LastSeen)
 		{
-			position += "_NORTH";
-		}
-		else if (i.location.translation()[1]<-0.38)
-		{
-			position += "_SOUTH";
+			continue;
 		}
 		
-		response["status"] = "OK";
-		response["zone"] = position;
+		robot = i;
+	}
+	if (robot.LastSeen == ObjectData::TimePoint())
+	{
+		response["status"] = "NO_DATA";
 		return true;
 	}
-	response["status"] = "NO_DATA";
+	
+	string position = "";
+	position += robot.location.translation()[0] > 0 ? "EAST" : "WEST";
+	if (robot.location.translation()[1]>0.38)
+	{
+		position += "_NORTH";
+	}
+	else if (robot.location.translation()[1]<-0.38)
+	{
+		position += "_SOUTH";
+	}
+	
+	response["status"] = "OK";
+	response["zone"] = position;
 	return true;
+
+	
 }
 
 void JsonListener::ReceiveImage(const json &Query)
