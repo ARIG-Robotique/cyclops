@@ -67,7 +67,7 @@ SerialTransport::SerialTransport(unsigned int BaudRate, bool SelfDetectSerial)
 		if (success != 1)
 		{
 			cout << "Failed to open the serial bridge, make sure your user is in the dialout group" <<endl;
-			cout << "run this ->   sudo usermod -a -G dialout $USER    <- then restart your PC." << endl;
+			cout << "run this ->   sudo usermod -a -G dialout $USER	<- then restart your PC." << endl;
 		}
 		else
 		{

@@ -83,7 +83,7 @@ field "yolo" contains array of objects with :
 {
   "action": "DATA",
   "filter": [
-    "all"
+	"all"
   ],
   "mode": "MILLIMETER_2D"
 }
@@ -94,18 +94,18 @@ field "yolo" contains array of objects with :
 {
   "action": "DATA",
   "filter": [
-    "TAG",
-    "REFERENCE_ABSOLUTE",
-    "REFERENCE_RELATIVE",
-    "CAMERA",
-    "OBJECT",
-    "ROBOT",
-    "TOP_TRACKER",
-    "TEAM_TRACKER",
-    "SOLAR_PANEL",
-    "TEAM",
-    "ARUCO",
-    "YOLO"
+	"TAG",
+	"REFERENCE_ABSOLUTE",
+	"REFERENCE_RELATIVE",
+	"CAMERA",
+	"OBJECT",
+	"ROBOT",
+	"TOP_TRACKER",
+	"TEAM_TRACKER",
+	"SOLAR_PANEL",
+	"TEAM",
+	"ARUCO",
+	"YOLO"
   ],
   "mode": "FLOAT_2D"
 }
@@ -127,46 +127,46 @@ field "yolo" contains array of objects with :
   "status": "OK",
   "action": "DATA",
   "data2D": [
-    {
-      "name": "",
-      "width": 0,
-      "height": 0,
-      "xfov": 0,
-      "yfov": 0,
-      "arucoObjects": [
-        {
-          "index": 0,
-          "corners": [
-            {
-              "x": 0,
-              "y": 0
-            },
-            {
-              "x": 0,
-              "y": 0
-            },
-            {
-              "x": 0,
-              "y": 0
-            },
-            {
-              "x": 0,
-              "y": 0
-            }
-          ]
-        }
-      ],
-      "yoloObjects": [
-        {
-          "index": 0,
-          "tlx": 0.0,
-          "tly": 0.0,
-          "brx": 0.0,
-          "bry": 0.0,
-          "confidence": 0.0
-        }
-      ]
-    }
+	{
+	  "name": "",
+	  "width": 0,
+	  "height": 0,
+	  "xfov": 0,
+	  "yfov": 0,
+	  "arucoObjects": [
+		{
+		  "index": 0,
+		  "corners": [
+			{
+			  "x": 0,
+			  "y": 0
+			},
+			{
+			  "x": 0,
+			  "y": 0
+			},
+			{
+			  "x": 0,
+			  "y": 0
+			},
+			{
+			  "x": 0,
+			  "y": 0
+			}
+		  ]
+		}
+	  ],
+	  "yoloObjects": [
+		{
+		  "index": 0,
+		  "tlx": 0.0,
+		  "tly": 0.0,
+		  "brx": 0.0,
+		  "bry": 0.0,
+		  "confidence": 0.0
+		}
+	  ]
+	}
   ]
 }
 ```

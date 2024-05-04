@@ -14,7 +14,7 @@ bool Shader::LoadShader(std::string Vertex, std::string Fragment)
 		return true;
 	}
 	
-    // Create the shaders
+	// Create the shaders
 	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
 	GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -102,5 +102,5 @@ bool Shader::LoadShader(std::string Vertex, std::string Fragment)
 	glDeleteShader(FragmentShaderID);
 	Loaded = true;
 
-    return true;
+	return true;
 }

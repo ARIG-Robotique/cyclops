@@ -5,7 +5,7 @@
 #include <thread>
 #include <filesystem>
 
-#include <opencv2/core.hpp>     // Basic OpenCV structures (Mat, Scalar)
+#include <opencv2/core.hpp>	 // Basic OpenCV structures (Mat, Scalar)
 #include <opencv2/core/ocl.hpp> //opencl
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -64,9 +64,9 @@ void ConfigureOpenCL(bool enable)
 	for (size_t i = 0; i < context.ndevices(); i++)
 	{
 		ocl::Device device = context.device(i);
-		cout << "\tname:              " << device.name() << endl;
-		cout << "\tavailable:         " << device.available() << endl;
-		cout << "\timageSupport:      " << device.imageSupport() << endl;
+		cout << "\tname:			  " << device.name() << endl;
+		cout << "\tavailable:		 " << device.available() << endl;
+		cout << "\timageSupport:	  " << device.imageSupport() << endl;
 		cout << "\tOpenCL_C_Version:  " << device.OpenCL_C_Version() << endl;
 	}
 }
@@ -105,14 +105,14 @@ int main(int argc, char** argv )
 	setup_signal_handler();
 
 	const string keys = 
-		"{help h usage ? |      | print this message}"
-		"{direct d       |      | show direct camera output}"
-		"{opengl o       |      | show 3D visualizer}"
-		"{record r       |      | turn on recording}"
-		"{build b        |      | print build information}"
-		"{calibrate c    |      | start camera calibration wizard}"
-		"{marker m       |      | print out markers}"
-		"{map            |      | runs object mapping, using saved images and calibration}"
+		"{help h usage ? |	  | print this message}"
+		"{direct d	   |	  | show direct camera output}"
+		"{opengl o	   |	  | show 3D visualizer}"
+		"{record r	   |	  | turn on recording}"
+		"{build b		|	  | print build information}"
+		"{calibrate c	|	  | start camera calibration wizard}"
+		"{marker m	   |	  | print out markers}"
+		"{map			|	  | runs object mapping, using saved images and calibration}"
 		;
 	CommandLineParser parser(argc, argv, keys);
 

@@ -4,18 +4,18 @@
 
 void CameraFeatureData::Clear()
 {
-    ArucoIndices.clear();
-    ArucoCorners.clear();
-    ArucoCornersReprojected.clear();
-    ArucoSegments.clear();
+	ArucoIndices.clear();
+	ArucoCorners.clear();
+	ArucoCornersReprojected.clear();
+	ArucoSegments.clear();
 
-    YoloDetections.clear();
+	YoloDetections.clear();
 }
 
 void CameraFeatureData::CopyEssentials(const CameraImageData &source)
 {
-    CameraName = source.CameraName;
-    CameraMatrix = source.CameraMatrix;
-    DistanceCoefficients = source.DistanceCoefficients;
-    FrameSize = source.Image.size();
+	CameraName = source.CameraName;
+	CameraMatrix = source.CameraMatrix;
+	DistanceCoefficients = source.DistanceCoefficients;
+	FrameSize = source.Image.size();
 }

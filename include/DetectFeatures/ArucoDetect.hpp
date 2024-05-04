@@ -7,7 +7,7 @@
 cv::UMat PreprocessArucoImage(cv::UMat Source);
 
 std::vector<cv::Rect> GetPOIRects(const std::vector<std::vector<cv::Point3d>> &POIs, cv::Size framesize, 
-    cv::Affine3d CameraTransform, cv::InputArray CameraMatrix, cv::InputArray distCoeffs);
+	cv::Affine3d CameraTransform, cv::InputArray CameraMatrix, cv::InputArray distCoeffs);
 
 int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData);
 

@@ -12,10 +12,10 @@
 {
 private:
 	serialib* Bridge;
-    bool Connected;
+	bool Connected;
 public:
 
-    static std::vector<std::string> autoDetectTTYUSB();
+	static std::vector<std::string> autoDetectTTYUSB();
 
 	SerialTransport(unsigned int BaudRate, bool SelfDetectSerial);
 

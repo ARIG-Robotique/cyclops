@@ -5,19 +5,19 @@
 class CameraManagerSimulation : public CameraManager
 {
 private:
-    std::string ScenarioPath;
+	std::string ScenarioPath;
 public:
-    CameraManagerSimulation(std::string InScenarioPath)
-        :CameraManager(), ScenarioPath(InScenarioPath)
-    {
+	CameraManagerSimulation(std::string InScenarioPath)
+		:CameraManager(), ScenarioPath(InScenarioPath)
+	{
 
-    }
+	}
 
-    virtual ~CameraManagerSimulation()
-    {
+	virtual ~CameraManagerSimulation()
+	{
 
-    }
+	}
 
 protected:
-    virtual void ScanWorker() override;
+	virtual void ScanWorker() override;
 };

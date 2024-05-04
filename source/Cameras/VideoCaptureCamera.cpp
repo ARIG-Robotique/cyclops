@@ -98,8 +98,8 @@ bool VideoCaptureCamera::StartFeed()
 	{
 		string folderstr = Settingscast->DeviceInfo.device_description.substr(0, 10);
 		auto now = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    	string timestr(32, '\0');
-    	timestr.resize(strftime(&timestr[0], timestr.size(), "%m-%d-%H:%M:%S", std::localtime(&now)));
+		string timestr(32, '\0');
+		timestr.resize(strftime(&timestr[0], timestr.size(), "%m-%d-%H:%M:%S", std::localtime(&now)));
 		auto rootdir = filesystem::path("recordings")/folderstr;
 		auto imagedir = rootdir/timestr;
 		auto mp4path = (rootdir/timestr).replace_extension(".mp4");

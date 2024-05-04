@@ -194,9 +194,9 @@ int TCPTransport::Receive(void *buffer, int maxlength, string client, bool block
 				{
 					DisconnectedClients.emplace(connections[i].name);
 				} else if (n < 0) {
-                    continue;
-                }
-                return n;
+					continue;
+				}
+				return n;
 			}
 		}
 		for (auto & client : DisconnectedClients) //Disconnection must be done outside of loop because the listenmutex is taken
