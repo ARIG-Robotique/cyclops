@@ -105,14 +105,14 @@ int main(int argc, char** argv )
 	setup_signal_handler();
 
 	const string keys = 
-		"{help h usage ? |	  | print this message}"
-		"{direct d	   |	  | show direct camera output}"
-		"{opengl o	   |	  | show 3D visualizer}"
-		"{record r	   |	  | turn on recording}"
-		"{build b		|	  | print build information}"
-		"{calibrate c	|	  | start camera calibration wizard}"
-		"{marker m	   |	  | print out markers}"
-		"{map			|	  | runs object mapping, using saved images and calibration}"
+		"{help h ?     |  | print this message}"
+		"{direct d     |  | show direct camera output}"
+		"{opengl o     |  | show 3D visualizer}"
+		"{record r     |  | turn on recording}"
+		"{build b      |  | print build information}"
+		"{calibrate c  |  | start camera calibration wizard}"
+		"{marker m     |  | print out markers}"
+		"{map          |  | runs object mapping, using saved images and calibration}"
 		;
 	CommandLineParser parser(argc, argv, keys);
 
