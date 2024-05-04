@@ -68,6 +68,11 @@ public:
 		HasNoClients = value;
 	}
 
+	bool GetIdle() const 
+	{
+		return Idle;
+	}
+
 	void SetIdle(bool value)
 	{
 		Idle = value;
@@ -85,10 +90,6 @@ public:
 	void ThreadEntryPoint();
 
 	int GetReadBufferIndex() const;
-
-    bool GetIdle() const {
-        return Idle;
-    };
 
 	std::vector<CameraImageData> GetImage() const;
 
