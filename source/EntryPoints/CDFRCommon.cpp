@@ -146,6 +146,12 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		yoloThread->join();
 		yoloThread.reset();
 	}
+	if (arucoThread)
+	{
+		arucoThread->join();
+		arucoThread.reset();
+	}
+	
 	
 	return false;
 }

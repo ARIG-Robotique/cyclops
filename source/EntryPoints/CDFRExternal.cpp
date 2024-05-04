@@ -103,7 +103,6 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 
 void CDFRExternal::SetCameraLock(bool value)
 {
-	LockedCamera = value;
 	CDFRCommon::ExternalSettings.SolveCameraLocation = !value;
 }
 
@@ -163,9 +162,9 @@ void CDFRExternal::ThreadEntryPoint()
 	
 	CameraMan->RegisterCamera = [this](shared_ptr<Camera> cam) -> void
 	{
-		if (LockedCamera)
+		if (!CDFRCommon::ExternalSettings.SolveCameraLocation)
 		{
-			LockedCamera = false;
+			CDFRCommon::ExternalSettings.SolveCameraLocation = true;
 			cerr << "New camera registered, but the cameras were locked, removing the lock..." << endl;
 		}
 		BlueTracker.RegisterTrackedObject(cam);
@@ -477,6 +476,7 @@ void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vecto
 		{
 			selfkill=true;
 		}
+		ImGui::Checkbox("Solve Camera Location", &CDFRCommon::ExternalSettings.SolveCameraLocation);
 
 		map<const char *, CDFRCommon::Settings&> settingsmap({{"External", CDFRCommon::ExternalSettings}, {"Internal", CDFRCommon::InternalSettings}});
 		ForceRecordNext = ImGui::Button("Capture next frame");
