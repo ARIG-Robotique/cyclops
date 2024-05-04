@@ -2,7 +2,7 @@
 
 #include <Cameras/ImageTypes.hpp>
 #include <Communication/ProcessedTypes.hpp>
-#include <Cameras/ImageTypes.hpp>
+#include <ArucoPipeline/ObjectIdentity.hpp>
 #include <opencv2/dnn.hpp>
 #include <opencv2/core.hpp>
 #include <vector>
@@ -27,8 +27,8 @@ private:
 	std::filesystem::path GetNetworkPath(std::string extension = "") const;
 	void loadNames();
 	void loadNet();
-	void Preprocess(const cv::UMat& frame, cv::dnn::Net& net, cv::Size inpSize, float scale, const cv::Scalar& mean, bool swapRB);
-	std::vector<Detection> Postprocess(std::vector<cv::Mat> outputBlobs, std::vector<std::string> layerNames, cv::Rect window);
+	void Preprocess(const cv::UMat& frame, cv::Size inpSize, float scale, const cv::Scalar& mean, bool swapRB);
+	std::vector<Detection> Postprocess(const std::vector<cv::Mat> &outputBlobs, const std::vector<std::string> &layerNames, cv::Rect window);
 public:
 	YoloDetect(std::string inModelName = "cdfr", int inNumclasses = 4);
 	virtual ~YoloDetect();
@@ -37,7 +37,9 @@ public:
 
 	int GetNumClasses() const;
 
-	int Detect(const CameraImageData &InData, CameraFeatureData& OutData);
+	int Detect(CameraImageData InData, CameraFeatureData *OutData);
+
+	static std::vector<ObjectData> Project(const CameraImageData &ImageData, const CameraFeatureData& FeatureData);
 };
 
 

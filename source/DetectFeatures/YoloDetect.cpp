@@ -7,6 +7,7 @@
 #include <array>
 
 #include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
 
 #ifdef WITH_CORAL
 #include <edgetpu.h>
@@ -62,20 +63,20 @@ void YoloDetect::loadNet()
 	network = dnn::readNetFromDarknet(GetNetworkPath(".cfg"), GetNetworkPath(".weights"));
 }
 
-void YoloDetect::Preprocess(const UMat& frame, dnn::Net& net, Size inpSize, float scale, const Scalar& mean, bool swapRB)
+void YoloDetect::Preprocess(const UMat& frame, Size inpSize, float scale, const Scalar& mean, bool swapRB)
 {
-	static Mat blob;
+	Mat blob;
 	// Create a 4D blob from a frame.
 	if (inpSize.width <= 0) inpSize.width = frame.cols;
 	if (inpSize.height <= 0) inpSize.height = frame.rows;
 	dnn::blobFromImage(frame, blob, 1.0, inpSize, Scalar(), swapRB, false);
 	//cout << "Input has size " << blob.size << endl;
 	// Run a model.
-	net.setInput(blob, "", scale, mean);
+	network.setInput(blob, "", scale, mean);
 }
 
 
-vector<YoloDetect::Detection> YoloDetect::Postprocess(vector<Mat> outputBlobs, vector<string> layerNames, Rect window)
+vector<YoloDetect::Detection> YoloDetect::Postprocess(const vector<Mat> &outputBlobs, const vector<string> &layerNames, Rect window)
 {
 	vector<Rect> boxes;
 	vector<float> scores;
@@ -137,20 +138,18 @@ int YoloDetect::GetNumClasses() const
 	return ClassNames.size();
 }
 
-int YoloDetect::Detect(const CameraImageData &InData, CameraFeatureData& OutData)
+int YoloDetect::Detect(CameraImageData InData, CameraFeatureData *OutData)
 {
-	Preprocess(InData.Image, network, modelSize, 1.0/255.0, 0, true);
-	//auto start = chrono::steady_clock::now();
+	Preprocess(InData.Image, modelSize, 1.0/255.0, 0, true);
+	auto start = chrono::steady_clock::now();
 	vector<Mat> outputBlobs;
 	auto OutputNames = network.getUnconnectedOutLayersNames();
 	network.forward(outputBlobs, OutputNames);
-	//auto stop = chrono::steady_clock::now();
-	//cout << "Inference took " << chrono::duration<double>(stop-start).count() << " s" << endl;
+	auto stop = chrono::steady_clock::now();
 	auto detections = Postprocess(outputBlobs, OutputNames, Rect(0,0,InData.Image.cols, InData.Image.rows));
-	Mat painted; InData.Image.copyTo(painted);
 	int numdetections = detections.size();
-	OutData.YoloDetections.clear();
-	OutData.YoloDetections.reserve(numdetections);
+	OutData->YoloDetections.clear();
+	OutData->YoloDetections.reserve(numdetections);
 	for (auto &det : detections)
 	{
 		int maxidx = 0;
@@ -166,9 +165,23 @@ int YoloDetect::Detect(const CameraImageData &InData, CameraFeatureData& OutData
 		final_detection.Class = maxidx;
 		final_detection.Confidence = det.Confidence;
 		final_detection.Corners = det.BoundingBox;
-		OutData.YoloDetections.push_back(final_detection);
+		OutData->YoloDetections.push_back(final_detection);
 	}
+	(void) start; (void) stop;
+	//cout << "Inference took " << chrono::duration<double>(stop-start).count() << "s and found " << numdetections << " objects" << endl;
 	return numdetections;
+}
+
+vector<ObjectData> YoloDetect::Project(const CameraImageData &ImageData, const CameraFeatureData& FeatureData)
+{
+	for (size_t i = 0; i < FeatureData.YoloDetections.size(); i++)
+	{
+		auto &Detection = FeatureData.YoloDetections[i];
+		auto ROI = ImageData.Image(Detection.Corners);
+		//imshow("Yolo ROI", ROI);
+		//waitKey(10);
+	}
+	return {};
 }
 
 #ifdef WITH_CORAL

@@ -91,7 +91,7 @@ Point2f ComputeMean(const ArucoCornerArray &Points)
 	return mean;
 }
 
-int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutData, const vector<Rect> &Segments, aruco::ArucoDetector* Detector)
+int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, const vector<Rect> &Segments, aruco::ArucoDetector* Detector)
 {
 	size_t NumSegments = Segments.size();
 	if (NumSegments == 0)
@@ -125,7 +125,7 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 		}
 	});
 
-	size_t NumDetectionsBefore = OutData.ArucoCorners.size();
+	size_t NumDetectionsBefore = OutData->ArucoCorners.size();
 	size_t NumDetectionsThis = 0;
 	for (size_t poiidx = 0; poiidx < NumSegments; poiidx++)
 	{
@@ -140,12 +140,12 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 	means.reserve(MaxDetectionsAfter);
 	for (size_t i = 0; i < NumDetectionsBefore; i++)
 	{
-		means[i] = ComputeMean(OutData.ArucoCorners[i]);
+		means[i] = ComputeMean(OutData->ArucoCorners[i]);
 	}
 	const float SameWindowSize = 4;
 	const Rect2f SameThreshold(-SameWindowSize/2,-SameWindowSize/2,SameWindowSize,SameWindowSize);
-	OutData.ArucoCorners.reserve(MaxDetectionsAfter);
-	OutData.ArucoIndices.reserve(MaxDetectionsAfter);
+	OutData->ArucoCorners.reserve(MaxDetectionsAfter);
+	OutData->ArucoIndices.reserve(MaxDetectionsAfter);
 	for (size_t poiidx = 0; poiidx < NumSegments; poiidx++)
 	{
 		size_t numdetslocal = ids[poiidx].size();
@@ -159,9 +159,9 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 		{
 			bool found = false;
 			Point2f mean = ComputeMean(CornersLocal[PotentialIdx]);
-			for (size_t PresentIdx = 0; PresentIdx < OutData.ArucoCorners.size(); PresentIdx++)
+			for (size_t PresentIdx = 0; PresentIdx < OutData->ArucoCorners.size(); PresentIdx++)
 			{
-				if (OutData.ArucoIndices[PresentIdx] != IDsLocal[PotentialIdx])
+				if (OutData->ArucoIndices[PresentIdx] != IDsLocal[PotentialIdx])
 				{
 					continue;
 				}
@@ -172,10 +172,10 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 					found = true;
 					//mean the mean
 					meanother = (meanother*accumulations[PresentIdx] + mean) / (accumulations[PresentIdx]+1);
-					for (size_t corneridx = 0; corneridx < OutData.ArucoCorners[PresentIdx].size(); corneridx++)
+					for (size_t corneridx = 0; corneridx < OutData->ArucoCorners[PresentIdx].size(); corneridx++)
 					{
 						//mean the corner locations
-						OutData.ArucoCorners[PresentIdx][corneridx] = (OutData.ArucoCorners[PresentIdx][corneridx]*accumulations[PresentIdx] + CornersLocal[PotentialIdx][corneridx]) / (accumulations[PresentIdx]+1);
+						OutData->ArucoCorners[PresentIdx][corneridx] = (OutData->ArucoCorners[PresentIdx][corneridx]*accumulations[PresentIdx] + CornersLocal[PotentialIdx][corneridx]) / (accumulations[PresentIdx]+1);
 					}
 					accumulations[PresentIdx]++;
 					//cout << "Merging aruco at " << mean << endl;
@@ -187,28 +187,20 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 				continue;
 			}
 			means.push_back(mean);
-			OutData.ArucoIndices.push_back(IDsLocal[PotentialIdx]);
-			OutData.ArucoCorners.push_back(CornersLocal[PotentialIdx]);
+			OutData->ArucoIndices.push_back(IDsLocal[PotentialIdx]);
+			OutData->ArucoCorners.push_back(CornersLocal[PotentialIdx]);
 			accumulations.push_back(1);
 		}
 	}
-	OutData.ArucoCornersReprojected.resize(OutData.ArucoIndices.size());
-	copy(Segments.begin(), Segments.end(), back_inserter(OutData.ArucoSegments));
+	OutData->ArucoCornersReprojected.resize(OutData->ArucoIndices.size());
+	copy(Segments.begin(), Segments.end(), back_inserter(OutData->ArucoSegments));
 	return NumDetectionsThis;
 }
 
-void CleanArucoDetections(CameraFeatureData& OutData)
+int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, int MaxArucoSize, Size Segments)
 {
-	OutData.ArucoCorners.clear();
-	OutData.ArucoIndices.clear();
-	OutData.ArucoCornersReprojected.clear();
-	OutData.ArucoSegments.clear();
-}
-
-int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutData, int MaxArucoSize, Size Segments)
-{
+	assert(OutData != nullptr);
 	MakeDetectors();
-	CleanArucoDetections(OutData);
 
 	Size framesize = InData.Image.size();
 	vector<Rect> ROIs;
@@ -244,10 +236,10 @@ int DetectArucoSegmented(const CameraImageData &InData, CameraFeatureData& OutDa
 	return DetectArucoSegmented(InData, OutData, ROIs, GlobalDetector.get());
 }
 
-int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData)
+int DetectAruco(CameraImageData InData, CameraFeatureData *OutData)
 {
+	assert(OutData != nullptr);
 	MakeDetectors();
-	CleanArucoDetections(OutData);
 
 	Size framesize = InData.Image.size();
 	Size rescaled = GetArucoReduction();
@@ -264,8 +256,8 @@ int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData)
 		ResizedFrame = GrayFrame;
 	}
 
-	vector<ArucoCornerArray> &corners = OutData.ArucoCorners;
-	vector<int> &IDs = OutData.ArucoIndices;
+	vector<ArucoCornerArray> &corners = OutData->ArucoCorners;
+	vector<int> &IDs = OutData->ArucoIndices;
 
 	try
 	{
@@ -299,7 +291,7 @@ int DetectAruco(const CameraImageData &InData, CameraFeatureData& OutData)
 			cornerSubPix(GrayFrame, corners[ArucoIdx], window, Size(-1,-1), TermCriteria(TermCriteria::COUNT | TermCriteria::EPS, 100, 0.01));
 		}
 	}
-	OutData.ArucoCornersReprojected.resize(corners.size(), {});
+	OutData->ArucoCornersReprojected.resize(corners.size(), {});
 	return IDs.size();
 }
 
@@ -342,11 +334,12 @@ vector<Rect> GetPOIRects(const vector<vector<Point3d>> &POIs, Size framesize, Af
 	return poirects;
 }
 
-int DetectArucoPOI(const CameraImageData &InData, CameraFeatureData& OutData, const vector<vector<Point3d>> &POIs)
+int DetectArucoPOI(CameraImageData InData, CameraFeatureData *OutData, const vector<vector<Point3d>> &POIs)
 {
+	assert(OutData != nullptr);
 	MakeDetectors();
 	Size framesize = InData.Image.size();
-	vector<Rect> poirects = GetPOIRects(POIs, framesize, OutData.CameraTransform, InData.CameraMatrix, InData.DistanceCoefficients);
+	vector<Rect> poirects = GetPOIRects(POIs, framesize, OutData->CameraTransform, InData.CameraMatrix, InData.DistanceCoefficients);
 
 	return DetectArucoSegmented(InData, OutData, poirects, POIDetector.get());
 }

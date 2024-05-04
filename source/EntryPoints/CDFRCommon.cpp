@@ -81,21 +81,23 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 	bool doYolo = Settings.YoloDetection && YoloDetector;
 	bool doAruco = Settings.ArucoDetection;
 	unique_ptr<thread> yoloThread;
+	unique_ptr<thread> arucoThread;
 	if (doYolo)
 	{
 		yoloThread = make_unique<thread>(&YoloDetect::Detect, YoloDetector, 
-			std::cref(ImData), std::ref(FeatData));
+			ImData, &FeatData);
 		//YoloDetector->Detect(ImData, FeatData);
 	}
 	if (doAruco)
 	{
 		if (Settings.SegmentedDetection)
 		{
-			DetectArucoSegmented(ImData, FeatData, 200, Size(4,3));
+			arucoThread = make_unique<thread>(DetectArucoSegmented, ImData, &FeatData, 200, Size(4,3));
+			
 		}
 		else
 		{
-			DetectAruco(ImData, FeatData);
+			arucoThread = make_unique<thread>(DetectAruco, ImData, &FeatData);
 		}
 	}
 	
@@ -103,6 +105,12 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 	{
 		if (Settings.SolveCameraLocation)
 		{
+			if (arucoThread)
+			{
+				arucoThread->join();
+				arucoThread.reset();
+			}
+			
 			bool HasPosition = Tracker.SolveCameraLocation(FeatData);
 			if (HasPosition)
 			{
@@ -120,8 +128,13 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		
 		if (Settings.POIDetection)
 		{
+			if (arucoThread)
+			{
+				arucoThread->join();
+				arucoThread.reset();
+			}
 			const auto &POIs = Tracker.GetPointsOfInterest();
-			DetectArucoPOI(ImData, FeatData, POIs);
+			DetectArucoPOI(ImData, &FeatData, POIs);
 		}
 	}
 	else
@@ -131,6 +144,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 	if (yoloThread)
 	{
 		yoloThread->join();
+		yoloThread.reset();
 	}
 	
 	return false;

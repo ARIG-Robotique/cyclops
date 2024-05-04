@@ -350,6 +350,11 @@ void CDFRExternal::ThreadEntryPoint()
 		TrackerToUse->SolveLocationsPerObject(FeatureDataLocal, GrabTick);
 		vector<ObjectData> &ObjDataLocal = ObjData[BufferIndex]; 
 		ObjDataLocal = TrackerToUse->GetObjectDataVector(GrabTick);
+		for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
+		{
+			//auto YoloObjects = YoloDetect::Project(ImageDataLocal[camidx], FeatureDataLocal[camidx]);
+			//ObjDataLocal.insert(ObjDataLocal.end(), YoloObjects.begin(), YoloObjects.end());
+		}
 		ObjectData TeamPacket(ObjectType::Team, TeamNames.at(Team));
 		ObjDataLocal.insert(ObjDataLocal.begin(), TeamPacket); //insert team as the first object
 
