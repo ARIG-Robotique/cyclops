@@ -13,6 +13,7 @@
 
 #include <nlohmann/json.hpp>
 #include <iostream>
+#include <fstream>
 #include <set>
 
 using namespace std;
@@ -499,6 +500,19 @@ void JsonListener::HandleQuery(const json &Query)
 			}
 		}
 		Response["data"]["statusMessage"] = statusbuilder.str();
+		try
+		{
+			int charge_full_value, charge_now_value;
+			ifstream charge_full_file("/sys/class/power_supply/BAT1/charge_full"), charge_now_file("/sys/class/power_supply/BAT1/charge_now");
+			charge_full_file >> charge_full_value;
+			charge_now_file >> charge_now_value;
+			Response["data"]["battery"] = 100*charge_now_value/charge_full_value;
+		}
+		catch(const std::exception& e)
+		{
+			std::cerr << "Failed to get battery charge: " << e.what() << '\n';
+		}
+		
 
 		Response["data"]["mode"] = TransformModeNames.at(ObjectMode);
 
