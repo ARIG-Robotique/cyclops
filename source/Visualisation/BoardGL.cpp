@@ -1,7 +1,6 @@
 #include "Visualisation/BoardGL.hpp"
 
 #include <iostream>
-#include <fstream>
 #include <tuple>
 #include <optional>
 

@@ -2,6 +2,7 @@
 
 #include <Cameras/Calibfile.hpp>
 #include <Misc/GlobalConf.hpp>
+#include <Misc/path.hpp>
 
 using namespace std;
 
@@ -37,8 +38,8 @@ VideoCaptureCameraSettings CameraManagerV4L2::DeviceToSettings(v4l2::devices::DE
 	settings.ApiID = -1;
 	settings.record = RecordVideo;
 
-	string CalibrationRoot = string("../calibration/");
-	string CalibrationPath = CalibrationRoot + settings.DeviceInfo.device_description;
+	auto CalibrationRoot = GetCyclopsPath() / "calibration";
+	auto CalibrationPath = CalibrationRoot / settings.DeviceInfo.device_description;
 
 	/*if (!filesystem::exists(CalibrationPath))
 	{

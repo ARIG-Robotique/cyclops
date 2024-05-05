@@ -12,6 +12,7 @@
 
 
 #include <Misc/GlobalConf.hpp>
+#include <Misc/path.hpp>
 #include <Cameras/VideoCaptureCamera.hpp>
 #include <Cameras/CameraManagerV4L2.hpp>
 #include <ArucoPipeline/ObjectTracker.hpp>
@@ -103,6 +104,7 @@ void setup_signal_handler()
 int main(int argc, char** argv )
 {
 	setup_signal_handler();
+	SetExecutablePath(argv[0]);
 
 	const string keys = 
 		"{help h ?     |  | print this message}"
@@ -137,14 +139,14 @@ int main(int argc, char** argv )
 	{
 		auto& detector = GetArucoDetector();
 		auto& dictionary = detector.getDictionary();
-		filesystem::create_directory("../markers");
+		filesystem::create_directory(GetCyclopsPath() / "markers");
 		for (int i = 0; i < ARUCO_DICT_SIZE; i++)
 		{
 			UMat markerImage;
 			aruco::generateImageMarker(dictionary, i, 1024, markerImage, 1);
 			char buffer[30];
-			snprintf(buffer, sizeof(buffer)/sizeof(char), "../markers/marker%d.png", i);
-			imwrite(buffer, markerImage);
+			snprintf(buffer, sizeof(buffer)/sizeof(char), "marker%d.png", i);
+			imwrite(GetCyclopsPath() / "markers" / buffer, markerImage);
 		}
 		return EXIT_SUCCESS;
 	}

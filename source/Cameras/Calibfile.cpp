@@ -52,7 +52,7 @@ bool readCameraParameters(std::filesystem::path path, cv::Mat &camMatrix, cv::Ma
 		if (missingcalibs.find(path) == missingcalibs.end())
 		{
 			missingcalibs.emplace(path);
-			cerr << "Failed to read camera parameters for " << path << ".yaml" << endl;
+			cerr << "Failed to read camera parameters for " << path << endl;
 		}
 		
 		return false;

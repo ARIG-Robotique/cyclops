@@ -18,6 +18,7 @@
 
 #include <Misc/math2d.hpp>
 #include <Misc/math3d.hpp>
+#include <Misc/path.hpp>
 
 #include <Visualisation/ImguiWindow.hpp>
 #include <Visualisation/openGL/Texture.hpp>
@@ -377,7 +378,7 @@ void CalibrationWorker()
 	}
 	
 
-	writeCameraParameters(filename, CameraMatrix, distanceCoefficients, CamSett->Resolution);
+	writeCameraParameters(GetCyclopsPath() / "build" / filename, CameraMatrix, distanceCoefficients, CamSett->Resolution);
 	//distanceCoefficients = Mat::zeros(8, 1, CV_64F);
 	ShowUndistorted = true;
 	Calibrating = false;

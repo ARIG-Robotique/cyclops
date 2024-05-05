@@ -14,6 +14,7 @@
 
 #include <Misc/ManualProfiler.hpp>
 #include <Misc/math2d.hpp>
+#include <Misc/path.hpp>
 
 #include <Communication/Transport/TCPTransport.hpp>
 #include <Communication/Transport/UDPTransport.hpp>
@@ -122,7 +123,7 @@ void CDFRExternal::ThreadEntryPoint()
 	
 	if (GetScenario().size())
 	{
-		std::filesystem::path basepath("../sim");
+		auto basepath = GetCyclopsPath() / "sim";
 		CameraMan = make_unique<CameraManagerSimulation>(basepath/GetScenario());
 	}
 	else
@@ -145,7 +146,7 @@ void CDFRExternal::ThreadEntryPoint()
 		OpenDirectVisualizer();
 	}
 	
-	RecordRootPath = TimeToStr();
+	RecordRootPath = GetCyclopsPath() / "Recordings" / TimeToStr();
 	
 	
 	//track and untrack cameras dynamically

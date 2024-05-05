@@ -1,6 +1,7 @@
 #include "Misc/GlobalConf.hpp"
 
 #include <Misc/ArucoDictSize.hpp>
+#include <Misc/path.hpp>
 #include <Cameras/ImageTypes.hpp>
 
 #include <iostream>
@@ -57,7 +58,7 @@ void InitConfig()
 	{
 		return;
 	}
-	string filepath = "../config.json";
+	auto filepath = GetCyclopsPath() / "config.json";
 	nlohmann::json configobj;
 	try
 	{
@@ -136,7 +137,7 @@ void InitConfig()
 
 std::filesystem::path GetAssetsPath()
 {
-	return std::filesystem::weakly_canonical(std::filesystem::path("../assets/"));
+	return GetCyclopsPath()/"assets";
 }
 
 string GetScenario()
