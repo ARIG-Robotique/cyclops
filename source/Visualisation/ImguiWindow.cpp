@@ -1,6 +1,8 @@
 
 #include "Visualisation/ImguiWindow.hpp"
 
+#include <Misc/path.hpp>
+
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui.h>
@@ -12,6 +14,7 @@
 using namespace std;
 
 bool ImguiWindow::ImguiOpenGLInit = false;
+string ImguiWindow::ImguiIniPath = "";
 
 ImguiWindow::ImguiWindow(string WindowName)
 {
@@ -27,6 +30,8 @@ ImguiWindow::ImguiWindow(string WindowName)
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;	 // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;	  // Enable Gamepad Controls
+	ImguiIniPath = GetCyclopsPath() / "build" / "imgui.ini";
+	io.IniFilename = ImguiIniPath.c_str();
 	
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();

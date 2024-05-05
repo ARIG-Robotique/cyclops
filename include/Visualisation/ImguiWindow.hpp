@@ -9,6 +9,7 @@ class ImguiWindow : public GLWindow
 {
 
 	static bool ImguiOpenGLInit;
+	static std::string ImguiIniPath;
 public:
 	ImguiWindow(std::string WindowName = "ImGui");
 	virtual ~ImguiWindow();
