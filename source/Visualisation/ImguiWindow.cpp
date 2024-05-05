@@ -45,7 +45,7 @@ ImguiWindow::ImguiWindow(string WindowName)
 ImguiWindow::~ImguiWindow()
 {
 	cout << "Deleting ImGui" << endl;
-	ImGui_ImplGlfw_Shutdown();
+	//ImGui_ImplGlfw_Shutdown();
 }
 
 void ImguiWindow::WindowSizeCallback(int width, int height)

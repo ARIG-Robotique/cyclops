@@ -516,6 +516,11 @@ void JsonListener::HandleQuery(const json &Query)
 
 	if (Parent && Parent->ExternalRunner)
 	{
+		if (Parent->ExternalRunner->IsKilled())
+		{
+			return;
+		}
+		
 		if (ActionStr == "DATA") //2D or 3D data
 		{
 			if (Query.contains("data") && Query["data"].contains("filters") && Query["data"].at("filters").is_array())

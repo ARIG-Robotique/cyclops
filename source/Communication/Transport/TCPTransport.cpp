@@ -65,6 +65,16 @@ void TCPTransport::CreateSocket()
 	{
 		cerr << "TCP Failed to bind to interface : " << strerror(errno) << endl;
 	}
+
+	const int enable = 1;
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+	{
+		cerr << "setsockopt(SO_REUSEADDR) failed" << endl;
+	}
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) < 0)
+	{
+		cerr << "setsockopt(SO_REUSEPORT) failed" << endl;
+	}
 	//LowerLatency(sockfd);
 	
 }
