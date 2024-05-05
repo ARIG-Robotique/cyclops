@@ -173,8 +173,10 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		filterStrings.emplace(elem);
 	}
 	bool hasall = filterStrings.find("ALL") != filterStrings.end();
+	bool has3D = filterStrings.find("DATA3D") != filterStrings.end() || hasall;
+	bool has2D = filterStrings.find("DATA2D") != filterStrings.end() || hasall;
 
-	auto has_filter = [&filterStrings, hasall](string match){return filterStrings.find(match) != filterStrings.end() || hasall;};
+	auto has_filter = [&filterStrings, hasall](string match){return filterStrings.find(match) != filterStrings.end();};
 
 	json jsondataarray = json::array({});
 	for (auto& [type,name] : ObjectTypeNames)
@@ -188,7 +190,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 	bool Has3DData = false;
 	for (auto &Object : ObjData)
 	{
-		if (AllowedTypes.find(Object.type) == AllowedTypes.end())
+		if (!has3D && AllowedTypes.find(Object.type) == AllowedTypes.end())
 		{
 			continue;
 		}
@@ -217,7 +219,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		cv::Size2d fov = GetCameraFOV(data.FrameSize, data.CameraMatrix);
 		cameradata["xfov"] = fov.width;
 		cameradata["yfov"] = fov.height;
-		if (has_filter("ARUCO"))
+		if (has_filter("ARUCO") || has2D)
 		{
 			cameradata["arucoObjects"] = json::array();
 			for (size_t i = 0; i < data.ArucoIndices.size(); i++)
@@ -234,7 +236,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 				CameraDetected = true;
 			}
 		}
-		if (has_filter("YOLO"))
+		if (has_filter("YOLO") || has2D)
 		{
 			cameradata["yoloObjects"] = json::array();
 			for (size_t i = 0; i < data.YoloDetections.size(); i++)
