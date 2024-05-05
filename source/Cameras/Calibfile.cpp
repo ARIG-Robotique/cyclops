@@ -47,6 +47,7 @@ void CleanCalibrationPath(std::filesystem::path &path)
 bool readCameraParameters(std::filesystem::path path, cv::Mat &camMatrix, cv::Mat &distCoeffs, cv::Size &Resolution)
 {
 	CleanCalibrationPath(path);
+	path.replace_filename(GetCalibrationFileName(path.filename()));
 	if (!filesystem::exists(path))
 	{
 		if (missingcalibs.find(path) == missingcalibs.end())
@@ -83,6 +84,7 @@ bool readCameraParameters(std::filesystem::path path, cv::Mat &camMatrix, cv::Ma
 void writeCameraParameters(std::filesystem::path path, Mat camMatrix, Mat distCoeffs, Size Resolution)
 {
 	CleanCalibrationPath(path);
+	path.replace_filename(GetCalibrationFileName(path.filename()));
 	FileStorage fs(path, FileStorage::WRITE);
 	if (!fs.isOpened())
 	{
@@ -94,17 +96,4 @@ void writeCameraParameters(std::filesystem::path path, Mat camMatrix, Mat distCo
 	fs.write("resolution", resmat);
 	fs.write("camera_matrix", camMatrix);
 	fs.write("distortion_coefficients", distCoeffs);
-}
-
-bool readCameraParameters(string description, Mat &camMatrix, Mat &distCoeffs, Size &Resolution)
-{
-	string filename = GetCalibrationFileName(description);
-	auto abspath = filesystem::absolute(filename);
-	return readCameraParameters(abspath, camMatrix, distCoeffs, Resolution);
-}
-
-void writeCameraParameters(string description, Mat camMatrix, Mat distCoeffs, Size Resolution)
-{
-	string filename = GetCalibrationFileName(description);
-	return writeCameraParameters(filesystem::absolute(filename), camMatrix, distCoeffs, Resolution);
 }
