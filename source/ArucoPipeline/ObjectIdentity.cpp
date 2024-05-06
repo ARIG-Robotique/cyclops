@@ -22,7 +22,6 @@ std::optional<GLObject> ObjectData::ToGLObject() const
 {
 	static const map<ObjectType, MeshNames> PacketToMesh = 
 	{
-		{ObjectType::Robot,				MeshNames::robot},
 		{ObjectType::Camera,			MeshNames::brio},
 		{ObjectType::ReferenceAbsolute,	MeshNames::arena},
 		{ObjectType::ReferenceRelative,	MeshNames::arena},

@@ -444,6 +444,7 @@ void BoardGL::ThreadEntryPoint()
 {
 	assert(Parent != nullptr);
 	Init();
+	LoadTags();
 	while (!killed && !Parent->IsKilled())
 	{
 		closed = !Tick(ObjectData::ToGLObjects(Parent->GetObjectData()));
