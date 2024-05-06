@@ -128,6 +128,7 @@ void CDFRExternal::ThreadEntryPoint()
 	}
 	else
 	{
+		Idle = true;
 		CameraMan = make_unique<CameraManagerV4L2>(GetCaptureMethod(), GetCaptureConfig().filter, false);
 	}
 
