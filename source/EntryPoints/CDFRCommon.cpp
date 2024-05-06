@@ -25,13 +25,16 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 		optional<double> height = 0.450;
 		CDFRTeam team = CDFRTeam::Unknown;
 
-		if (i >= 1 && i < 6) {
+		if (i < 6) 
+		{
 			team = CDFRTeam::Blue;
-		} else if ( i >= 6 && i < 11) {
+		} 
+		else  
+		{
 			team = CDFRTeam::Yellow;
 		}
 
-		GlobalObjects.emplace(make_shared<TopTracker>(i, 0.0695, TeamNames.at(team), height));
+		GlobalObjects.emplace(make_shared<TopTracker>(i, 0.07, TeamNames.at(team) + String(" ") + to_string(i), height, true));
 	}
 	for (auto &Tracker : Trackers)
 	{
@@ -63,7 +66,7 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 		auto &tracker = i==0 ? Trackers.at(CDFRTeam::Blue) : Trackers.at(CDFRTeam::Yellow);
 		for (size_t j = 0; j < PAMINames.size(); j++)
 		{
-			auto pamitracker = make_shared<TopTracker>(51+i*20+j, 0.07, PAMINames[j], 0.112);
+			auto pamitracker = make_shared<TopTracker>(51+i*20+j, 0.0695, PAMINames[j], 0.112, false);
 			tracker.RegisterTrackedObject(pamitracker);
 		}
 	}

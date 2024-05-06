@@ -7,8 +7,8 @@
 using namespace cv;
 using namespace std;
 
-TopTracker::TopTracker(int MarkerIdx, double MarkerSize, String InName, optional<double> InExpectedHeight)
-	:ExpectedHeight(InExpectedHeight)
+TopTracker::TopTracker(int MarkerIdx, double MarkerSize, String InName, optional<double> InExpectedHeight, bool InRobot)
+	:ExpectedHeight(InExpectedHeight), Robot(InRobot)
 {
 	Unique = false;
 	Name = InName;
@@ -89,7 +89,7 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 
 vector<ObjectData> TopTracker::ToObjectData() const
 {
-	ObjectData tracker(ObjectType::TopTracker, Name, Location, LastSeenTick);
-	//tracker.Childs = GetMarkersAndChilds();
+	ObjectData tracker(Robot ? ObjectType::Robot : ObjectType::Pami, Name, Location, LastSeenTick);
+	tracker.Childs = GetMarkersAndChilds();
 	return {tracker};
 }

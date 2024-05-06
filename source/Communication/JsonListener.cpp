@@ -325,26 +325,11 @@ bool JsonListener::GetStartingZone(const nlohmann::json query, nlohmann::json &r
 	robot.LastSeen = ObjectData::TimePoint();
 	for (auto &&i : data)
 	{
-		if (i.type != ObjectType::TopTracker)
+		if (i.type != ObjectType::Robot)
 		{
 			continue;
 		}
-		if (i.name.rfind("Robot", 0) != 0) //must start with robot
-		{
-			continue;
-		}
-		int robotidx;
-		try
-		{
-			robotidx = atoi(i.name.c_str() + strlen("Robot "));
-		}
-		catch(const std::exception& e)
-		{
-			std::cerr << "Failed to parse robot index : " << e.what() << '\n';
-			continue;
-		}
-		CDFRTeam robotTeam = robotidx < 6 ? CDFRTeam::Blue : CDFRTeam::Yellow;
-		if (robotTeam != team)
+		if (i.name.rfind(TeamNames.at(team), 0) != 0) //must start with robot
 		{
 			continue;
 		}

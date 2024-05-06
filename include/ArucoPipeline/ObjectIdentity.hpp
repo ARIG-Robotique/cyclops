@@ -34,8 +34,7 @@ enum class ObjectType
 	Camera,
 	Object,
 	Robot,
-	TopTracker,
-	TeamTracker,
+	Pami,
 
 	SolarPanel,
 
@@ -56,15 +55,14 @@ const std::map<ObjectType, std::string> ObjectTypeNames =
 	{ObjectType::Camera, 			"Camera"},
 	{ObjectType::Object, 			"Object"},
 	{ObjectType::Robot, 			"Robot"},
-	{ObjectType::TopTracker, 		"Top Tracker"},
-	{ObjectType::TeamTracker, 		"Team Tracker"},
+	{ObjectType::Pami, 				"PAMI"},
 
 	{ObjectType::SolarPanel, 		"Solar panel"},
 
-	{ObjectType::Fragile, 			"Yolo"},
-	{ObjectType::Resistant, 		"Yolo"},
-	{ObjectType::Pot, 				"Yolo"},
-	{ObjectType::PottedPlant, 		"Yolo"},
+	{ObjectType::Fragile, 			"Yolo3d"},
+	{ObjectType::Resistant, 		"Yolo3d"},
+	{ObjectType::Pot, 				"Yolo3d"},
+	{ObjectType::PottedPlant, 		"Yolo3d"},
 
 	{ObjectType::Team, 				"Team"}
 };

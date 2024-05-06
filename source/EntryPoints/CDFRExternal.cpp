@@ -134,6 +134,8 @@ void CDFRExternal::ThreadEntryPoint()
 
 	YoloDetector = make_unique<YoloDetect>("cdfr", 4);
 
+	//PostProcesses.emplace_back(make_unique<PostProcessAddTeam>(this));
+
 	//display/debug section
 	FrameCounter fps;
 	
@@ -353,13 +355,18 @@ void CDFRExternal::ThreadEntryPoint()
 		TrackerToUse->SolveLocationsPerObject(FeatureDataLocal, GrabTick);
 		vector<ObjectData> &ObjDataLocal = ObjData[BufferIndex]; 
 		ObjDataLocal = TrackerToUse->GetObjectDataVector(GrabTick);
-		ObjectData TeamPacket(ObjectType::Team, TeamNames.at(Team));
-		ObjDataLocal.insert(ObjDataLocal.begin(), TeamPacket); //insert team as the first object
 		for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
 		{
 			auto YoloObjects = YoloDetector->Project(ImageDataLocal[camidx], FeatureDataLocal[camidx]);
 			ObjDataLocal.insert(ObjDataLocal.end(), YoloObjects.begin(), YoloObjects.end());
 		}
+
+		for (auto &i : PostProcesses)
+		{
+			i->Process(ImageDataLocal, FeatureDataLocal, ObjDataLocal);
+		}
+		
+		
 
 
 		BufferIndex = (BufferIndex+1)%ObjData.size();

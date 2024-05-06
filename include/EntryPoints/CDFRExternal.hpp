@@ -11,8 +11,8 @@
 #include <ArucoPipeline/ObjectTracker.hpp>
 #include <Cameras/ImageTypes.hpp>
 #include <Misc/FrameCounter.hpp>
-
 #include <Misc/Task.hpp>
+#include <PostProcessing/PostProcess.hpp>
 
 class CDFRExternal : public Task
 {
@@ -37,6 +37,8 @@ private:
 
 	//Camera manager
 	std::unique_ptr<class CameraManager> CameraMan;
+
+	std::vector<std::unique_ptr<PostProcess>> PostProcesses;
 
 protected:
 	//3D viz

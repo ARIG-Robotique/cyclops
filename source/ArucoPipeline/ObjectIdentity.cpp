@@ -22,18 +22,18 @@ std::optional<GLObject> ObjectData::ToGLObject() const
 {
 	static const map<ObjectType, MeshNames> PacketToMesh = 
 	{
-		{ObjectType::Robot, MeshNames::robot},
-		{ObjectType::Camera, MeshNames::brio},
-		{ObjectType::ReferenceAbsolute, MeshNames::arena},
-		{ObjectType::ReferenceRelative, MeshNames::arena},
-		{ObjectType::Tag, MeshNames::tag},
-		{ObjectType::TopTracker, MeshNames::toptracker},
-		{ObjectType::TeamTracker, MeshNames::trackercube},
-		{ObjectType::SolarPanel, MeshNames::solarpanel},
-		{ObjectType::Fragile, MeshNames::fragile},
-		{ObjectType::Resistant, MeshNames::resistant},
-		{ObjectType::Pot, MeshNames::pot},
-		{ObjectType::PottedPlant, MeshNames::potted_plant}
+		{ObjectType::Robot,				MeshNames::robot},
+		{ObjectType::Camera,			MeshNames::brio},
+		{ObjectType::ReferenceAbsolute,	MeshNames::arena},
+		{ObjectType::ReferenceRelative,	MeshNames::arena},
+		{ObjectType::Tag,				MeshNames::tag},
+		{ObjectType::Robot,				MeshNames::toptracker},
+		{ObjectType::Pami,				MeshNames::toptracker},
+		{ObjectType::SolarPanel,		MeshNames::solarpanel},
+		{ObjectType::Fragile,			MeshNames::fragile},
+		{ObjectType::Resistant,			MeshNames::resistant},
+		{ObjectType::Pot,				MeshNames::pot},
+		{ObjectType::PottedPlant,		MeshNames::potted_plant}
 	};
 
 	auto foundmesh = PacketToMesh.find(type);

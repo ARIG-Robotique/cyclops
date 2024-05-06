@@ -42,7 +42,7 @@ TrackerCube::~TrackerCube()
 
 vector<ObjectData> TrackerCube::ToObjectData() const
 {
-	ObjectData robot(ObjectType::TeamTracker, Name, Location, LastSeenTick);
+	ObjectData robot(ObjectType::Robot, Name, Location, LastSeenTick);
 	robot.Childs = GetMarkersAndChilds();
 	return {robot};
 }
