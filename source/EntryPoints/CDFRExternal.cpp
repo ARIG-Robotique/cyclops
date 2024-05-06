@@ -22,6 +22,8 @@
 #include <Cameras/CameraManagerSimulation.hpp>
 #include <Cameras/VideoCaptureCamera.hpp>
 
+#include <PostProcessing/StockPlants.hpp>
+
 #include <thread>
 #include <memory>
 
@@ -134,7 +136,7 @@ void CDFRExternal::ThreadEntryPoint()
 
 	YoloDetector = make_unique<YoloDetect>("cdfr", 4);
 
-	//PostProcesses.emplace_back(make_unique<PostProcessAddTeam>(this));
+	PostProcesses.emplace_back(make_unique<PostProcessStockPlants>(this));
 
 	//display/debug section
 	FrameCounter fps;

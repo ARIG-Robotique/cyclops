@@ -43,6 +43,10 @@ enum class ObjectType
 	Pot,
 	PottedPlant,
 
+	PlantStock,
+	Hangar,
+	Jardiniere,
+
 	Team
 };
 
@@ -63,6 +67,10 @@ const std::map<ObjectType, std::string> ObjectTypeNames =
 	{ObjectType::Resistant, 		"Yolo3d"},
 	{ObjectType::Pot, 				"Yolo3d"},
 	{ObjectType::PottedPlant, 		"Yolo3d"},
+
+	{ObjectType::PlantStock,		"PlantStock"},
+	{ObjectType::Hangar,			"Hangar"},
+	{ObjectType::Jardiniere,		"Jardiniere"},
 
 	{ObjectType::Team, 				"Team"}
 };
