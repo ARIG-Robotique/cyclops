@@ -16,6 +16,7 @@
 
 #include <Misc/GlobalConf.hpp>
 #include <Misc/ArucoDictSize.hpp>
+#include <EntryPoints/CDFRExternal.hpp>
 #include <Visualisation/openGL/Mesh.hpp>
 
 using namespace std;
@@ -28,40 +29,28 @@ GLObject::GLObject(MeshNames InType, double x, double y, double z, std::string I
 	metadata = InMetadata;
 }
 
-BoardGL::BoardGL(string name)
-	:GLWindow()
+BoardGL::BoardGL(string InName, CDFRExternal* InParent)
+	:GLWindow(), name(InName), Parent(InParent)
 {
-	GLCreateWindow(1280, 720, name);
-	if (!Window)
+	if (InParent)
 	{
-		return;
+		Start();
 	}
-
-	// Enable depth test
-	glEnable(GL_DEPTH_TEST);
-	// Cull triangles which normal is not towards the camera
-	glEnable(GL_CULL_FACE);
-	// Accept fragment if it closer to the camera than the former one
-	glDepthFunc(GL_LESS);
-
-	glfwSetInputMode(Window, GLFW_STICKY_KEYS, GL_TRUE);
-	glfwSetInputMode(Window, GLFW_RAW_MOUSE_MOTION, GL_TRUE);
-	
-	auto shaderfolder = GetAssetsPath() / "shaders";
-	// Create and compile our GLSL program from the shaders
-	ShaderProgram.LoadShader(shaderfolder / "vertexshader.vs", shaderfolder / "fragmentshader.fs");
-
-	glGenVertexArrays(1, &VertexArrayID);
-	glBindVertexArray(VertexArrayID);
-	
-	glfwMakeContextCurrent(NULL);
-
-	LoadModels();
-	//cout << "OpenGL init done!" << endl;
+	else
+	{
+		Init();
+	}
 }
 
 BoardGL::~BoardGL()
 {
+	killed = true;
+	if (ThreadHandle)
+	{
+		ThreadHandle->join();
+		ThreadHandle.reset();
+	}
+	
 	for (auto &&i : Meshes)
 	{
 		i.second.Release();
@@ -332,6 +321,37 @@ void BoardGL::LoadTags()
 	glfwMakeContextCurrent(NULL);
 }
 
+void BoardGL::Init()
+{
+	GLCreateWindow(1280, 720, name);
+	if (!Window)
+	{
+		return;
+	}
+
+	// Enable depth test
+	glEnable(GL_DEPTH_TEST);
+	// Cull triangles which normal is not towards the camera
+	glEnable(GL_CULL_FACE);
+	// Accept fragment if it closer to the camera than the former one
+	glDepthFunc(GL_LESS);
+
+	glfwSetInputMode(Window, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(Window, GLFW_RAW_MOUSE_MOTION, GL_TRUE);
+	
+	auto shaderfolder = GetAssetsPath() / "shaders";
+	// Create and compile our GLSL program from the shaders
+	ShaderProgram.LoadShader(shaderfolder / "vertexshader.vs", shaderfolder / "fragmentshader.fs");
+
+	glGenVertexArrays(1, &VertexArrayID);
+	glBindVertexArray(VertexArrayID);
+	
+	glfwMakeContextCurrent(NULL);
+
+	LoadModels();
+	//cout << "OpenGL init done!" << endl;
+}
+
 bool BoardGL::Tick(std::vector<GLObject> data)
 {
 	if (!Window)
@@ -418,6 +438,18 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 	glfwMakeContextCurrent(NULL);
 
 	return IsDone;
+}
+
+void BoardGL::ThreadEntryPoint()
+{
+	assert(Parent != nullptr);
+	Init();
+	while (!killed && !Parent->IsKilled())
+	{
+		closed = !Tick(ObjectData::ToGLObjects(Parent->GetObjectData()));
+		killed |= closed;		
+	}
+	killed = true;
 }
 
 void BoardGL::runTest()

@@ -150,6 +150,8 @@ bool VideoCaptureCamera::Read()
 	bool ReadSuccess = false;
 	bool HadGrabbed = grabbed;
 	grabbed = false;
+	LastFrameDistorted = UMat();
+	LastFrameUndistorted = UMat();
 	if (HadGrabbed)
 	{
 		ReadSuccess = feed->retrieve(LastFrameDistorted);

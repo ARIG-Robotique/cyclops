@@ -42,7 +42,7 @@ CDFRExternal::CDFRExternal()
 		}	
 	);
 
-	ThreadHandle = make_unique<thread>(&CDFRExternal::ThreadEntryPoint, this);
+	Start();
 }
 
 CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
@@ -181,11 +181,12 @@ void CDFRExternal::ThreadEntryPoint()
 		return true;
 	};
 
-	CameraMan->StartScanThread();
+	CameraMan->Start();
 
 	
 	while (!killed)
 	{
+		DetectionFrameCounter.GetDeltaTime();
 		bool LowPower = false;
 		if(Idle)
 		{
@@ -318,6 +319,7 @@ void CDFRExternal::ThreadEntryPoint()
 				thisprof.EnterSection("CameraGetFrame");
 				CameraImageData &ImData = ImageDataLocal[i];
 				ImData = cam->GetFrame(CDFRCommon::ExternalSettings.DistortedDetection);
+				//cout << "Frame " << BufferIndex << " at " << ImData.Image.u << endl;
 				if (GetScenario().size() && false)
 				{
 					thisprof.EnterSection("Add simulation noise");
@@ -369,17 +371,46 @@ void CDFRExternal::ThreadEntryPoint()
 		if (OpenGLBoard.get())
 		{
 			prof.EnterSection("Visualisation 3D");
-			if(!OpenGLBoard->Tick(ObjectData::ToGLObjects(ObjDataLocal)))
+			if (OpenGLBoard->IsThreaded())
 			{
-				killed = true;
-				cout << "3D visualizer closed, shutting down..." << endl;
-				return;
+				if (OpenGLBoard->GetClosed())
+				{
+					killed = true;
+					cout << "3D visualizer closed, shutting down..." << endl;
+					return;
+				}
+				if (OpenGLBoard->IsKilled())
+				{
+					OpenGLBoard.reset();
+				}
+			}
+			else
+			{
+				if(!OpenGLBoard->Tick(ObjectData::ToGLObjects(ObjDataLocal)))
+				{
+					killed = true;
+					cout << "3D visualizer closed, shutting down..." << endl;
+					return;
+				}
 			}
 		}
+		
 		if (DirectImage.get())
 		{
 			prof.EnterSection("Visualisation 2D");
-			UpdateDirectImage(Cameras, FeatureDataLocal);
+			if (DirectImage->IsThreaded())
+			{
+				if (DirectImage->GetClosed())
+				{
+					killed = true;
+					cout << "2D visualizer closed, shutting down..." << endl;
+					return;
+				}
+				if (DirectImage->IsKilled())
+				{
+					DirectImage.reset();
+				}				
+			}
 		}
 
 		prof.EnterSection("");
@@ -415,8 +446,12 @@ std::vector<ObjectData> CDFRExternal::GetObjectData() const
 
 void CDFRExternal::Open3DVisualizer()
 {
-	OpenGLBoard = make_unique<BoardGL>();
-	if (OpenGLBoard->HasWindow())
+	OpenGLBoard = make_unique<BoardGL>("Cyclops", this);
+	if (OpenGLBoard->IsThreaded())
+	{
+		
+	}
+	else if (OpenGLBoard->HasWindow())
 	{
 		OpenGLBoard->LoadTags();
 		OpenGLBoard->Tick({});
@@ -430,219 +465,17 @@ void CDFRExternal::Open3DVisualizer()
 
 void CDFRExternal::OpenDirectVisualizer()
 {
-	DirectImage = make_unique<ImguiWindow>("External Direct Visualizer");
-	if (!DirectImage->HasWindow())
+	DirectImage = make_unique<ImguiWindow>("External Direct Visualizer", this);
+	if (!DirectImage->IsThreaded() && !DirectImage->HasWindow())
 	{
 		cout << "No 2D visualizer created: No window" << endl;
 		DirectImage.reset();
 	}
 }
 
-void CDFRExternal::UpdateDirectImage(const vector<Camera*> &Cameras, const vector<CameraFeatureData> &FeatureDataLocal)
-{
-	bool selfkill = false;
-	DirectImage->StartFrame();
-	int DisplaysPerCam = 1;
-	int NumDisplays = Cameras.size()*DisplaysPerCam;
-	if ((int)DirectTextures.size() != NumDisplays)
-	{
-		DirectTextures.resize(NumDisplays);
-	}
-	Size WindowSize = DirectImage->GetWindowSize();
-	Size ImageSize = WindowSize;
-	if (Cameras.size() > 0)
-	{
-		ImageSize = Cameras[0]->GetCameraSettings()->Resolution;
-	}
-
-	if (ImGui::Begin("Settings"))
-	{
-		
-		if (!OpenGLBoard)
-		{
-			if (ImGui::Button("Open 3D vizualiser"))
-			{
-				Open3DVisualizer();
-			}
-		}
-		else
-		{
-			if (ImGui::Button("Close 3D vizualiser"))
-			{
-				OpenGLBoard.reset();
-			}
-		}
-		
-		if (ImGui::Button("Close this window"))
-		{
-			selfkill=true;
-		}
-		ImGui::Checkbox("Solve Camera Location", &CDFRCommon::ExternalSettings.SolveCameraLocation);
-
-		map<const char *, CDFRCommon::Settings&> settingsmap({{"External", CDFRCommon::ExternalSettings}, {"Internal", CDFRCommon::InternalSettings}});
-		ForceRecordNext = ImGui::Button("Capture next frame");
-
-		for (auto &entry : settingsmap)
-		{
-			if (!ImGui::CollapsingHeader(entry.first))
-			{
-				continue;
-			}
-			ImGui::InputInt("Record interval", &entry.second.RecordInterval);
-			if(ImGui::Checkbox("Record", &entry.second.record))
-			{
-			}
-			//ImGui::Checkbox("Freeze camera position", nullptr);
-			ImGui::Checkbox("Aruco Detection", &entry.second.ArucoDetection);
-			ImGui::Checkbox("Distorted detection", &entry.second.DistortedDetection);
-			ImGui::Checkbox("Segmented detection", &entry.second.SegmentedDetection);
-			ImGui::Checkbox("POI Detection", &entry.second.POIDetection);
-			ImGui::Checkbox("Yolo detection", &entry.second.YoloDetection);
-			ImGui::Checkbox("Denoising", &entry.second.Denoising);
-			ImGui::Spacing();
-		}
-		
-		
-		ImGui::Checkbox("Idle", &Idle);
-
-		ImGui::Checkbox("Show Aruco", &ShowAruco);
-		ImGui::Checkbox("Show Yolo", &ShowYolo);
-
-		ImGui::Checkbox("Focus peeking", &FocusPeeking);
-		
-	}
-	ImGui::End();
-
-	
-	
-	
-	auto tiles = DistributeViewports(ImageSize, WindowSize, NumDisplays);
-	assert(tiles.size() == Cameras.size());
-	//show cameras and arucos
-	for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
-	{
-		if (Cameras[camidx]->errors != 0)
-		{
-			continue;
-		}
-		auto &thisTile = tiles[camidx*DisplaysPerCam];
-		const Camera* thisCamera = Cameras[camidx];
-		auto ImData = thisCamera->GetFrame(CDFRCommon::ExternalSettings.DistortedDetection);
-		Size Resolution = ImData.Image.size();
-		if (FocusPeeking)
-		{
-			auto POIs = UnknownTracker.GetPointsOfInterest();
-			auto POIRects = GetPOIRects(POIs, Resolution, GetFeatureData()[camidx].CameraTransform, 
-				ImData.CameraMatrix, ImData.DistanceCoefficients);
-			auto POI = POIRects[POIs.size()/2];
-			thisTile.height = ImageSize.height;
-			thisTile.width = ImageSize.width;
-			thisTile.x = -POI.x+(WindowSize.width-POI.width)/2;
-			thisTile.y = -POI.y+(WindowSize.height-POI.height)/2;
-		}
-		
-		DirectTextures[camidx*DisplaysPerCam].LoadFromUMat(ImData.Image);
-		DirectImage->AddImageToBackground(DirectTextures[camidx*DisplaysPerCam], thisTile);
-
-		auto DrawList = ImGui::GetForegroundDrawList();
-		{
-			ostringstream CameraTextStream;
-			CameraTextStream << thisCamera->GetLocation().translation() <<endl;
-			CameraTextStream << LastTeam << endl;
-			string CameraText = CameraTextStream.str();
-			DrawList->AddText(NULL, 12, ImVec2(thisTile.x, thisTile.y), IM_COL32(255,255,255,255), CameraText.c_str());
-		}
-		const CameraFeatureData &FeatData = FeatureDataLocal[camidx];
-		Rect SourceRemap(Point(0,0), Resolution);
-		Rect DestRemap = tiles[camidx];
-		//draw aruco
-		if (ShowAruco && !FocusPeeking)
-		{
-			for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
-			{
-				auto corners = FeatData.ArucoCorners[arucoidx];
-				uint32_t color = IM_COL32(255, 128, 255, 128);
-				if (FeatData.ArucoCornersReprojected[arucoidx].size() != 0)
-				{
-					//cout << arucoidx << " is reprojected" << endl;
-					corners = FeatData.ArucoCornersReprojected[arucoidx];
-					color = IM_COL32(128, 255, 255, 128);
-				}
-				
-				Point2d textpos(0,0);
-				for (auto cornerit = corners.cbegin(); cornerit != corners.cend(); cornerit++)
-				{
-					auto vizpos = ImageRemap<double>(SourceRemap, DestRemap, *cornerit);
-					textpos.x = max<double>(textpos.x, vizpos.x);
-					textpos.y = max<double>(textpos.y, vizpos.y);
-					if (cornerit == corners.begin())
-					{
-						//corner0 square
-						Point2d size = Point2d(2,2);
-						DrawList->AddRect(vizpos-size, vizpos+size, color);
-					}
-					//start aruco contour
-					DrawList->PathLineTo(vizpos);
-				}
-				//finish aruco contour
-				DrawList->PathStroke(color, ImDrawFlags_Closed, 2);
-				//text with aruco number
-				string text = to_string(FeatData.ArucoIndices[arucoidx]);
-				DrawList->AddText(nullptr, 16, textpos, color, text.c_str());
-			}
-			//display segments of segmented detection
-			for (size_t segmentidx = 0; segmentidx < FeatData.ArucoSegments.size(); segmentidx++)
-			{
-				auto &segment = FeatData.ArucoSegments[segmentidx];
-				auto tl = ImageRemap<double>(SourceRemap, DestRemap, segment.tl());
-				auto br = ImageRemap<double>(SourceRemap, DestRemap, segment.br());
-				DrawList->AddRect(tl, br, IM_COL32(255, 255, 255, 64));
-			}
-		}
-		if (ShowYolo && !FocusPeeking)
-		{
-			for (size_t detidx = 0; detidx < FeatData.YoloDetections.size(); detidx++)
-			{
-				auto det = FeatData.YoloDetections[detidx];
-				uint8_t r,g,b;
-				HsvConverter::getRgbFromHSV(1530*det.Class/YoloDetector->GetNumClasses(), 255, 255, r, g, b);
-				uint32_t color = IM_COL32(r,g,b,det.Confidence*255);
-				
-				Point2d textpos(0,0);
-				auto tl = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.tl());
-				auto br = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.br());
-				DrawList->AddRect(tl, br, color);
-				//text with class and confidence
-				string text = YoloDetector->GetClassName(det.Class) + string("\n") + to_string(int(det.Confidence*100));
-				DrawList->AddText(nullptr, 16, tl, color, text.c_str());
-			}
-		}
-		
-	}
-	if(!DirectImage->EndFrame())
-	{
-		killed = true;
-		cout << "2D visualizer closed, shutting down..." << endl;
-		return;
-	}
-	if (selfkill)
-	{
-		DirectImage.reset();
-	}
-	
-}
-
-
 CDFRExternal::~CDFRExternal()
 {
-	killed = true;
-	if (ThreadHandle)
-	{
-		ThreadHandle->join();
-	}
-	for (auto &&i : DirectTextures)
-	{
-		i.Release();
-	}
-	
+	cout << "External runner shutting down..." << endl;
+	DirectImage.reset();
+	OpenGLBoard.reset();
 }

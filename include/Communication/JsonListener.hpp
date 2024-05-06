@@ -9,6 +9,7 @@
 #include <opencv2/core/affine.hpp>
 #include <nlohmann/json.hpp>
 #include <ArucoPipeline/ObjectIdentity.hpp>
+#include <Misc/Task.hpp>
 
 class TCPTransport;
 
@@ -24,11 +25,9 @@ class TCPTransport;
 
 class TCPJsonHost;
 
-class JsonListener
+class JsonListener : public Task
 {
 private:
-	std::unique_ptr<std::thread> ListenThread = nullptr;
-	bool killed = false;
 	std::vector<char> ReceiveBuffer;
 public:
 	TCPTransport *Transport = nullptr;
@@ -88,5 +87,5 @@ private:
 
 	void CheckAlive();
 
-	void ThreadEntryPoint();
+	virtual void ThreadEntryPoint() override;
 };

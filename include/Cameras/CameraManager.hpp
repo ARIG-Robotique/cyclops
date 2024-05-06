@@ -9,13 +9,14 @@
 #include <memory>
 
 #include <Cameras/Camera.hpp>
+#include <Misc/Task.hpp>
 
 
 //Overseer class for the cameras
 //Creates a camera objet when a new camera is detected
 //Deletes a camera object when too many errors have been accumulated
 //Could be made so that the creation and detection is run on another thread
-class CameraManager
+class CameraManager : public Task
 {
 protected:
 	//Boths paths are protected by pathmutex
@@ -23,9 +24,6 @@ protected:
 	std::set<std::string> blockedpaths; //paths that have been tried but failed at some point during init, so that we don't try again
 
 	std::shared_mutex pathmutex, cammutex;
-
-	std::unique_ptr<std::thread> scanthread;
-	bool killmutex;
 
 	std::vector<std::shared_ptr<Camera>> Cameras, NewCameras; //List of cameras. NewCameras is protected by cammutex, Cameras only belongs to Tick
 
@@ -39,15 +37,12 @@ public:
 
 
 	CameraManager()
+		:Task()
 	{
-		scanthread = nullptr;
-		killmutex = false;
 	}
 	
 	virtual ~CameraManager()
 	{
-		killmutex = true;
-		scanthread->join();
 	}
 
 public:
@@ -56,8 +51,6 @@ public:
 
 	std::vector<Camera*> GetCameras();
 
-	void StartScanThread();
-
 protected:
-	virtual void ScanWorker();
+	virtual void ThreadEntryPoint() override;
 };

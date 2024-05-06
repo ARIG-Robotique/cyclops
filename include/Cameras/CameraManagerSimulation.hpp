@@ -19,5 +19,5 @@ public:
 	}
 
 protected:
-	virtual void ScanWorker() override;
+	virtual void ThreadEntryPoint() override;
 };

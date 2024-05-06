@@ -13,9 +13,13 @@ class FrameCounter
 private:
 	deltapoint LastTime;
 	deltapoint StartTime;
+	deltatype LastDelta;
 public:
 	FrameCounter(/* args */);
 	~FrameCounter();
+
+	//Get the last value of GetDeltaTime
+	double GetLastDelta();
 
 	// Returns the time elapsed since last call of this function
 	double GetDeltaTime();

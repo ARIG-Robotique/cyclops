@@ -28,6 +28,6 @@ public:
 
 	static std::vector<VideoCaptureCameraSettings> autoDetectCameras(CameraStartType Start, std::string Filter, bool silent = true);
 
-	protected:
-	virtual void ScanWorker() override;
+protected:
+	virtual void ThreadEntryPoint() override;
 };

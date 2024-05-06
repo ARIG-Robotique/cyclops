@@ -28,8 +28,6 @@ TCPTransport::TCPTransport(bool inServer, string inIP, int inPort, string inInte
 	CreateSocket();
 	Connect();
 
-	//ReceiveThreadHandle = new thread(&TCPTransport::receiveThread, this);
-
 	cout << "Created TCP transport " << IP << ":" << Port << " @ " << Interface <<endl;
 }
 
@@ -399,7 +397,7 @@ void TCPTransport::DisconnectClient(std::string client)
 	}
 }
 
-void TCPTransport::receiveThread()
+void TCPTransport::ThreadEntryPoint()
 {
 	cout << "TCP Webserver thread started..." << endl;
 	while (1)

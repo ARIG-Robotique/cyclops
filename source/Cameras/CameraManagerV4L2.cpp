@@ -91,9 +91,9 @@ vector<VideoCaptureCameraSettings> CameraManagerV4L2::autoDetectCameras(CameraSt
 	return detected;
 }
 
-void CameraManagerV4L2::ScanWorker()
+void CameraManagerV4L2::ThreadEntryPoint()
 {
-	while (!killmutex)
+	while (!killed)
 	{
 		std::vector<v4l2::devices::DEVICE_INFO> devices;
 		v4l2::devices::list(devices);

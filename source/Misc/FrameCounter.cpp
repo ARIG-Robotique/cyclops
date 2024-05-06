@@ -17,12 +17,17 @@ FrameCounter::~FrameCounter()
 
 }
 
+double FrameCounter::GetLastDelta()
+{
+	return LastDelta.count();
+}
+
 double FrameCounter::GetDeltaTime()
 {
 	deltapoint dt2 = deltaclock::now();
-	deltatype deltaTime = (dt2-LastTime);
+	LastDelta = (dt2-LastTime);
 	LastTime = dt2;
-	return deltaTime.count();
+	return LastDelta.count();
 }
 
 double FrameCounter::GetAbsoluteTime()

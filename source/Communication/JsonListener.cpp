@@ -24,21 +24,12 @@ JsonListener::JsonListener(TCPTransport* InTransport, string InClientName, TCPJs
 {
 	LastAliveSent = chrono::steady_clock::now();
 	LastAliveReceived = LastAliveSent;
-	if (ListenThread)
-	{
-		return;
-	}
-	ListenThread = make_unique<thread>(&JsonListener::ThreadEntryPoint, this);
+	Start();
 	cout << "Json listen thread for " << ClientName << " started" << endl;
 }
 
 JsonListener::~JsonListener()
 {
-	killed = true;
-	if (ListenThread)
-	{
-		ListenThread->join();
-	}
 	cout << "Json listen thread for " << ClientName << " stoppped" << endl;
 }
 

@@ -3,11 +3,14 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <thread>
+#include <memory>
 #include <glm/glm.hpp>
 
 #include <Visualisation/GLWindow.hpp>
 #include <Visualisation/openGL/Mesh.hpp>
 #include <Visualisation/openGL/Shader.hpp>
+#include <Misc/Task.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -47,23 +50,39 @@ struct GLObject
 	GLObject(MeshNames InType, double x, double y, double z, std::string InMetadata = "");
 };
 
+class CDFRExternal;
 
-class BoardGL : public GLWindow
+class BoardGL : public GLWindow, public Task
 {
 private:
 	GLuint VertexArrayID;
 	Shader ShaderProgram;
 
+	std::string name;
+
 	bool MeshesLoaded = false, TagsLoaded= false, TagLoadWarning=false;
 	std::map<MeshNames, Mesh> Meshes;
 	std::vector<Texture> TagTextures;
 
+	CDFRExternal *Parent = nullptr;
+	bool closed = false;
+
 	glm::mat4 GetVPMatrix(glm::vec3 forward, glm::vec3 up) const;
 public:
-
-	BoardGL(std::string name = "Cyclops");
+	//if parent is not null, visualiser is started in another thread
+	BoardGL(std::string InName = "Cyclops", CDFRExternal* InParent = nullptr);
 
 	virtual ~BoardGL();
+
+	bool IsThreaded()
+	{
+		return Parent != nullptr;
+	}
+
+	bool GetClosed()
+	{
+		return closed;
+	}
 
 	bool LookingAround = false; //Is left button pressed ?
 	double lastCursorX, lastCursorY;
@@ -82,10 +101,16 @@ public:
 	void LoadModels();
 	void LoadTags();
 
+	void Init();
+
 	bool Tick(std::vector<GLObject> data); //Run display loop for these objects, returns false if exit was asked.
 
 	void runTest();
 
+protected:
+	virtual void ThreadEntryPoint() override;
+
+public:
 	virtual void WindowSizeCallback(int width, int height) override;
 
 };

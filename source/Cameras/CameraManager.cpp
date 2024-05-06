@@ -41,19 +41,10 @@ std::vector<Camera*> CameraManager::GetCameras()
 	return OutCams;
 }
 
-void CameraManager::StartScanThread()
-{
-	if (scanthread)
-	{
-		return;
-	}
-	scanthread = make_unique<thread>(&CameraManager::ScanWorker, this);
-}
-
-void CameraManager::ScanWorker()
+void CameraManager::ThreadEntryPoint()
 {
 	cout << "Called base CameraManager ScanWorker, this is bad..." << endl;
-	while (!killmutex)
+	while (!killed)
 	{
 		this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}

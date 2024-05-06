@@ -79,7 +79,7 @@ GLFWwindow* GLWindow::GLCreateWindow(int width, int height, std::string name)
 		return nullptr;
 	}
 
-	glfwSwapInterval( 0 ); //disable vsync
+	//glfwSwapInterval( 0 ); //disable vsync
 
 
 	glfwSetWindowSizeCallback(Window, window_size_callback_generic);

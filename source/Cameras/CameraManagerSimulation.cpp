@@ -8,9 +8,9 @@
 
 using namespace std;
 
-void CameraManagerSimulation::ScanWorker()
+void CameraManagerSimulation::ThreadEntryPoint()
 {
-	while (!killmutex)
+	while (!killed)
 	{
 		{
 			shared_lock lock(pathmutex);

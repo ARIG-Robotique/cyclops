@@ -9,11 +9,13 @@
 #include <functional>
 #include <netinet/in.h>
 
+#include <Misc/Task.hpp>
+
 //TCP transport layer
 
 
 
-class TCPTransport : public GenericTransport
+class TCPTransport : public GenericTransport, public Task
 {
 private:
 	struct TCPConnection
@@ -28,7 +30,6 @@ private:
 	int Port;
 	int sockfd;
 	bool Connected;
-	std::unique_ptr<std::thread> ReceiveThreadHandle;
 	mutable std::shared_mutex listenmutex; //protects connections
 	std::vector<TCPConnection> connections;
 public:
@@ -56,5 +57,5 @@ public:
 
 	void DisconnectClient(std::string client);
 	
-	void receiveThread();
+	virtual void ThreadEntryPoint() override;
 };

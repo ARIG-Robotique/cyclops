@@ -9,12 +9,15 @@
 #include <Communication/ProcessedTypes.hpp>
 #include <ArucoPipeline/ObjectIdentity.hpp>
 #include <ArucoPipeline/ObjectTracker.hpp>
+#include <Cameras/ImageTypes.hpp>
+#include <Misc/FrameCounter.hpp>
 
-class CDFRExternal
+#include <Misc/Task.hpp>
+
+class CDFRExternal : public Task
 {
 private:
 	//State
-	bool killed = false;
 	bool HasNoClients = true;
 	//Low power modes : disables aruco detection and reduces visualizers to 2fps
 	//Idle : manual low power mode
@@ -23,25 +26,26 @@ private:
 	bool Sleep = false, LastSleep = false;
 
 	//Settings
-	bool FocusPeeking = false;
 	int RecordTick = 0, RecordIndex=0;
+protected:
 	bool ForceRecordNext = false;
+	FrameCounter DetectionFrameCounter;
+private:
 	std::filesystem::path RecordRootPath;
 
 	std::unique_ptr<class YoloDetect> YoloDetector;
 
 	//Camera manager
 	std::unique_ptr<class CameraManager> CameraMan;
-	//Running thread handle
-	std::unique_ptr<std::thread> ThreadHandle;
 
+protected:
 	//3D viz
 	std::unique_ptr<class BoardGL> OpenGLBoard;
 
 	//2D viz
-	std::vector<struct Texture> DirectTextures;
 	std::unique_ptr<class ImguiWindow> DirectImage;
 
+private:
 	//data
 	int BufferIndex = 0;
 	CDFRTeam LastTeam = CDFRTeam::Unknown, LockedTeam = CDFRTeam::Unknown;
@@ -50,13 +54,11 @@ private:
 	std::array<std::vector<CameraFeatureData>, 3> FeatureData;
 	std::array<std::vector<ObjectData>, 3> ObjData;
 
-	//Show Aruco or Yolo
-	bool ShowAruco = true, ShowYolo = true;
-
 	CDFRTeam GetTeamFromCameraPosition(std::vector<class Camera*> Cameras);
 
 	void UpdateDirectImage(const std::vector<class Camera*> &Cameras, const std::vector<CameraFeatureData> &FeatureDataLocal);
 
+protected:
 	void Open3DVisualizer();
 
 	void OpenDirectVisualizer();
@@ -86,7 +88,7 @@ public:
 
 	CDFRTeam GetTeam();
 
-	void ThreadEntryPoint();
+	virtual void ThreadEntryPoint() override;
 
 	int GetReadBufferIndex() const;
 
@@ -96,14 +98,10 @@ public:
 
 	std::vector<ObjectData> GetObjectData() const;
 
-	bool IsKilled()
-	{
-		return killed;
-	}
-
 	CDFRExternal();
-	~CDFRExternal();
+	virtual ~CDFRExternal();
 
+	friend class ImguiWindow;
 };
 
 
