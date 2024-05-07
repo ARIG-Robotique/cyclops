@@ -6,3 +6,4 @@ config.*
 *.blend1
 *.mp4
 .idea/**
+Recordings/**

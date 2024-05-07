@@ -231,6 +231,10 @@ bool JsonListener::GetData(const json &Query, json &Response)
 				break;
 			}
 		}
+		if (!contained)
+		{
+			continue;
+		}
 		json objectified = ObjectToJson(Object);
 		jsondataarray.push_back(objectified);
 		Has3DData = true;

@@ -204,7 +204,7 @@ void ImguiWindow::ThreadEntryPoint()
 			ImGui::Checkbox("Solve Camera Location", &CDFRCommon::ExternalSettings.SolveCameraLocation);
 
 			map<const char *, CDFRCommon::Settings&> settingsmap({{"External", CDFRCommon::ExternalSettings}, {"Internal", CDFRCommon::InternalSettings}});
-			Parent->ForceRecordNext = ImGui::Button("Capture next frame");
+			Parent->ForceRecordNext |= ImGui::Button("Capture next frame");
 
 			for (auto &entry : settingsmap)
 			{

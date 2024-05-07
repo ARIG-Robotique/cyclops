@@ -344,6 +344,7 @@ void CDFRExternal::ThreadEntryPoint()
 
 				if (RecordThisTick)
 				{
+					cout << "Recording image" << endl;
 					cam->Record(RecordRootPath, RecordIndex);
 				}
 				
