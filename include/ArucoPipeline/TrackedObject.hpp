@@ -1,11 +1,8 @@
 #pragma once
 
-#include <iostream> // for standard I/O
-#include <string>   // for strings
-#include <sstream>  // string to number conversion
 #include <array>
-#include <opencv2/core.hpp>		// Basic OpenCV structures (Mat, Scalar)
-#include <opencv2/video/tracking.hpp>
+#include <opencv2/core.hpp>				// Basic OpenCV structures (Mat, Scalar)
+#include <opencv2/video/tracking.hpp>	//Kalman filter
 #include <ArucoPipeline/ObjectIdentity.hpp>
 #include <Communication/ProcessedTypes.hpp>
 

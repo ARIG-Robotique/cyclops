@@ -2,6 +2,7 @@
 
 
 #include <vector>
+#include <iostream>
 
 #include <Misc/math3d.hpp>
 #include <ArucoPipeline/StaticObject.hpp>

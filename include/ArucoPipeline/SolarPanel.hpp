@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ArucoPipeline/TrackedObject.hpp>
-
 #include <array>
 
 class SolarPanel : public TrackedObject

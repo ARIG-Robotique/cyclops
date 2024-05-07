@@ -27,11 +27,8 @@ struct CameraSettings
 	//Distortion
 	cv::Mat distanceCoeffs;
 
-	bool record;
-
 	CameraSettings()
-	:Resolution(-1,-1), Framerate(0), FramerateDivider(1),
-	record(false)
+	:Resolution(-1,-1), Framerate(0), FramerateDivider(1)
 	{}
 
 	virtual ~CameraSettings(){};

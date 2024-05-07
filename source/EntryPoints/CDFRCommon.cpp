@@ -79,6 +79,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		Camera* cam, const CameraImageData& ImData, CameraFeatureData& FeatData, 
 		ObjectTracker& Tracker, std::chrono::steady_clock::time_point GrabTick, YoloDetect *YoloDetector)
 {
+	const bool use_threads = false;
 	FeatData.Clear();
 	FeatData.CopyEssentials(ImData);
 	bool doYolo = Settings.YoloDetection && YoloDetector;
@@ -87,20 +88,39 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 	unique_ptr<thread> arucoThread;
 	if (doYolo)
 	{
-		yoloThread = make_unique<thread>(&YoloDetect::Detect, YoloDetector, 
-			ImData, &FeatData);
-		//YoloDetector->Detect(ImData, FeatData);
-	}
-	if (doAruco)
-	{
-		if (Settings.SegmentedDetection)
+		if (use_threads)
 		{
-			arucoThread = make_unique<thread>(DetectArucoSegmented, ImData, &FeatData, 200, Size(4,3));
-			
+			yoloThread = make_unique<thread>(&YoloDetect::Detect, YoloDetector, 
+				ImData, &FeatData);
 		}
 		else
 		{
-			arucoThread = make_unique<thread>(DetectAruco, ImData, &FeatData);
+			YoloDetector->Detect(ImData, &FeatData);
+		}
+	}
+	if (doAruco)
+	{
+		if (use_threads)
+		{
+			if (Settings.SegmentedDetection)
+			{
+				arucoThread = make_unique<thread>(DetectArucoSegmented, ImData, &FeatData, 200, Size(4,3));
+			}
+			else
+			{
+				arucoThread = make_unique<thread>(DetectAruco, ImData, &FeatData);
+			}
+		}
+		else
+		{
+			if (Settings.SegmentedDetection)
+			{
+				DetectArucoSegmented(ImData, &FeatData, 200, Size(4,3));
+			}
+			else
+			{
+				DetectAruco(ImData, &FeatData);
+			}
 		}
 	}
 	

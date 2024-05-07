@@ -2,7 +2,7 @@
 
 #include <opencv2/core.hpp>
 #include <ArucoPipeline/TrackedObject.hpp>
-#include <Misc/ArucoDictSize.hpp>
+#include <ArucoPipeline/ArucoTypes.hpp>
 #include <array>
 
 //Class that handles the objects, and holds information about each tag's size

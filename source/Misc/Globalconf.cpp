@@ -1,6 +1,6 @@
 #include "Misc/GlobalConf.hpp"
 
-#include <Misc/ArucoDictSize.hpp>
+#include <ArucoPipeline/ArucoTypes.hpp>
 #include <Misc/path.hpp>
 #include <Cameras/ImageTypes.hpp>
 

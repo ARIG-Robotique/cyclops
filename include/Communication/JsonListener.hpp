@@ -3,8 +3,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <cstdint>
-#include <sstream>
 #include <chrono>
 #include <opencv2/core/affine.hpp>
 #include <nlohmann/json.hpp>
@@ -33,7 +31,6 @@ public:
 	TCPTransport *Transport = nullptr;
 	std::string ClientName = "none";
 	TCPJsonHost *Parent = nullptr;
-	uint64 sendIndex = 0;
 	std::chrono::steady_clock::time_point LastAliveSent, LastAliveReceived;
 	enum class TransformMode
 	{

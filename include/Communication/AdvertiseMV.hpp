@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <thread>
-#include <mutex>
 #include <Communication/Transport/UDPTransport.hpp>
 
 class AdvertiseMV

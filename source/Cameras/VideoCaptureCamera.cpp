@@ -93,26 +93,6 @@ bool VideoCaptureCamera::StartFeed()
 	}
 	
 	connected = true;
-
-	if (Settingscast->record)
-	{
-		string folderstr = Settingscast->DeviceInfo.device_description.substr(0, 10);
-		auto now = chrono::system_clock::to_time_t(chrono::system_clock::now());
-		string timestr(32, '\0');
-		timestr.resize(strftime(&timestr[0], timestr.size(), "%m-%d-%H:%M:%S", std::localtime(&now)));
-		auto rootdir = filesystem::path("recordings")/folderstr;
-		auto imagedir = rootdir/timestr;
-		auto mp4path = (rootdir/timestr).replace_extension(".mp4");
-		#ifdef USE_VIDEO_RECORDING
-		filesystem::create_directories(rootdir);
-		cout << "Opening mp4 for recording at " << mp4path << endl;
-		recorder = make_unique<VideoWriter>(mp4path, VideoWriter::fourcc('m', 'p', '4', 'v'), 30.0, Settingscast->Resolution);
-		#else
-		filesystem::create_directories(imagedir);
-		record_path = imagedir;
-		record_idx = 0;
-		#endif
-	}
 	
 	return true;
 }
@@ -169,24 +149,6 @@ bool VideoCaptureCamera::Read()
 		return false;
 	}
 	RegisterNoError();
-	if (!record_path.empty() || recorder)
-	{
-		string writepath = record_path/(string("img_") + to_string(record_idx) + string(".jpg"));
-		#ifndef USE_VIDEO_RECORDING
-		#if 0
-		std::thread t(imwrite, writepath, std::ref(LastFrameDistorted));
-		t.detach();
-		#else
-		if (record_idx%10==0)
-		{
-			imwrite(writepath, LastFrameDistorted);
-		}
-		#endif
-		#else
-		recorder->write(LastFrameUndistorted);
-		#endif
-		record_idx++;
-	}
 	
 	return true;
 }

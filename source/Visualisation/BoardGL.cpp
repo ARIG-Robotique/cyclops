@@ -15,7 +15,6 @@
 #include <assimp/Importer.hpp>
 
 #include <Misc/GlobalConf.hpp>
-#include <Misc/ArucoDictSize.hpp>
 #include <EntryPoints/CDFRExternal.hpp>
 #include <Visualisation/openGL/Mesh.hpp>
 

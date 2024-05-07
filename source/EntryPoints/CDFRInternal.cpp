@@ -4,6 +4,12 @@
 #include <DetectFeatures/ArucoDetect.hpp>
 #include <DetectFeatures/YoloDetect.hpp>
 
+#include <iostream>
+#include <sstream>
+#include <thread>
+
+using namespace std;
+
 CDFRInternal::CDFRInternal()
 {
 }

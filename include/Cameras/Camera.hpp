@@ -7,7 +7,6 @@
 #include <chrono>
 #include <filesystem>
 #include <opencv2/core.hpp>		// Basic OpenCV structures (Mat, Scalar)
-#include <opencv2/highgui.hpp>  // OpenCV window I/O
 #include <opencv2/core/affine.hpp>
 
 #include <Cameras/ImageSource.hpp>

@@ -5,7 +5,6 @@
 #include <string>
 #include <iostream>
 #include <shared_mutex>
-#include <thread>
 #include <memory>
 
 #include <Cameras/Camera.hpp>
