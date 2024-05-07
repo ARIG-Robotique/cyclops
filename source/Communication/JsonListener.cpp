@@ -167,7 +167,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 	bool hasall = filterStrings.find("ALL") != filterStrings.end();
 	bool has3D = filterStrings.find("DATA3D") != filterStrings.end() || hasall;
 	bool has2D = filterStrings.find("DATA2D") != filterStrings.end() || hasall;
-	vector<cv::Rect2d> PositionFilters;
+	map<string, cv::Rect2d> PositionFilters;
 	if (QueryData.contains("zones") && QueryData.at("zones").is_array())
 	{
 		for (auto &elem : QueryData.at("zones"))
@@ -178,7 +178,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 				double cy = elem.at("cy");
 				double dx = elem.at("dx");
 				double dy = elem.at("dy");
-				PositionFilters.emplace_back(cx-dx/2.0, cy-dy/2.0, dx, dy);
+				PositionFilters[elem.at("name")] = cv::Rect2d(cx-dx/2.0, cy-dy/2.0, dx, dy);
 			}
 			catch(const json::exception& e)
 			{
@@ -190,11 +190,11 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		cv::Point2d offset(1500,1000);
 		for (auto &zone : PositionFilters)
 		{
-			cv::Point2d tl = zone.tl();
-			cv::Size2d size = zone.size();
+			cv::Point2d tl = zone.second.tl();
+			cv::Size2d size = zone.second.size();
 			tl = (tl-offset)/1000;
 			size /= 1000.0;
-			zone = cv::Rect2d(tl, size);
+			zone.second = cv::Rect2d(tl, size);
 		}
 	}
 
@@ -220,14 +220,14 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		{
 			continue;
 		}
-		bool contained = PositionFilters.size() == 0;
+		bool contains = PositionFilters.size() == 0;
 		for (auto &zone : PositionFilters)
 		{
 			cv::Vec3d pos3d = Object.location.translation();
 			cv::Vec2d pos2d(pos3d.val);
-			if (zone.contains(pos2d))
+			if (zone.second.contains(pos2d))
 			{
-				contained = true;
+				contains = true;
 				break;
 			}
 		}
