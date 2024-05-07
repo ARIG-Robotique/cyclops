@@ -296,6 +296,7 @@ bool JsonListener::GetZone(const json &Query, json &Response)
 		return false;
 	}
 	auto &QueryData = Query.at("data");
+	set<ObjectType> AllowedTypes;
 	if (!QueryData.contains("zones"))
 	{
 		return false;
@@ -306,11 +307,18 @@ bool JsonListener::GetZone(const json &Query, json &Response)
 	}
 	if (!QueryData.contains("classes"))
 	{
-		return false;
+		AllowedTypes.insert(ObjectType::Fragile);
+		AllowedTypes.insert(ObjectType::Resistant);
+		AllowedTypes.insert(ObjectType::Pot);
+		AllowedTypes.insert(ObjectType::PottedPlant);
 	}
-	if (!QueryData.at("classes").is_array())
+	else if (!QueryData.at("classes").is_array())
 	{
 		return false;
+	}
+	else
+	{
+		AllowedTypes = GetFilterClasses(QueryData.at("classes"));
 	}
 	
 	auto ObjData = Parent->ExternalRunner->GetObjectData();
@@ -330,8 +338,6 @@ bool JsonListener::GetZone(const json &Query, json &Response)
 		{
 		}
 	}
-
-	set<ObjectType> AllowedTypes = GetFilterClasses(QueryData.at("classes"));
 
 	if (ObjectMode == TransformMode::Millimeter2D)
 	{
@@ -370,7 +376,7 @@ bool JsonListener::GetZone(const json &Query, json &Response)
 			}
 		}
 	}
-	Response["data"]["not_empty"] = SeenZones;
+	Response["data"]["zones"] = SeenZones;
 	Response["status"] = "OK";
 	return true;
 }
