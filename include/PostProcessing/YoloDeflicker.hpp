@@ -29,7 +29,6 @@ class PostProcessYoloDeflicker : public PostProcess
 			{
 				if ((type == ObjectType::Fragile && other.type == ObjectType::Resistant) || (other.type == ObjectType::Fragile && type == ObjectType::Resistant))
 				{
-					type=other.type;
 				}
 				else
 				{
@@ -50,6 +49,7 @@ class PostProcessYoloDeflicker : public PostProcess
 			Lifetime += std::chrono::milliseconds(confidence*10);//if 100% confident, add 1s lifetime
 			Lifetime = std::max(Lifetime, ObjectData::Clock::now() + std::chrono::seconds(3)); //max 3s lifetime
 			LastSeen = other.LastSeen;
+			type = other.type;
 		}
 	};
 	std::vector<YoloObject> CachedObjects;
