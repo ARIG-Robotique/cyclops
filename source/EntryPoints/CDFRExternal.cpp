@@ -270,6 +270,7 @@ void CDFRExternal::ThreadEntryPoint()
 		}
 
 		bool RecordThisTick = ForceRecordNext;
+		ForceRecordNext &= false;
 		if (RecordTick >= CDFRCommon::ExternalSettings.RecordInterval-1)
 		{
 			RecordTick = 0;
