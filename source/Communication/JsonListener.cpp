@@ -231,7 +231,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 				break;
 			}
 		}
-		if (!contained)
+		if (!contains)
 		{
 			continue;
 		}
