@@ -147,8 +147,9 @@ bool JsonListener::GetData(const json &Query, json &Response)
 	{
 		return false;
 	}
-	auto &filter = Query["data"]["filters"];
-	int maxagems = Query["data"].value("maxAge", 0);
+	auto &QueryData = Query.at("data");
+	auto &filter = QueryData.at("filters");
+	int maxagems = QueryData.value("maxAge", 0);
 	ObjectData::TimePoint OldCutoff;
 	if (maxagems >0)
 	{
@@ -166,29 +167,36 @@ bool JsonListener::GetData(const json &Query, json &Response)
 	bool hasall = filterStrings.find("ALL") != filterStrings.end();
 	bool has3D = filterStrings.find("DATA3D") != filterStrings.end() || hasall;
 	bool has2D = filterStrings.find("DATA2D") != filterStrings.end() || hasall;
-	optional<cv::Rect2d> PositionFilter;
-	try
+	vector<cv::Rect2d> PositionFilters;
+	if (QueryData.contains("zones") && QueryData.at("zones").is_array())
 	{
-		double cx = Query.at("cx");
-		double cy = Query.at("cy");
-		double dx = Query.at("dx");
-		double dy = Query.at("dy");
-		PositionFilter = cv::Rect2d(cx-dx/2.0, cy-dy/2.0, dx, dy);
+		for (auto &elem : QueryData.at("zones"))
+		{
+			try
+			{
+				double cx = elem.at("cx");
+				double cy = elem.at("cy");
+				double dx = elem.at("dx");
+				double dy = elem.at("dy");
+				PositionFilters.emplace_back(cx-dx/2.0, cy-dy/2.0, dx, dy);
+			}
+			catch(const json::exception& e)
+			{
+			}
+		}
 	}
-	catch(const json::exception& e)
-	{
-	}
-	if (PositionFilter.has_value() && ObjectMode == TransformMode::Millimeter2D)
+	if (ObjectMode == TransformMode::Millimeter2D)
 	{
 		cv::Point2d offset(1500,1000);
-		cv::Point2d tl = PositionFilter->tl();
-		cv::Size2d size = PositionFilter->size();
-		tl = (tl-offset)/1000;
-		size /= 1000.0;
-		PositionFilter = cv::Rect2d(tl, size);
+		for (auto &zone : PositionFilters)
+		{
+			cv::Point2d tl = zone.tl();
+			cv::Size2d size = zone.size();
+			tl = (tl-offset)/1000;
+			size /= 1000.0;
+			zone = cv::Rect2d(tl, size);
+		}
 	}
-	
-	
 
 	auto has_filter = [&filterStrings, hasall](string match){return filterStrings.find(match) != filterStrings.end();};
 
@@ -212,13 +220,15 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		{
 			continue;
 		}
-		if (PositionFilter.has_value())
+		bool contained = PositionFilters.size() == 0;
+		for (auto &zone : PositionFilters)
 		{
 			cv::Vec3d pos3d = Object.location.translation();
 			cv::Vec2d pos2d(pos3d.val);
-			if (!PositionFilter->contains(pos2d))
+			if (zone.contains(pos2d))
 			{
-				continue;
+				contained = true;
+				break;
 			}
 		}
 		json objectified = ObjectToJson(Object);
@@ -547,7 +557,7 @@ void JsonListener::HandleQuery(const json &Query)
 		
 		if (ActionStr == "DATA") //2D or 3D data
 		{
-			if (Query.contains("data") && Query["data"].contains("filters") && Query["data"].at("filters").is_array())
+			if (Query.contains("data") && Query.at("data").contains("filters") && Query.at("data").at("filters").is_array())
 			{
 				GetData(Query, Response);
 				Response["status"] = "OK";
