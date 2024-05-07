@@ -3,6 +3,8 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/highgui.hpp>
 
+#include <iostream>
+
 using namespace std;
 using namespace cv;
 
@@ -84,6 +86,10 @@ void PostProcessJardinieres::Process(std::vector<CameraImageData> &ImageData, st
 	const auto InvCameraMatrix = ThisFeatureData.CameraTransform.inv();
 	Size WantedImageSize(65,30);
 	vector<Vec2f> AffineTarget{{0,0}, {0, (float)WantedImageSize.height}, Vec2f(WantedImageSize.width, WantedImageSize.height)};
+	int adaptive_threshold_size = 5;
+	int dilation_amount = adaptive_threshold_size/2, erosion_amount=dilation_amount+1;
+	Mat dilation_kernel = getStructuringElement(MORPH_ELLIPSE, Size(dilation_amount*2+1,dilation_amount*2+1), Point(dilation_amount,dilation_amount));
+	Mat erosion_kernel = getStructuringElement(MORPH_ELLIPSE, Size(erosion_amount*2+1,erosion_amount*2+1), Point(erosion_amount,erosion_amount));
 	for (auto &zone : Stocks)
 	{
 		vector<Vec2d> ImagePointsDouble;
@@ -91,10 +97,41 @@ void PostProcessJardinieres::Process(std::vector<CameraImageData> &ImageData, st
 			ThisFeatureData.CameraMatrix, ThisFeatureData.DistanceCoefficients, ImagePointsDouble);
 		vector<Vec2f> ImagePoints(ImagePointsDouble.begin(), ImagePointsDouble.end()-1);
 		
-		Mat WarpedImage; 
+		Mat WarpedImage, HSV; vector<Mat> BGRComponents, HSVComponents;
 		Mat AffineMatrix = getAffineTransform(ImagePoints, AffineTarget);
 		warpAffine(ThisImageData.Image, WarpedImage, AffineMatrix, WantedImageSize);
-		//imshow(zone.name, WarpedImage);
+		split(WarpedImage, BGRComponents);
+		cvtColor(WarpedImage, HSV, COLOR_BGR2HSV);
+		split(WarpedImage, HSVComponents);
+		Mat mask, green, notblue, notred, adaptive_value, adaptive_dilated, adaptive_eroded, saturated;
+		threshold(BGRComponents[1], green, 32, 255, THRESH_BINARY);
+		threshold(BGRComponents[0], notblue, 128, 255, THRESH_BINARY_INV);
+		threshold(BGRComponents[2], notred, 128, 255, THRESH_BINARY_INV);
+		adaptiveThreshold(HSVComponents[2], adaptive_value, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY_INV, 3, 10);
+		dilate(adaptive_value, adaptive_dilated, dilation_kernel);
+		erode(adaptive_dilated, adaptive_eroded, erosion_kernel);
+		threshold(HSVComponents[1], saturated, 32, 255, THRESH_BINARY);
+		mask = green & notblue & notred & adaptive_eroded;
+		/*if (zone.name == "Bleu Sud")
+		{
+			Mat concat;
+			vector<Mat> masks{green, notblue, notred, adaptive_value, adaptive_dilated, adaptive_eroded, saturated, mask};
+			vconcat(masks, concat);
+			cvtColor(concat, concat, COLOR_GRAY2BGR);
+			masks = {WarpedImage, concat};
+			vconcat(masks, concat);
+			imshow(zone.name, concat);
+		}*/
+		int NumWhitePixels = countNonZero(mask);
+		zone.NumPlants = NumWhitePixels * 12 / WantedImageSize.area();
+		//cout << zone.NumPlants << " plants in " << zone.name << endl;
+
+		ObjectData obj(ObjectType::Jardiniere, zone.name, Affine3d::Identity(), ThisImageData.GrabTime);
+		obj.metadata["numPlantes"] = zone.NumPlants;
+		obj.metadata["whitePixels"] = NumWhitePixels;
+		Objects.push_back(obj);
 	}
-	//waitKey(1);
+	//waitKey(2);
+
+
 }

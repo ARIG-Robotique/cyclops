@@ -22,6 +22,7 @@
 #include <Cameras/CameraManagerSimulation.hpp>
 #include <Cameras/VideoCaptureCamera.hpp>
 
+#include <PostProcessing/YoloDeflicker.hpp>
 #include <PostProcessing/StockPlants.hpp>
 #include <PostProcessing/Jardinieres.hpp>
 
@@ -137,6 +138,7 @@ void CDFRExternal::ThreadEntryPoint()
 
 	YoloDetector = make_unique<YoloDetect>("cdfr", 4);
 
+	PostProcesses.emplace_back(make_unique<PostProcessYoloDeflicker>(this));
 	PostProcesses.emplace_back(make_unique<PostProcessStockPlants>(this));
 	PostProcesses.emplace_back(make_unique<PostProcessJardinieres>(this));
 

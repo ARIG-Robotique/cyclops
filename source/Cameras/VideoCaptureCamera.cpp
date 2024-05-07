@@ -89,7 +89,7 @@ bool VideoCaptureCamera::StartFeed()
 		feed->set(CAP_PROP_FPS, Settings->Framerate/Settings->FramerateDivider);
 		//feed->set(CAP_PROP_AUTO_EXPOSURE, 3) ;
 		//feed->set(CAP_PROP_EXPOSURE, 300) ;
-		feed->set(CAP_PROP_BUFFERSIZE, 2);
+		feed->set(CAP_PROP_BUFFERSIZE, 1);
 	}
 	
 	connected = true;

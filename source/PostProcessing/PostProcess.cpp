@@ -1,6 +1,7 @@
 #include "PostProcessing/PostProcess.hpp"
 
 using namespace std;
+using namespace cv;
 
 PostProcess::PostProcess(CDFRExternal* InOwner)
 	:Owner(InOwner)

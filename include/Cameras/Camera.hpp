@@ -54,7 +54,7 @@ public:
 	//status
 	bool connected;
 	bool grabbed;
-	std::chrono::time_point<std::chrono::steady_clock> captureTime;
+	std::chrono::steady_clock::time_point captureTime;
 
 public:
 

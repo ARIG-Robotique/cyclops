@@ -65,5 +65,6 @@ struct CameraImageData
 	cv::UMat Image;
 	cv::Mat CameraMatrix;
 	cv::Mat DistanceCoefficients;
+	std::chrono::steady_clock::time_point GrabTime;
 	bool Distorted;
 };

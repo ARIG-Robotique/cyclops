@@ -4,6 +4,8 @@
 #include <Communication/ProcessedTypes.hpp>
 #include <ArucoPipeline/ObjectIdentity.hpp>
 #include <vector>
+#include <set>
+#include <functional>
 
 class CDFRExternal;
 
@@ -14,6 +16,6 @@ protected:
 public:
 	PostProcess(CDFRExternal* InOwner);
 	virtual ~PostProcess();
-
+	
 	virtual void Process(std::vector<CameraImageData> &ImageData, std::vector<CameraFeatureData> &FeatureData, std::vector<ObjectData> &Objects);
 };
