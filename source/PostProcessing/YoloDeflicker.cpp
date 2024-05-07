@@ -46,9 +46,9 @@ void PostProcessYoloDeflicker::Process(vector<CameraImageData> &ImageData, vecto
 	auto cache_erase_iterator = std::remove_if(CachedObjects.begin(), 
 		CachedObjects.end(),
 		[time_threshold](YoloObject &obj) { return !obj.Associated && (obj.Lifetime < time_threshold); });
-	cout << numnew << " new in cache, " << numlinked << " relinked, " << CachedObjects.end() - cache_erase_iterator << " to be deleted, ";
+	//cout << numnew << " new in cache, " << numlinked << " relinked, " << CachedObjects.end() - cache_erase_iterator << " to be deleted, ";
 	CachedObjects.erase(cache_erase_iterator, CachedObjects.end());
-	cout << CachedObjects.size() << " still in cache" << endl;
+	//cout << CachedObjects.size() << " still in cache" << endl;
 	//cout << "Vector before yolo erase: " << Objects.size() <<endl;
 	Objects.erase(
 		std::remove_if(Objects.begin(), 
