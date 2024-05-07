@@ -95,7 +95,7 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 			objectified["y"] = int(Object.location.translation()[1]*1000.0+1000.0);
 		}
 
-		objectified["r"] = int(rotZdeg*10)/10.0;
+		objectified["r"] = int(rotZdeg);
 
 		break;
 
