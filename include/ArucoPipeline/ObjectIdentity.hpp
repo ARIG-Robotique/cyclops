@@ -26,7 +26,14 @@ std::ostream& operator << (std::ostream& out, CDFRTeam Team);
 
 enum class ObjectType
 {
+	//meta types
 	Unknown,
+	All,
+	Data3D,
+	Data2D,
+	Aruco,
+	Yolo,
+
 	Tag,
 	ReferenceAbsolute,
 	ReferenceRelative,
@@ -52,6 +59,12 @@ enum class ObjectType
 const std::map<ObjectType, std::string> ObjectTypeNames =
 {
 	{ObjectType::Unknown, 			"Unknown"},
+	{ObjectType::All, 				"All"},
+	{ObjectType::Data2D, 			"Data2D"},
+	{ObjectType::Data3D, 			"Data3D"},
+	{ObjectType::Aruco, 			"Aruco"},
+	{ObjectType::Yolo, 				"Yolo"},
+
 	{ObjectType::Tag, 				"Tag"},
 	{ObjectType::ReferenceAbsolute, "Reference Absolute"},
 	{ObjectType::ReferenceRelative, "Reference Relative"},

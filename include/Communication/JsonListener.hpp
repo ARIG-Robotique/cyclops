@@ -3,6 +3,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <set>
 #include <chrono>
 #include <opencv2/core/affine.hpp>
 #include <nlohmann/json.hpp>
@@ -63,8 +64,14 @@ private:
 
 	static std::string JavaCapitalize(std::string source);
 
+	std::set<ObjectType> GetFilterClasses(const nlohmann::json &filter);
+
+	ObjectData::TimePoint GetCutoffTime(const nlohmann::json &Query);
+
 	//Get data from external monitor
 	bool GetData(const nlohmann::json &Query, nlohmann::json &Response);
+
+	bool GetZone(const nlohmann::json &Query, nlohmann::json &Response);
 
 	bool GetImage(double reduction, nlohmann::json &Response);
 

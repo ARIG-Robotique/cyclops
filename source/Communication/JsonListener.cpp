@@ -137,78 +137,76 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	return objectified;
 }
 
-bool JsonListener::GetData(const json &Query, json &Response)
+std::set<ObjectType> JsonListener::GetFilterClasses(const nlohmann::json &filter)
 {
-	if (!Parent)
+	set<string> filterStrings;
+	if (filter.is_array())
 	{
-		return false;
+		for (auto &elem : filter)
+		{
+			filterStrings.emplace(elem);
+		}
 	}
-	if (!Parent->ExternalRunner)
+	else if (filter.is_string())
 	{
-		return false;
+		filterStrings.emplace(filter);
 	}
-	auto &QueryData = Query.at("data");
-	auto &filter = QueryData.at("filters");
-	int maxagems = QueryData.value("maxAge", 0);
+	else
+	{
+		return {};
+	}
+	set<ObjectType> AllowedTypes;
+	for (auto& [type,name] : ObjectTypeNames)
+	{
+		string java_name = JavaCapitalize(name);
+		if (filterStrings.find(java_name) != filterStrings.end())
+		{
+			AllowedTypes.insert(type);
+		}
+	}
+	if (AllowedTypes.find(ObjectType::All) != AllowedTypes.end())
+	{
+		AllowedTypes.insert(ObjectType::Data2D);
+		AllowedTypes.insert(ObjectType::Data3D);
+	}
+	return AllowedTypes;
+}
+
+ObjectData::TimePoint JsonListener::GetCutoffTime(const nlohmann::json &Query)
+{
+	int maxagems = Query.at("data").value("maxAge", 0);
 	ObjectData::TimePoint OldCutoff;
 	if (maxagems >0)
 	{
 		OldCutoff = ObjectData::Clock::now() - chrono::milliseconds(maxagems);
 	}
+	return OldCutoff;
+}
+
+bool JsonListener::GetData(const json &Query, json &Response)
+{
+	if (!Query.contains("data"))
+	{
+		return false;
+	}
+	auto &QueryData = Query.at("data");
+	if (!QueryData.contains("filters"))
+	{
+		return false;
+	}
+	if (!QueryData.at("filters").is_array())
+	{
+		return false;
+	}
+	ObjectData::TimePoint OldCutoff = GetCutoffTime(Query);
 	 
 	vector<CameraFeatureData> FeatureData = Parent->ExternalRunner->GetFeatureData();
 	vector<ObjectData> ObjData = Parent->ExternalRunner->GetObjectData();
-	set<ObjectType> AllowedTypes;
-	set<string> filterStrings;
-	for (auto &elem : filter)
-	{
-		filterStrings.emplace(elem);
-	}
-	bool hasall = filterStrings.find("ALL") != filterStrings.end();
-	bool has3D = filterStrings.find("DATA3D") != filterStrings.end() || hasall;
-	bool has2D = filterStrings.find("DATA2D") != filterStrings.end() || hasall;
-	map<string, cv::Rect2d> PositionFilters;
-	if (QueryData.contains("zones") && QueryData.at("zones").is_array())
-	{
-		for (auto &elem : QueryData.at("zones"))
-		{
-			try
-			{
-				double cx = elem.at("cx");
-				double cy = elem.at("cy");
-				double dx = elem.at("dx");
-				double dy = elem.at("dy");
-				PositionFilters[elem.at("name")] = cv::Rect2d(cx-dx/2.0, cy-dy/2.0, dx, dy);
-			}
-			catch(const json::exception& e)
-			{
-			}
-		}
-	}
-	if (ObjectMode == TransformMode::Millimeter2D)
-	{
-		cv::Point2d offset(1500,1000);
-		for (auto &zone : PositionFilters)
-		{
-			cv::Point2d tl = zone.second.tl();
-			cv::Size2d size = zone.second.size();
-			tl = (tl-offset)/1000;
-			size /= 1000.0;
-			zone.second = cv::Rect2d(tl, size);
-		}
-	}
-
-	auto has_filter = [&filterStrings, hasall](string match){return filterStrings.find(match) != filterStrings.end();};
+	set<ObjectType> AllowedTypes = GetFilterClasses(QueryData.at("filters"));
 
 	json jsondataarray = json::array({});
-	for (auto& [type,name] : ObjectTypeNames)
-	{
-		string java_name = JavaCapitalize(name);
-		if (has_filter(java_name) && java_name != "CAMERA")
-		{
-			AllowedTypes.insert(type);
-		}
-	}
+	bool has3D = AllowedTypes.find(ObjectType::Data3D) != AllowedTypes.end(); 
+	bool has2D = AllowedTypes.find(ObjectType::Data2D) != AllowedTypes.end(); 
 	bool Has3DData = false;
 	for (auto &Object : ObjData)
 	{
@@ -217,21 +215,6 @@ bool JsonListener::GetData(const json &Query, json &Response)
 			continue;
 		}
 		if (Object.LastSeen < OldCutoff)
-		{
-			continue;
-		}
-		bool contains = PositionFilters.size() == 0;
-		for (auto &zone : PositionFilters)
-		{
-			cv::Vec3d pos3d = Object.location.translation();
-			cv::Vec2d pos2d(pos3d.val);
-			if (zone.second.contains(pos2d))
-			{
-				contains = true;
-				break;
-			}
-		}
-		if (!contains)
 		{
 			continue;
 		}
@@ -256,7 +239,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		cv::Size2d fov = GetCameraFOV(data.FrameSize, data.CameraMatrix);
 		cameradata["xfov"] = fov.width;
 		cameradata["yfov"] = fov.height;
-		if (has_filter("ARUCO") || has2D)
+		if (has2D || AllowedTypes.find(ObjectType::Aruco) == AllowedTypes.end())
 		{
 			cameradata["arucoObjects"] = json::array();
 			for (size_t i = 0; i < data.ArucoIndices.size(); i++)
@@ -273,7 +256,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 				CameraDetected = true;
 			}
 		}
-		if (has_filter("YOLO") || has2D)
+		if (has2D || AllowedTypes.find(ObjectType::Yolo) == AllowedTypes.end())
 		{
 			cameradata["yoloObjects"] = json::array();
 			for (size_t i = 0; i < data.YoloDetections.size(); i++)
@@ -302,6 +285,93 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		Response["data"]["data2D"] = jsonfeaturearray;
 	}
 
+	Response["status"] = "OK";
+	return true;
+}
+
+bool JsonListener::GetZone(const json &Query, json &Response)
+{
+	if (!Query.contains("data"))
+	{
+		return false;
+	}
+	auto &QueryData = Query.at("data");
+	if (!QueryData.contains("zones"))
+	{
+		return false;
+	}
+	if (!QueryData.at("zones").is_array())
+	{
+		return false;
+	}
+	if (!QueryData.contains("classes"))
+	{
+		return false;
+	}
+	if (!QueryData.at("classes").is_array())
+	{
+		return false;
+	}
+	
+	auto ObjData = Parent->ExternalRunner->GetObjectData();
+
+	vector<pair<string, cv::Rect2d>> PositionFilters;
+	for (auto &elem : QueryData.at("zones"))
+	{
+		try
+		{
+			double cx = elem.at("cx");
+			double cy = elem.at("cy");
+			double dx = elem.at("dx");
+			double dy = elem.at("dy");
+			PositionFilters.emplace_back(elem.at("name"), cv::Rect2d(cx-dx/2.0, cy-dy/2.0, dx, dy));
+		}
+		catch(const json::exception& e)
+		{
+		}
+	}
+
+	set<ObjectType> AllowedTypes = GetFilterClasses(QueryData.at("classes"));
+
+	if (ObjectMode == TransformMode::Millimeter2D)
+	{
+		cv::Point2d offset(1500,1000);
+		for (auto &zone : PositionFilters)
+		{
+			cv::Point2d tl = zone.second.tl();
+			cv::Size2d size = zone.second.size();
+			tl = (tl-offset)/1000;
+			size /= 1000.0;
+			zone.second = cv::Rect2d(tl, size);
+		}
+	}
+
+	auto OldCutoff = GetCutoffTime(Query);
+	set<string> SeenZones;
+
+	for (auto &Object : ObjData)
+	{
+		if (AllowedTypes.find(Object.type) == AllowedTypes.end())
+		{
+			continue;
+		}
+		if (Object.LastSeen < OldCutoff)
+		{
+			continue;
+		}
+		for (auto &zone : PositionFilters)
+		{
+			cv::Vec3d pos3d = Object.location.translation();
+			cv::Vec2d pos2d(pos3d.val);
+			if (zone.second.contains(pos2d))
+			{
+				SeenZones.insert(zone.first);
+				break;
+			}
+		}
+	}
+	Response["data"]["not_empty"] = SeenZones;
+	Response["status"] = "OK";
 	return true;
 }
 
@@ -363,8 +433,6 @@ bool JsonListener::GetStartingZone(const nlohmann::json query, nlohmann::json &r
 			response["errorMessage"] = "No team selected";
 			return false;
 		}
-		
-		
 	}
 	auto data = Parent->ExternalRunner->GetObjectData();
 	ObjectData robot;
@@ -561,15 +629,23 @@ void JsonListener::HandleQuery(const json &Query)
 		
 		if (ActionStr == "DATA") //2D or 3D data
 		{
-			if (Query.contains("data") && Query.at("data").contains("filters") && Query.at("data").at("filters").is_array())
+			if(GetData(Query, Response))
 			{
-				GetData(Query, Response);
-				Response["status"] = "OK";
 			}
 			else
 			{
 				Response["status"] = "ERROR";
-				Response["errorMessage"] = "Wrong or missing filters, must be an array";
+			}
+			goto send;
+		}
+		if (ActionStr == "ZONE") //Get if zone empty or not
+		{
+			if(GetZone(Query, Response))
+			{
+			}
+			else
+			{
+				Response["status"] = "ERROR";
 			}
 			goto send;
 		}
