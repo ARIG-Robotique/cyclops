@@ -166,6 +166,29 @@ bool JsonListener::GetData(const json &Query, json &Response)
 	bool hasall = filterStrings.find("ALL") != filterStrings.end();
 	bool has3D = filterStrings.find("DATA3D") != filterStrings.end() || hasall;
 	bool has2D = filterStrings.find("DATA2D") != filterStrings.end() || hasall;
+	optional<cv::Rect2d> PositionFilter;
+	try
+	{
+		double cx = Query.at("cx");
+		double cy = Query.at("cy");
+		double dx = Query.at("dx");
+		double dy = Query.at("dy");
+		PositionFilter = cv::Rect2d(cx-dx/2.0, cy-dy/2.0, dx, dy);
+	}
+	catch(const json::exception& e)
+	{
+	}
+	if (PositionFilter.has_value() && ObjectMode == TransformMode::Millimeter2D)
+	{
+		cv::Point2d offset(1500,1000);
+		cv::Point2d tl = PositionFilter->tl();
+		cv::Size2d size = PositionFilter->size();
+		tl = (tl-offset)/1000;
+		size /= 1000.0;
+		PositionFilter = cv::Rect2d(tl, size);
+	}
+	
+	
 
 	auto has_filter = [&filterStrings, hasall](string match){return filterStrings.find(match) != filterStrings.end();};
 
@@ -188,6 +211,15 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		if (Object.LastSeen < OldCutoff)
 		{
 			continue;
+		}
+		if (PositionFilter.has_value())
+		{
+			cv::Vec3d pos3d = Object.location.translation();
+			cv::Vec2d pos2d(pos3d.val);
+			if (!PositionFilter->contains(pos2d))
+			{
+				continue;
+			}
 		}
 		json objectified = ObjectToJson(Object);
 		jsondataarray.push_back(objectified);
