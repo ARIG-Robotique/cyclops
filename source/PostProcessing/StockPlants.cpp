@@ -12,23 +12,23 @@ PostProcessStockPlants::PostProcessStockPlants(CDFRExternal* InOwner)
 	{
 		auto& stock = Stocks[i];
 		auto &position = stock.position;
-		bool nord = i>3;
-		bool milieu = (i%3)==1;
-		bool ouest = (i%3)==0;
-		if (milieu)
+		bool north = i<3;
+		bool center = (i%3)==1;
+		bool west = (i%3)==0;
+		if (center)
 		{
 			position = {0.000,0.500};
 		}
 		else
 		{
 			position = {0.500, 0.300};
-			if (ouest)
+			if (west)
 			{
 				position[0] *= -1;
 			}
 			
 		}
-		if (!nord)
+		if (!north)
 		{
 			position[1] *= -1;
 		}
