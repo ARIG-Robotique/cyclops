@@ -271,15 +271,19 @@ void CDFRExternal::ThreadEntryPoint()
 
 		bool RecordThisTick = ForceRecordNext;
 		ForceRecordNext &= false;
-		if (RecordTick >= CDFRCommon::ExternalSettings.RecordInterval-1)
+		if (ObjectData::Clock::now() - LastRecordTime >= chrono::seconds(CDFRCommon::ExternalSettings.RecordInterval))
 		{
-			RecordTick = 0;
 			RecordThisTick |= CDFRCommon::ExternalSettings.record;
 		}
-		else if (Cameras.size() > 0 && CDFRCommon::ExternalSettings.record)
+		if (!CDFRCommon::ExternalSettings.record)
 		{
-			RecordTick++;
+			LastRecordTime = ObjectData::TimePoint();
 		}
+		if (RecordThisTick)
+		{
+			LastRecordTime = ObjectData::Clock::now();
+		}
+		
 		
 		
 		
@@ -345,8 +349,8 @@ void CDFRExternal::ThreadEntryPoint()
 
 				if (RecordThisTick)
 				{
-					cout << "Recording image" << endl;
-					cam->Record(RecordRootPath, RecordIndex);
+					cout << "\aRecording image " << TimeToStr() << endl;
+					cam->Record(RecordRootPath, RecordImageIndex);
 				}
 				
 				thisprof.EnterSection("");
@@ -380,7 +384,7 @@ void CDFRExternal::ThreadEntryPoint()
 		BufferIndex = (BufferIndex+1)%ObjData.size();
 		if (RecordThisTick)
 		{
-			RecordIndex++;
+			RecordImageIndex++;
 		}
 		
 		

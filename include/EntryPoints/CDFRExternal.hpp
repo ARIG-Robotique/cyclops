@@ -26,7 +26,8 @@ private:
 	bool Sleep = false, LastSleep = false;
 
 	//Settings
-	int RecordTick = 0, RecordIndex=0;
+	ObjectData::TimePoint LastRecordTime;
+	int RecordImageIndex = 0;
 protected:
 	bool ForceRecordNext = false;
 	FrameCounter DetectionFrameCounter;
