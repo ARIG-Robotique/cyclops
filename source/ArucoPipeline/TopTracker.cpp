@@ -69,12 +69,16 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 	Matx33d rotationMatrix; //Matrice de rotation Camera -> Tag
 	Rodrigues(rvec, rotationMatrix);
 	Affine3d localTransform(rotationMatrix, tvec), WorldTransform = CameraData.CameraTransform * localTransform;
-	if (ExpectedHeight.has_value() && abs(WorldTransform.translation()[2] - ExpectedHeight.value()) < 0.02) //2cm tolerance
+	if (ExpectedHeight.has_value() ) //2cm tolerance
 	{
-		Vec3d LocationOnPlane = LinePlaneIntersection(CameraData.CameraTransform.translation(), WorldTransform.translation() - CameraData.CameraTransform.translation(), 
-			Vec3d(0,0, ExpectedHeight.value()), Vec3d(0,0,1));
-		WorldTransform.translation(LocationOnPlane);
-		localTransform = CameraData.CameraTransform.inv() * WorldTransform; //Camera, to world, to tag
+		bool withinDeltaHeight = abs(WorldTransform.translation()[2] - ExpectedHeight.value()) < 0.02;
+		if (withinDeltaHeight || !Robot)
+		{
+			Vec3d LocationOnPlane = LinePlaneIntersection(CameraData.CameraTransform.translation(), WorldTransform.translation() - CameraData.CameraTransform.translation(), 
+				Vec3d(0,0, ExpectedHeight.value()), Vec3d(0,0,1));
+			WorldTransform.translation(LocationOnPlane);
+			localTransform = CameraData.CameraTransform.inv() * WorldTransform; //Camera, to world, to tag
+		}
 	}
 	
 	//cout << "Panel " << closest << " has a rotation of " << PanelRotations[closest]*180.0/M_PI << " deg" << endl;
