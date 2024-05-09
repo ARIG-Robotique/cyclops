@@ -8,13 +8,13 @@ using namespace std;
 
 std::ostream& operator << (std::ostream& out, CDFRTeam Team)
 {
-	out << TeamNames.at(Team);
+	out << TeamNames.at(Team).Name;
 	return out;
 }
 
 std::ostream& operator << (std::ostream& out, ObjectType Type)
 {
-	out << ObjectTypeNames.at(Type);
+	out << ObjectTypeNames.at(Type).Name;
 	return out;
 }
 

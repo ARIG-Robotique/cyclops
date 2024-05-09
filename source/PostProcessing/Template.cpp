@@ -6,5 +6,5 @@ void PostProcessTemplate::Process(std::vector<CameraImageData> &ImageData, std::
 	(void) ImageData;
 	(void) FeatureData;
 	assert(Owner != nullptr);
-	Objects.emplace_back(ObjectType::Team, TeamNames.at(Owner->GetTeam()));
+	Objects.emplace_back(ObjectType::Team, TeamNames.at(Owner->GetTeam()).JavaName);
 }

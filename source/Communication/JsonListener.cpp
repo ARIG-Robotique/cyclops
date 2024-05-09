@@ -55,7 +55,7 @@ CDFRTeam JsonListener::StringToTeam(string team)
 	CDFRTeam Team = CDFRTeam::Unknown;
 	for (auto &i : TeamNames)
 	{
-		if (value == JavaCapitalize(i.second))
+		if (value == i.second.JavaName)
 		{
 			Team = i.first;
 			break;
@@ -64,10 +64,16 @@ CDFRTeam JsonListener::StringToTeam(string team)
 	return Team;
 }
 
-json JsonListener::ObjectToJson(const ObjectData& Object)
+optional<json> JsonListener::ObjectToJson(const ObjectData& Object)
 {
 	json objectified;
-	objectified["type"] = JavaCapitalize(ObjectTypeNames.at(Object.type));
+	const auto &ObjectTypeConfig = ObjectTypeNames.at(Object.type);
+	if (!ObjectTypeConfig.Sendable)
+	{
+		return nullopt;
+	}
+	
+	objectified["type"] = ObjectTypeConfig.JavaName;
 	objectified["name"] = JavaCapitalize(Object.name);
 	if (Object.metadata.size() > 0)
 	{
@@ -75,7 +81,8 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	}
 	objectified["age"] = chrono::duration_cast<chrono::milliseconds>(ObjectData::Clock::now() - Object.LastSeen).count();
 	
-	bool requireCoord = Object.type != ObjectType::SolarPanel;
+	bool requireCoord = ObjectTypeConfig.WantPosition;
+	bool requireRot = ObjectTypeConfig.WantRotation;
 	double rotZ = GetRotZ(Object.location.rotation());
 	double rotZdeg = rotZ*180.0/M_PI;
 	switch (ObjectMode)
@@ -86,17 +93,22 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 			objectified["x"] = Object.location.translation()[0];
 			objectified["y"] = Object.location.translation()[1];
 		}
-		objectified["r"] = rotZ;
+		if (requireRot)
+		{
+			objectified["r"] = rotZ;
+		}
+		
 		break;
 	case TransformMode::Millimeter2D:
 		if (requireCoord)
 		{
-			objectified["x"] = int(Object.location.translation()[0]*1000.0+1500.0);
-			objectified["y"] = int(Object.location.translation()[1]*1000.0+1000.0);
+			objectified["x"] = (int)round(Object.location.translation()[0]*1000.0+1500.0);
+			objectified["y"] = (int)round(Object.location.translation()[1]*1000.0+1000.0);
 		}
-
-		objectified["r"] = int(rotZdeg);
-
+		if (requireRot)
+		{
+			objectified["r"] = (int)round(rotZdeg);
+		}
 		break;
 
 	case TransformMode::Float3D:
@@ -111,28 +123,6 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 
 	default:
 		break;
-	}
-	if (Object.type == ObjectType::SolarPanel)
-	{
-		bool teamyellow = false, teamblue = false;
-		if (rotZdeg > 5)
-		{
-			teamyellow = true;
-		}
-		if (rotZdeg < -5)
-		{
-			teamblue = true;
-		}
-		if (rotZdeg > 155)
-		{
-			teamblue = true;
-		}
-		if (rotZdeg < -155)
-		{
-			teamyellow = true;
-		}
-		static const array<string, 4> teams = {"AUCUNE", "JAUNE", "BLEU", "JAUNE_ET_BLEU"};
-		objectified["team"] = teams[teamblue*2+teamyellow];
 	}
 	return objectified;
 }
@@ -158,7 +148,7 @@ std::set<ObjectType> JsonListener::GetFilterClasses(const nlohmann::json &filter
 	set<ObjectType> AllowedTypes;
 	for (auto& [type,name] : ObjectTypeNames)
 	{
-		string java_name = JavaCapitalize(name);
+		const string &java_name = name.JavaName;
 		if (filterStrings.find(java_name) != filterStrings.end())
 		{
 			AllowedTypes.insert(type);
@@ -218,9 +208,12 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		{
 			continue;
 		}
-		json objectified = ObjectToJson(Object);
-		jsondataarray.push_back(objectified);
-		Has3DData = true;
+		auto objectified = ObjectToJson(Object);
+		if (objectified.has_value())
+		{
+			jsondataarray.push_back(objectified.value());
+			Has3DData = true;
+		}
 	}
 	if (Has3DData)
 	{
@@ -449,7 +442,7 @@ bool JsonListener::GetStartingZone(const nlohmann::json query, nlohmann::json &r
 		{
 			continue;
 		}
-		if (i.name.rfind(TeamNames.at(team), 0) != 0) //must start with robot
+		if (i.name.rfind(TeamNames.at(team).JavaName, 0) != 0) //must start with robot
 		{
 			continue;
 		}
@@ -584,7 +577,7 @@ void JsonListener::HandleQuery(const json &Query)
 			else
 			{
 				statusbuilder << "External runner doing fine; ";
-				Response["data"]["team"] = JavaCapitalize(TeamNames.at(Parent->ExternalRunner->GetTeam()));
+				Response["data"]["team"] = TeamNames.at(Parent->ExternalRunner->GetTeam()).JavaName;
 				Response["data"]["idle"] = Parent->ExternalRunner->GetIdle();
 			}
 

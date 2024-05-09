@@ -34,7 +34,7 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 			team = CDFRTeam::Yellow;
 		}
 
-		GlobalObjects.emplace(make_shared<TopTracker>(i, 0.07, TeamNames.at(team) + String(" ") + to_string(i), height, true));
+		GlobalObjects.emplace(make_shared<TopTracker>(i, 0.07, TeamNames.at(team).JavaName + String(" ") + to_string(i), height, true));
 	}
 	for (auto &Tracker : Trackers)
 	{

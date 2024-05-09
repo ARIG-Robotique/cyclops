@@ -15,11 +15,17 @@ enum class CDFRTeam
 	Blue
 };
 
+struct TeamNameStruct
+{
+	std::string Name;
+	std::string JavaName;
+};
 
-const std::map<CDFRTeam, std::string> TeamNames = {
-	{CDFRTeam::Unknown, "Unknown"},
-	{CDFRTeam::Blue, "Bleu"},
-	{CDFRTeam::Yellow, "Jaune"}
+
+const std::map<CDFRTeam, TeamNameStruct> TeamNames = {
+	{CDFRTeam::Unknown, {"Unknown", "INCONNU"}},
+	{CDFRTeam::Blue, 	{"Blue", 	"BLEU"}},
+	{CDFRTeam::Yellow, 	{"Yellow", 	"JAUNE"}}
 };
 
 std::ostream& operator << (std::ostream& out, CDFRTeam Team);
@@ -56,35 +62,40 @@ enum class ObjectType
 	Team
 };
 
-const std::map<ObjectType, std::string> ObjectTypeNames =
+struct ObjectTypeConfig
 {
-	{ObjectType::Unknown, 			"Unknown"},
-	{ObjectType::All, 				"All"},
-	{ObjectType::Data2D, 			"Data2D"},
-	{ObjectType::Data3D, 			"Data3D"},
-	{ObjectType::Aruco, 			"Aruco"},
-	{ObjectType::Yolo, 				"Yolo"},
+	std::string Name;
+	std::string JavaName;
+	bool WantPosition;
+	bool WantRotation;
+	bool Sendable;
+};
 
-	{ObjectType::Tag, 				"Tag"},
-	{ObjectType::ReferenceAbsolute, "Reference Absolute"},
-	{ObjectType::ReferenceRelative, "Reference Relative"},
-	{ObjectType::Camera, 			"Camera"},
-	{ObjectType::Object, 			"Object"},
-	{ObjectType::Robot, 			"Robot"},
-	{ObjectType::Pami, 				"PAMI"},
 
-	{ObjectType::SolarPanel, 		"Solar panel"},
-
-	{ObjectType::Fragile, 			"Yolo3d"},
-	{ObjectType::Resistant, 		"Yolo3d"},
-	{ObjectType::Pot, 				"Yolo3d"},
-	{ObjectType::PottedPlant, 		"Yolo3d"},
-
-	{ObjectType::PlantStock,		"PlantStock"},
-	{ObjectType::Hangar,			"Hangar"},
-	{ObjectType::Jardiniere,		"Jardiniere"},
-
-	{ObjectType::Team, 				"Team"}
+const std::map<ObjectType, ObjectTypeConfig> ObjectTypeNames =
+{
+	{ObjectType::Unknown, 			{"Unknown",				"INCONNU"				,0	,0	,0}},
+	{ObjectType::All, 				{"All",					"TOUT"					,0	,0	,0}},
+	{ObjectType::Data2D, 			{"Data2D",				"DATA2D"				,0	,0	,0}},
+	{ObjectType::Data3D, 			{"Data3D",				"DATA3D"				,0	,0	,0}},
+	{ObjectType::Aruco, 			{"Aruco",				"ARUCO"					,0	,0	,0}},
+	{ObjectType::Yolo, 				{"Yolo",				"YOLO"					,0	,0	,0}},
+	{ObjectType::Tag, 				{"Tag",					"TAG"					,1	,1	,1}},
+	{ObjectType::ReferenceAbsolute, {"Reference Absolute",	"REFERENCE_ABSOLUE"		,0	,0	,1}},
+	{ObjectType::ReferenceRelative, {"Reference Relative",	"REFERENCE_RELATIVE"	,1	,1	,1}},
+	{ObjectType::Camera, 			{"Camera",				"CAMERA"				,1	,1	,1}},
+	{ObjectType::Object, 			{"Object",				"OBJET"					,1	,1	,1}},
+	{ObjectType::Robot, 			{"Robot",				"ROBOT"					,1	,1	,1}},
+	{ObjectType::Pami, 				{"PAMI",				"PAMI"					,1	,1	,1}},
+	{ObjectType::SolarPanel, 		{"Solar panel",			"PANNEAU_SOLAIRE"		,0	,1	,1}},
+	{ObjectType::Fragile, 			{"Fragile",				"YOLO3D"				,1	,0	,1}},
+	{ObjectType::Resistant, 		{"Resistant",			"YOLO3D"				,1	,0	,1}},
+	{ObjectType::Pot, 				{"Pot",					"YOLO3D"				,1	,0	,1}},
+	{ObjectType::PottedPlant, 		{"Potted plant",		"YOLO3D"				,1	,0	,1}},
+	{ObjectType::PlantStock,		{"PlantStock",			"STOCK_PLANTES"			,0	,0	,1}},
+	{ObjectType::Hangar,			{"Hangar",				"HANGAR"				,0	,0	,1}},
+	{ObjectType::Jardiniere,		{"Jardiniere",			"JARDINIERE"			,0	,0	,1}},
+	{ObjectType::Team, 				{"Team",				"EQUIPE"				,0	,0	,1}}
 };
 
 std::ostream& operator << (std::ostream& out, ObjectType Type);
