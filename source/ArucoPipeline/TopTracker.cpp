@@ -74,7 +74,8 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 		bool withinDeltaHeight = abs(WorldTransform.translation()[2] - ExpectedHeight.value()) < 0.02;
 		if (withinDeltaHeight || !Robot)
 		{
-			Vec3d LocationOnPlane = LinePlaneIntersection(CameraData.CameraTransform.translation(), WorldTransform.translation() - CameraData.CameraTransform.translation(), 
+			Vec3d LocationOnPlane = LinePlaneIntersection(CameraData.CameraTransform.translation(), 
+				WorldTransform.translation() - CameraData.CameraTransform.translation(), 
 				Vec3d(0,0, ExpectedHeight.value()), Vec3d(0,0,1));
 			WorldTransform.translation(LocationOnPlane);
 			localTransform = CameraData.CameraTransform.inv() * WorldTransform; //Camera, to world, to tag
