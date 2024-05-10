@@ -48,7 +48,7 @@ void PostProcessStockPlants::Process(std::vector<CameraImageData> &ImageData, st
 	
 	for (auto &obj : Objects)
 	{
-		Vec2d pos2d = Vec2d(obj.location.translation().val);
+		Vec2d pos2d = obj.GetPos2D();
 		bool plant = obj.type == ObjectType::Fragile || obj.type == ObjectType::Resistant;
 		bool robot = obj.type == ObjectType::Robot;
 		if (!robot && !plant)

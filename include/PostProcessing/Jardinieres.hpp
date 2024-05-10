@@ -12,6 +12,12 @@ class PostProcessJardinieres : public PostProcess
 		int NumPlants = 6;
 		std::string name;
 		std::vector<cv::Vec3d> Corners;
+		cv::Vec2d BuzzingPoint;
+		double BuzzingRadius = 0.35/2.0;
+		bool Contacting = false, ContactThisTick = false;
+		ObjectData::TimePoint LastContactStart;
+		ObjectData::TimePoint LastContactEnd;
+		ObjectData::Clock::duration TimeSpentContacting;
 	};
 	std::array<StockStatus, 6> Stocks;
 public:

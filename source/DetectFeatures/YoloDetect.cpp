@@ -187,8 +187,9 @@ vector<ObjectData> YoloDetect::Project(const CameraImageData &ImageData, const C
 		Matx31d position = {center.x, center.y, 1};
 		Matx31d vector(InvCameraMatrix * position); //TODO: This doesn't take into account distortion coeffs
 		Matx31d WorldVector = FeatureData.CameraTransform.rotation() * vector;
+		double InterceptHeight = Detection.Class >= 2 ? 0.03 : 0.02;
 		Vec3d WorldPosition = LinePlaneIntersection(FeatureData.CameraTransform.translation(), 
-			*reinterpret_cast<Vec3d*>(&WorldVector), Vec3d(0,0,0.02), Vec3d(0,0,1));
+			*reinterpret_cast<Vec3d*>(&WorldVector), Vec3d(0,0,InterceptHeight), Vec3d(0,0,1));
 		WorldPosition[2] = 0;
 		ObjectType type = (ObjectType)((int)ObjectType::Fragile + Detection.Class);
 		const auto &name = GetClassName(Detection.Class);

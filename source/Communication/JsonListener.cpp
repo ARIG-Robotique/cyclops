@@ -425,15 +425,9 @@ bool JsonListener::GetStartingZone(const nlohmann::json query, nlohmann::json &r
 	if (team == CDFRTeam::Unknown)
 	{
 		CDFRTeam SavedTeam = Parent->ExternalRunner->GetTeam();
-		switch (SavedTeam)
+		team = GetOtherTeam(SavedTeam);
+		if (team == CDFRTeam::Unknown)
 		{
-		case CDFRTeam::Yellow :
-			team = CDFRTeam::Blue;
-			break;
-		case CDFRTeam::Blue : 
-			team = CDFRTeam::Yellow;
-			break;
-		default:
 			response["status"] = "ERROR";
 			response["errorMessage"] = "No team selected";
 			return false;

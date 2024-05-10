@@ -39,7 +39,7 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 	vector<Point2d> ImageSolarPanels;
 	cv::projectPoints(PanelPositions, WorldToCam.rvec(), WorldToCam.translation(), CameraData.CameraMatrix, CameraData.DistanceCoefficients, ImageSolarPanels);
 	auto UpVector = GetAxis(WorldToCam.rotation(), 2);
-	PanelSeenLastTick.fill(false);
+	fill(PanelSeenLastTick.begin(), PanelSeenLastTick.end(), false);
 	for (auto &marker : SeenMarkers)
 	{
 		auto& flatimg = marker.CameraCornerPositions;

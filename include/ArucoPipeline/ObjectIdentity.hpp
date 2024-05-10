@@ -15,11 +15,15 @@ enum class CDFRTeam
 	Blue
 };
 
+
 struct TeamNameStruct
 {
 	std::string Name;
 	std::string JavaName;
 };
+
+CDFRTeam GetOtherTeam(CDFRTeam InTeam);
+
 
 
 const std::map<CDFRTeam, TeamNameStruct> TeamNames = {
@@ -127,4 +131,9 @@ struct ObjectData
 	std::optional<struct GLObject> ToGLObject() const;
 
 	static std::vector<GLObject> ToGLObjects(const std::vector<ObjectData>& data, Clock::duration maxAge = std::chrono::milliseconds(500));
+
+	cv::Vec2d GetPos2D() const
+	{
+		return cv::Vec2d(location.translation().val);
+	}
 };

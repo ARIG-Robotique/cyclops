@@ -60,14 +60,12 @@ void PostProcessYoloDeflicker::Process(vector<CameraImageData> &ImageData, vecto
 	{
 		if (obj.type == ObjectType::Robot)
 		{
-			cv::Vec3d robotpos3d = obj.location.translation();
-			cv::Vec2d robotpos2d(robotpos3d.val);
+			cv::Vec2d robotpos2d = obj.GetPos2D();
 			CachedObjects.erase(
 				std::remove_if(
 					CachedObjects.begin(), CachedObjects.end(),
 					[robotpos2d](YoloObject &yobj){
-						cv::Vec3d pos3d = yobj.location.translation();
-						cv::Vec2d pos2d(pos3d.val);
+						cv::Vec2d pos2d = yobj.GetPos2D();
 						auto delta = pos2d-robotpos2d;
 						return delta.ddot(delta) < 0.15*0.15;
 					}
