@@ -13,13 +13,13 @@ PostProcess::~PostProcess()
 {
 }
 
-vector<ObjectData&> PostProcess::GetEnemyRobots(vector<ObjectData> &Objects)
+vector<ObjectData> PostProcess::GetEnemyRobots(vector<ObjectData> &Objects) const 
 {
 	assert(Owner != nullptr);
 	auto OurTeam = Owner->GetTeam();
 	auto EnemyTeam = GetOtherTeam(OurTeam);
 	const string& EnemyTeamName = TeamNames.at(EnemyTeam);
-	vector<ObjectData&> robots;
+	vector<ObjectData> robots;
 	for (auto &obj : Objects)
 	{
 		if (obj.type != ObjectType::Robot)
@@ -30,7 +30,7 @@ vector<ObjectData&> PostProcess::GetEnemyRobots(vector<ObjectData> &Objects)
 		{
 			continue;
 		}
-		robots.push_back(obj);
+		robots.emplace_back(obj);
 	}
 	return robots;
 }

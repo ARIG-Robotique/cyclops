@@ -92,7 +92,7 @@ void PostProcessJardinieres::Process(std::vector<CameraImageData> &ImageData, st
 	int dilation_amount = adaptive_threshold_size/2, erosion_amount=dilation_amount+1;
 	Mat dilation_kernel = getStructuringElement(MORPH_ELLIPSE, Size(dilation_amount*2+1,dilation_amount*2+1), Point(dilation_amount,dilation_amount));
 	Mat erosion_kernel = getStructuringElement(MORPH_ELLIPSE, Size(erosion_amount*2+1,erosion_amount*2+1), Point(erosion_amount,erosion_amount));
-	vector<ObjectData&> EnemyRobots = GetEnemyRobots(Objects);
+	vector<ObjectData> EnemyRobots = GetEnemyRobots(Objects);
 	
 	for (auto &zone : Stocks)
 	{
@@ -132,7 +132,7 @@ void PostProcessJardinieres::Process(std::vector<CameraImageData> &ImageData, st
 
 		//track enemy robot contact
 		zone.ContactThisTick = false;
-		for (ObjectData &obj : EnemyRobots)
+		for (auto &obj : EnemyRobots)
 		{
 			auto pos = obj.GetPos2D();
 			auto delta = pos-zone.BuzzingPoint;

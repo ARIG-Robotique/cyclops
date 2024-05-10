@@ -17,7 +17,7 @@ public:
 	PostProcess(CDFRExternal* InOwner);
 	virtual ~PostProcess();
 
-	std::vector<ObjectData&> GetEnemyRobots(std::vector<ObjectData> &Objects) const;
+	std::vector<ObjectData> GetEnemyRobots(std::vector<ObjectData> &Objects) const;
 	
 	virtual void Process(std::vector<CameraImageData> &ImageData, std::vector<CameraFeatureData> &FeatureData, std::vector<ObjectData> &Objects);
 };

@@ -15,18 +15,7 @@ enum class CDFRTeam
 	Blue
 };
 
-CDFRTeam GetOtherTeam(CDFRTeam InTeam)
-{
-	switch (InTeam)
-	{
-	case CDFRTeam::Blue:
-		return CDFRTeam::Yellow;
-	case CDFRTeam::Yellow:
-		return CDFRTeam::Blue;
-	default:
-		return CDFRTeam::Unknown;
-	}
-}
+CDFRTeam GetOtherTeam(CDFRTeam InTeam);
 
 const std::map<CDFRTeam, std::string> TeamNames = {
 	{CDFRTeam::Unknown, "Unknown"},

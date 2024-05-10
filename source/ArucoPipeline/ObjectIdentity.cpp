@@ -6,6 +6,19 @@
 #include <iostream>
 using namespace std;
 
+CDFRTeam GetOtherTeam(CDFRTeam InTeam)
+{
+	switch (InTeam)
+	{
+	case CDFRTeam::Blue:
+		return CDFRTeam::Yellow;
+	case CDFRTeam::Yellow:
+		return CDFRTeam::Blue;
+	default:
+		return CDFRTeam::Unknown;
+	}
+}
+
 std::ostream& operator << (std::ostream& out, CDFRTeam Team)
 {
 	out << TeamNames.at(Team);
