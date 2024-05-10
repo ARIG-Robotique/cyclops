@@ -56,6 +56,28 @@ void PostProcessYoloDeflicker::Process(vector<CameraImageData> &ImageData, vecto
 			&PostProcessYoloDeflicker::IsYolo),
 		Objects.end());
 	//cout << "Vector after yolo erase: " << Objects.size() <<endl;
+	for (auto &obj : Objects)
+	{
+		if (obj.type == ObjectType::Robot)
+		{
+			cv::Vec3d robotpos3d = obj.location.translation();
+			cv::Vec2d robotpos2d(robotpos3d.val);
+			CachedObjects.erase(
+				std::remove_if(
+					CachedObjects.begin(), CachedObjects.end(),
+					[robotpos2d](YoloObject &yobj){
+						cv::Vec3d pos3d = yobj.location.translation();
+						cv::Vec2d pos2d(pos3d.val);
+						auto delta = pos2d-robotpos2d;
+						return delta.ddot(delta) < 0.15*0.15;
+					}
+				),
+				CachedObjects.end()
+			);
+		}
+	}
+	
+	
 	Objects.insert(Objects.end(), CachedObjects.begin(), CachedObjects.end());
 	//cout << "Vector after re-adding: " << Objects.size() <<endl;
 }
