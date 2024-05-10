@@ -353,6 +353,11 @@ bool JsonListener::GetZone(const json &Query, json &Response)
 	}
 
 	auto OldCutoff = GetCutoffTime(Query);
+	if (OldCutoff == ObjectData::TimePoint())
+	{
+		OldCutoff = ObjectData::Clock::now() - chrono::seconds(3);
+	}
+	
 	set<string> SeenZones;
 
 	for (auto &Object : ObjData)
