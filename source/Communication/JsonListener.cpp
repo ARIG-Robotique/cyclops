@@ -231,9 +231,9 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		cameradata["width"] = data.FrameSize.width;
 		cameradata["height"] = data.FrameSize.height;
 		cv::Size2d fov = GetCameraFOV(data.FrameSize, data.CameraMatrix);
-		cameradata["xfov"] = fov.width;
-		cameradata["yfov"] = fov.height;
-		if (has2D || AllowedTypes.find(ObjectType::Aruco) == AllowedTypes.end())
+		cameradata["xfov"] = round(fov.width * 180 / M_PI * 100) / 100;
+		cameradata["yfov"] = round(fov.height * 180 / M_PI * 100) / 100;
+		if (has2D || AllowedTypes.find(ObjectType::Aruco) != AllowedTypes.end())
 		{
 			cameradata["arucoObjects"] = json::array();
 			for (size_t i = 0; i < data.ArucoIndices.size(); i++)
@@ -250,7 +250,7 @@ bool JsonListener::GetData(const json &Query, json &Response)
 				CameraDetected = true;
 			}
 		}
-		if (has2D || AllowedTypes.find(ObjectType::Yolo) == AllowedTypes.end())
+		if (has2D || AllowedTypes.find(ObjectType::Yolo) != AllowedTypes.end())
 		{
 			cameradata["yoloObjects"] = json::array();
 			for (size_t i = 0; i < data.YoloDetections.size(); i++)

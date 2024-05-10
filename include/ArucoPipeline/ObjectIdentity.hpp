@@ -81,9 +81,9 @@ const std::map<ObjectType, ObjectTypeConfig> ObjectTypeNames =
 	{ObjectType::Aruco, 			{"Aruco",				"ARUCO"					,0	,0	,0}},
 	{ObjectType::Yolo, 				{"Yolo",				"YOLO"					,0	,0	,0}},
 	{ObjectType::Tag, 				{"Tag",					"TAG"					,1	,1	,1}},
-	{ObjectType::ReferenceAbsolute, {"Reference Absolute",	"REFERENCE_ABSOLUE"		,0	,0	,1}},
+	{ObjectType::ReferenceAbsolute, {"Reference Absolute",	"REFERENCE_ABSOLUE"		,0	,0	,0}},
 	{ObjectType::ReferenceRelative, {"Reference Relative",	"REFERENCE_RELATIVE"	,1	,1	,1}},
-	{ObjectType::Camera, 			{"Camera",				"CAMERA"				,1	,1	,1}},
+	{ObjectType::Camera, 			{"Camera",				"CAMERA"				,1	,1	,0}},
 	{ObjectType::Object, 			{"Object",				"OBJET"					,1	,1	,1}},
 	{ObjectType::Robot, 			{"Robot",				"ROBOT"					,1	,1	,1}},
 	{ObjectType::Pami, 				{"PAMI",				"PAMI"					,1	,1	,1}},
@@ -95,7 +95,7 @@ const std::map<ObjectType, ObjectTypeConfig> ObjectTypeNames =
 	{ObjectType::PlantStock,		{"PlantStock",			"STOCK_PLANTES"			,0	,0	,1}},
 	{ObjectType::Hangar,			{"Hangar",				"HANGAR"				,0	,0	,1}},
 	{ObjectType::Jardiniere,		{"Jardiniere",			"JARDINIERE"			,0	,0	,1}},
-	{ObjectType::Team, 				{"Team",				"EQUIPE"				,0	,0	,1}}
+	{ObjectType::Team, 				{"Team",				"EQUIPE"				,0	,0	,0}}
 };
 
 std::ostream& operator << (std::ostream& out, ObjectType Type);
