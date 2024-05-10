@@ -15,6 +15,18 @@ enum class CDFRTeam
 	Blue
 };
 
+CDFRTeam GetOtherTeam(CDFRTeam InTeam)
+{
+	switch (InTeam)
+	{
+	case CDFRTeam::Blue:
+		return CDFRTeam::Yellow;
+	case CDFRTeam::Yellow:
+		return CDFRTeam::Blue;
+	default:
+		return CDFRTeam::Unknown;
+	}
+}
 
 const std::map<CDFRTeam, std::string> TeamNames = {
 	{CDFRTeam::Unknown, "Unknown"},
@@ -116,4 +128,9 @@ struct ObjectData
 	std::optional<struct GLObject> ToGLObject() const;
 
 	static std::vector<GLObject> ToGLObjects(const std::vector<ObjectData>& data, Clock::duration maxAge = std::chrono::milliseconds(500));
+
+	cv::Vec2d GetPos2D() const
+	{
+		return cv::Vec2d(location.translation().val);
+	}
 };

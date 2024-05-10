@@ -66,7 +66,7 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 	for (Camera* cam : Cameras)
 	{
 		auto campos = cam->GetLocation().translation();
-		Vec2d pos2d(campos[0], campos[1]);
+		Vec2d pos2d(campos.val);
 		CDFRTeam bestTeam = CDFRTeam::Unknown;
 		double bestdist = 0.5; //tolerance of 50cm
 		for (const auto& [team, positions] : CameraPos)
