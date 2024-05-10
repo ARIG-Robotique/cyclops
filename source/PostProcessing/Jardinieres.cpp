@@ -17,6 +17,7 @@ PostProcessJardinieres::PostProcessJardinieres(CDFRExternal* InOwner)
 	{
 		auto& stock = Stocks[stockidx];
 		stock.name = names[stockidx];
+		stock.TimeSpentContacting = chrono::seconds(0);
 	}
 	for (stockidx = 0; stockidx < 4; stockidx++)
 	{
@@ -25,7 +26,6 @@ PostProcessJardinieres::PostProcessJardinieres(CDFRExternal* InOwner)
 		bool west = stockidx>=2;
 		bool blue = stockidx%2==west;
 		bool center = (stockidx%2)==0;
-		stock.BuzzingPoint = Vec2d(CenterPosition.val) + Vec2d(west ? 0.075 : -0.075, 0);
 		if (!center)
 		{
 			CenterPosition[1] *=-1;
@@ -45,6 +45,7 @@ PostProcessJardinieres::PostProcessJardinieres(CDFRExternal* InOwner)
 			corneroffset[0] *= ymul * (corneridx%2==0 ? 1 : -1);
 			stock.Corners.emplace_back(CenterPosition + corneroffset);
 		}
+		stock.BuzzingPoint = Vec2d(CenterPosition.val) + Vec2d(west ? 0.075 : -0.075, 0);
 	}
 	for (stockidx = 4; stockidx < 6; stockidx++)
 	{
@@ -52,7 +53,6 @@ PostProcessJardinieres::PostProcessJardinieres(CDFRExternal* InOwner)
 		Vec3d CenterPosition(0.7375,1.075, 0.092);
 		bool west = stockidx==5;
 		bool blue = west;
-		stock.BuzzingPoint = Vec2d(CenterPosition.val) + Vec2d(0, -0.075);
 		if (west)
 		{
 			CenterPosition[0] *=-1;
@@ -68,6 +68,7 @@ PostProcessJardinieres::PostProcessJardinieres(CDFRExternal* InOwner)
 			corneroffset[1] *= ymul * (corneridx%2==0 ? 1 : -1);
 			stock.Corners.emplace_back(CenterPosition + corneroffset);
 		}
+		stock.BuzzingPoint = Vec2d(CenterPosition.val) + Vec2d(0, -0.075);
 	}
 }
 
@@ -143,23 +144,29 @@ void PostProcessJardinieres::Process(std::vector<CameraImageData> &ImageData, st
 				if (!zone.Contacting)
 				{
 					zone.LastContactStart = obj.LastSeen;
-					zone.Contacting = true;
 				}
 				zone.ContactThisTick = true;
 			}
 		}
-		if (!zone.ContactThisTick)
+		if (!zone.ContactThisTick && zone.Contacting)
 		{
 			zone.LastContactEnd = ThisImageData.GrabTime;
 			zone.TimeSpentContacting += zone.LastContactEnd - zone.LastContactStart;
 		}
+		zone.Contacting = zone.ContactThisTick;
 
 		ObjectData obj(ObjectType::Jardiniere, zone.name, Affine3d::Identity(), ThisImageData.GrabTime);
 		obj.metadata["numPlantes"] = zone.NumPlants;
 		obj.metadata["whitePixels"] = NumWhitePixels;
-		obj.metadata["lastContactStartAge"] = chrono::duration_cast<chrono::milliseconds>(ObjectData::Clock::now() - zone.LastContactStart).count();
-		obj.metadata["lastContactStopAge"] = chrono::duration_cast<chrono::milliseconds>(ObjectData::Clock::now() - zone.LastContactEnd).count();
-		obj.metadata["contacted"] = zone.Contacting;
+		if (zone.LastContactStart != ObjectData::TimePoint())
+		{
+			obj.metadata["lastContactStartAge"] = chrono::duration_cast<chrono::milliseconds>(ObjectData::Clock::now() - zone.LastContactStart).count();
+		}
+		if (zone.LastContactEnd != ObjectData::TimePoint())
+		{
+			obj.metadata["lastContactStopAge"] = chrono::duration_cast<chrono::milliseconds>(ObjectData::Clock::now() - zone.LastContactEnd).count();
+		}
+		obj.metadata["contacting"] = zone.Contacting;
 		obj.metadata["timeSpentNear"] = chrono::duration_cast<chrono::milliseconds>(zone.TimeSpentContacting).count();
 		Objects.push_back(obj);
 	}
