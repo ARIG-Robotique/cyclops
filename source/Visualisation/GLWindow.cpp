@@ -69,7 +69,7 @@ GLFWwindow* GLWindow::GLCreateWindow(int width, int height, std::string name)
 	// Open a window and create its OpenGL context
 	Window = glfwCreateWindow( width, height, name.c_str(), NULL, NULL);
 	if( Window == NULL ){
-		cerr << "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials." << endl;
+		cerr << "Failed to open GLFW window." << endl;
 		glfwTerminate();
 		return nullptr;
 	}
