@@ -2,6 +2,7 @@
 #include <Communication/Transport/TCPTransport.hpp>
 #include <Communication/TCPJsonHost.hpp>
 #include <Cameras/ImageTypes.hpp>
+#include <EntryPoints/CDFRCommon.hpp>
 #include <EntryPoints/CDFRExternal.hpp>
 #include <EntryPoints/CDFRInternal.hpp>
 #include <Misc/math3d.hpp>
@@ -547,6 +548,43 @@ void JsonListener::HandleQuery(const json &Query)
 		}
 		goto send;
 	}
+	if (ActionStr == "START")
+	{
+		CDFRCommon::ExternalSettings.record = true;
+		CDFRCommon::ExternalSettings.RecordInterval = 0;
+		CDFRCommon::InternalSettings.record = true;
+		CDFRCommon::InternalSettings.RecordInterval = 0;
+		if (Parent)
+		{
+			if (Parent->ExternalRunner)
+			{
+				Parent->ExternalRunner->SetCameraLock(true);
+				CDFRTeam team = Parent->ExternalRunner->GetTeam();
+				if (team != CDFRTeam::Unknown)
+				{
+					Parent->ExternalRunner->SetTeamLock(team);
+				}
+			}
+		}
+		Response["status"] = "OK";
+		goto send;
+	}
+	if (ActionStr == "END")
+	{
+		CDFRCommon::ExternalSettings.record = false;
+		CDFRCommon::InternalSettings.record = false;
+		if (Parent)
+		{
+			if (Parent->ExternalRunner)
+			{
+				Parent->ExternalRunner->SetCameraLock(false);
+				Parent->ExternalRunner->SetTeamLock(CDFRTeam::Unknown);
+			}
+		}
+		Response["status"] = "OK";
+		goto send;
+	}
+	
 	if (ActionStr == "EXIT")
 	{
 		killed = true;
