@@ -115,19 +115,19 @@ json JsonListener::ObjectToJson(const ObjectData& Object)
 	if (Object.type == ObjectType::SolarPanel)
 	{
 		bool teamyellow = false, teamblue = false;
-		if (rotZdeg > 5)
+		if (rotZdeg > 8)
 		{
 			teamyellow = true;
 		}
-		if (rotZdeg < -5)
+		if (rotZdeg < -8)
 		{
 			teamblue = true;
 		}
-		if (rotZdeg > 155)
+		if (rotZdeg > 152)
 		{
 			teamblue = true;
 		}
-		if (rotZdeg < -155)
+		if (rotZdeg < -152)
 		{
 			teamyellow = true;
 		}
