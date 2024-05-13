@@ -1,20 +1,21 @@
 # Cyclops
-Ca voit tout, mais avec un seul oeuil
+Ca voit tout, mais avec un seul oeuil (camera)
 
 # Installation
 Utiliser Debian ou une de ses fork
 
-Si tu veux installer OpenCV avec CUDA, voici le lien pour installer Cuda
+Si tu veux installer OpenCV avec CUDA, voici le lien pour installer Cuda (J'utilise pas CUDA ni CUDNN pour l'instant, vu que les jetson sont underpowered compare aux Framework)
 
 https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#introduction
 
-Pour les neural networks, il faut aussi CuDNN, là y'a un package sur Ubuntu qui installe tout.
+Pour les neural networks, il faut aussi CuDNN.
 
 Script une commande : `./DownloadRepos.sh` 
-En fait ce script lance le script `./InstallRequirement.sh` qui installe toutes les libs nécessaires, 
-puis télécharge les repos OpenCV et OpenCV_contrib puis lance `./IntallOpenCV.sh`.
 
-Si tu veux utiliser Cuda ou CuDNN, il faudra modifier un peu `InstallOpenCV.sh` 
+En fait ce script lance le script `./InstallRequirement.sh` qui installe toutes les libs nécessaires, 
+puis télécharge les repos OpenCV, et enfin lance `./IntallOpenCV.sh`, script qui compile et installe OpenCV avec les bons parametres.
+
+Si tu veux utiliser Cuda ou CuDNN, il faudra faire `./InstallOpenCV.sh 1` 
 
 # Coder dessus
 Je recommande VisualStudioCode
@@ -32,13 +33,17 @@ Y forward
 
 Z up
 
-UV, Vertex colors, normals, triangulate faces
+UV, Vertex colors, triangulate faces
 
 
 ## calibration
-Une fois la calibration faite, si t'en es content, déplacer le fichier de calibration de /build vers ce fichier. Il aura le nom de la caméra
 Pour effectuer la calibration, lancer l'executable depuis /build `./cyclops -c`. 
-Les paramètres de la calibration sont dans config.cfg. La calibration essaie de garder un maximum d'images avec le minimum d'erreur de reprojection et peut prends un poil de temps à s'executer
+
+Pour calibrer, il faut prendre en photo un echiquier. Les paremetres de l'echiquier sont regles dans le fichier config.json, qui est cree automatiquement.
+
+Une fois la calibration faite, si t'en es content, déplacer le fichier de calibration de /build vers ce fichier. Il aura le nom de la caméra.
+
+Les paramètres de la calibration sont dans config.cfg. La calibration essaie de garder un maximum d'images avec le minimum d'erreur de reprojection et peut prendre un poil de temps à s'executer.
 
 ## sim
 Dossier où stocker les simulations software in the loop
@@ -54,11 +59,11 @@ toutes les sources
 
 # Lancer le code
 
-L'exécutable se trouvera dans le fichier build
+L'exécutable se trouvera dans le fichier build. Il peut se lancer depuis n'importe ou, il retrouvera son chemin.
 
 `./cyclops -h` pour avoir l'aide
 
-# Jetson
+# Jetson (pas supporte)
 
 Surtout si c'est dans le cas où les caméras sont connectées en MIPI-CSI, des fois le daemon plante : éxecuter
 `systemctl restart nvargus-daemon.service`
