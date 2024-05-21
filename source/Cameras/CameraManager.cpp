@@ -2,11 +2,20 @@
 
 using namespace std;
 
+void CameraManager::SetIdle(bool value)
+{
+	if (value == Idle)
+	{
+		return;
+	}
+	Idle = value;
+}
+
 vector<Camera*> CameraManager::Tick()
 {
 	for (size_t i = 0; i < Cameras.size(); i++)
 	{
-		if (Cameras[i]->errors >= 20)
+		if (Cameras[i]->errors >= 20 || Idle)
 		{
 			std::cerr << "Detaching camera @ " << Cameras[i]->GetName() << std::endl;
 			std::string pathtofind = dynamic_cast<const VideoCaptureCameraSettings*>(Cameras[i]->GetCameraSettings())->DeviceInfo.device_paths[0];

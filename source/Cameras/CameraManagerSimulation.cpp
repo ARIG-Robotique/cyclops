@@ -14,6 +14,12 @@ void CameraManagerSimulation::ThreadEntryPoint()
 	SetThreadName("CameraManagerSimulation");
 	while (!killed)
 	{
+		if (Idle)
+		{
+			this_thread::sleep_for(chrono::milliseconds(1000));
+			continue;
+		}
+		
 		{
 			shared_lock lock(pathmutex);
 			if (usedpaths.size() != 0)

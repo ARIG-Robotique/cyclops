@@ -109,6 +109,12 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 	return bestTeam;
 }
 
+void CDFRExternal::SetIdle(bool value)
+{
+	Idle = value;
+	CameraMan->SetIdle(value);
+}
+
 void CDFRExternal::SetCameraLock(bool value)
 {
 	CDFRCommon::ExternalSettings.SolveCameraLocation = !value;
@@ -136,8 +142,8 @@ void CDFRExternal::ThreadEntryPoint()
 	}
 	else
 	{
-		Idle = true;
 		CameraMan = make_unique<CameraManagerV4L2>(GetCaptureMethod(), GetCaptureConfig().filter, false);
+		SetIdle(true);
 	}
 
 	YoloDetector = make_unique<YoloDetect>("cdfr", 4);

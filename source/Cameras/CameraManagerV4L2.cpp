@@ -96,6 +96,12 @@ void CameraManagerV4L2::ThreadEntryPoint()
 	SetThreadName("CameraManagerV4L2");
 	while (!killed)
 	{
+		if (Idle)
+		{
+			this_thread::sleep_for(chrono::milliseconds(1000));
+			continue;
+		}
+		
 		std::vector<v4l2::devices::DEVICE_INFO> devices;
 		v4l2::devices::list(devices);
 		std::set<std::string> knownpaths, unknownpaths;
@@ -104,6 +110,7 @@ void CameraManagerV4L2::ThreadEntryPoint()
 			std::copy(usedpaths.begin(), usedpaths.end(), std::inserter(knownpaths, knownpaths.end()));
 			std::copy(blockedpaths.begin(), blockedpaths.end(), std::inserter(knownpaths, knownpaths.end()));
 		}
+		
 
 		for (auto &device : devices)
 		{

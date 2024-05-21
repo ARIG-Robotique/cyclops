@@ -77,10 +77,7 @@ public:
 		return Idle;
 	}
 
-	void SetIdle(bool value)
-	{
-		Idle = value;
-	}
+	void SetIdle(bool value);
 
 	void SetCameraLock(bool value);
 

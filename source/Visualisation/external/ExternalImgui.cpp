@@ -107,8 +107,11 @@ void ExternalImgui::ThreadEntryPoint()
 				ImGui::Spacing();
 			}
 			
-			
-			ImGui::Checkbox("Idle", &Parent->Idle);
+			bool newIdle = Parent->Idle;
+			if(ImGui::Checkbox("Idle", &newIdle))
+			{
+				Parent->SetIdle(newIdle);
+			}
 
 			ImGui::Checkbox("Show Aruco", &ShowAruco);
 			ImGui::Checkbox("Show Yolo", &ShowYolo);

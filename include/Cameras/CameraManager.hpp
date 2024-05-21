@@ -26,6 +26,8 @@ protected:
 
 	std::vector<std::shared_ptr<Camera>> Cameras, NewCameras; //List of cameras. NewCameras is protected by cammutex, Cameras only belongs to Tick
 
+	bool Idle = false;
+
 public:
 	//Function called when a new camera is to be created. Return nullptr if you want to veto that creation
 	//Will be called in a separate thread 
@@ -42,6 +44,12 @@ public:
 	
 	virtual ~CameraManager()
 	{
+	}
+
+	virtual void SetIdle(bool value);
+	bool GetIdle()
+	{
+		return Idle;
 	}
 
 public:
