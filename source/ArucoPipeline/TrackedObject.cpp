@@ -314,7 +314,7 @@ vector<vector<Point3d>> TrackedObject::GetPointsOfInterest() const
 void TrackedObject::Inspect()
 {
 	BoardGL board;
-
+	board.Init();
 	board.LoadTags();
 
 	vector<ObjectData> datas = ToObjectData();

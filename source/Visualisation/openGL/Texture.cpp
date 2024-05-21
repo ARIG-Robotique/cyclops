@@ -22,7 +22,7 @@ void Texture::LoadFromFile(std::filesystem::path path)
 
 void Texture::LoadFromMat(const cv::Mat &Image)
 {
-	Image.copyTo(SourceImage);
+	SourceImage = Image;
 	if (valid)
 	{
 		Refresh();

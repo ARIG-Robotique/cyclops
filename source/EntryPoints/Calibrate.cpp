@@ -333,7 +333,6 @@ Camera* CamToCalib;
 Mat CameraMatrix;
 Mat distanceCoefficients;
 
-thread *CalibrationThread;
 bool Calibrating = false;
 bool ShowUndistorted = false;
 
@@ -386,6 +385,7 @@ void CalibrationWorker()
 
 bool docalibration(VideoCaptureCameraSettings CamSett)
 {
+	unique_ptr<thread> CalibrationThread;
 	ManualProfiler<false> prof;
 	bool HasCamera = CamSett.IsValid();
 	
@@ -433,17 +433,14 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 	CamToCalib->StartFeed();
 
 	ImguiWindow imguiinst;
-	Texture cameratex;
-	cameratex.SourceImage = Mat::zeros(CamSett.Resolution, CV_8UC3);
-	cameratex.valid = true;
-	
-	cameratex.Bind();
+	imguiinst.Init();
 
 
 	cout << "Camera calibration mode !" << endl
 	<< "Press [space] to capture an image, [enter] to calibrate, [a] to capture an image every " << 1/AutoCaptureFramerate << "s" <<endl
 	<< "Take pictures of a checkerboard with " << GetCalibrationConfig().NumIntersections.width+1 << "x" << GetCalibrationConfig().NumIntersections.height+1 << " squares of side length " << GetCalibrationConfig().SquareSideLength << "mm" << endl
-	<< "Images will be saved in folder " << TempImgPath << endl;
+	<< "Images will be saved in folder " << TempImgPath << endl
+	<< "Camera opened with resolution " << CamToCalib->GetCameraSettings()->Resolution << endl;
 
 	
 	//startWindowThread();
@@ -472,7 +469,6 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 			{
 				break;
 			}
-			
 			continue;
 		}
 		prof.EnterSection("Controls");
@@ -481,8 +477,6 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 			ImGui::Text("FPS : %f", 1/fps.GetDeltaTime());
 			ImGui::Checkbox("Mirror", &mirrored);
 		}
-
-		
 		if (ShowUndistorted)
 		{
 			prof.EnterSection("Undistort");
@@ -491,7 +485,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 		}
 		CameraImageData framedata = CamToCalib->GetFrame(!ShowUndistorted);
 		frame = framedata.Image;
-		
+
 		if (!ShowUndistorted)
 		{
 			if(ImGui::Checkbox("Auto capture", &AutoCapture))
@@ -524,7 +518,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 				}
 				else
 				{
-					CalibrationThread = new thread(CalibrationWorker);
+					CalibrationThread = make_unique<thread>(CalibrationWorker);
 				}
 			}
 		}
@@ -559,18 +553,13 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 		{
 			ImGui::Text("Image %d %s !", nextIdx -1, ( AutoCapture ? "AutoCaptured" : "captured"));
 		}
-		
-		ImGui::End();
 
-
-		prof.EnterSection("Upload frame");
-		cameratex.LoadFromUMat(frame);
 		prof.EnterSection("Background");
 
 
 		{
 			cv::Rect Backgroundsize(Point2i(0,0), (Size2i)imguiinst.GetWindowSize());
-			cv::Rect impos = ScaleToFit(CamSett.Resolution, Backgroundsize);
+			cv::Rect impos = ScaleToFit(frame.size(), Backgroundsize);
 			Size2f uv_min(0,0), uv_max(1,1);
 
 			if (mirrored)
@@ -579,18 +568,25 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 				uv_max = Size2f(0,1);
 			}
 			
-			imguiinst.AddImageToBackground(cameratex, impos, uv_min, uv_max);
+			imguiinst.AddImageToBackground(0, frame, impos, uv_min, uv_max);
 		}
 
 		prof.EnterSection("End Frame");
+		ImGui::End();
 		if(!imguiinst.EndFrame())
 		{
-			return true;
+			
+			break;
 		}
 		prof.EnterSection("");
 		prof.PrintIfShould();
 		//fps.AddFpsToImage(frameresized, fps.GetDeltaTime());
 		//imshow(CalibWindowName, frameresized);
+	}
+	if (CalibrationThread)
+	{
+		CalibrationThread->join();
+		CalibrationThread.reset();
 	}
 	return true;
 }

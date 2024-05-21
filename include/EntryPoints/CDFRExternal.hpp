@@ -43,10 +43,10 @@ private:
 
 protected:
 	//3D viz
-	std::unique_ptr<class BoardGL> OpenGLBoard;
+	std::unique_ptr<class ExternalBoardGL> OpenGLBoard;
 
 	//2D viz
-	std::unique_ptr<class ImguiWindow> DirectImage;
+	std::unique_ptr<class ExternalImgui> DirectImage;
 
 private:
 	//data
@@ -104,7 +104,7 @@ public:
 	CDFRExternal();
 	virtual ~CDFRExternal();
 
-	friend class ImguiWindow;
+	friend class ExternalImgui;
 };
 
 

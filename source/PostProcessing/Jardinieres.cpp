@@ -75,16 +75,19 @@ PostProcessJardinieres::PostProcessJardinieres(CDFRExternal* InOwner)
 void PostProcessJardinieres::Process(std::vector<CameraImageData> &ImageData, std::vector<CameraFeatureData> &FeatureData, std::vector<ObjectData> &Objects)
 {
 	(void) ImageData;
-	if (FeatureData.size() == 0)
+	if (FeatureData.size() != 1)
 	{
 		return;
 	}
-	assert(FeatureData.size() == 1);
 	for (auto &zone : Stocks)
 	{
 		zone.NumPlants = 0;
 	}
 	const auto &ThisImageData = ImageData[0];
+	if (!ThisImageData.Valid)
+	{
+		return;
+	}
 	const auto &ThisFeatureData = FeatureData[0];
 	const auto InvCameraMatrix = ThisFeatureData.CameraTransform.inv();
 	Size WantedImageSize(65,30);

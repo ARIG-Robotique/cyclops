@@ -128,6 +128,7 @@ CameraImageData Camera::GetFrame(bool Distorted) const
 		frame.Image = LastFrameUndistorted;
 	}
 	frame.GrabTime = captureTime;
+	frame.Valid = true;
 	return frame;
 }
 

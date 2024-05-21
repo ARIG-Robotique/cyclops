@@ -14,8 +14,8 @@
 #include <glm/gtx/transform.hpp>
 #include <assimp/Importer.hpp>
 
+#include <ArucoPipeline/ArucoTypes.hpp>
 #include <Misc/GlobalConf.hpp>
-#include <EntryPoints/CDFRExternal.hpp>
 #include <Visualisation/openGL/Mesh.hpp>
 
 using namespace std;
@@ -28,28 +28,14 @@ GLObject::GLObject(MeshNames InType, double x, double y, double z, std::string I
 	metadata = InMetadata;
 }
 
-BoardGL::BoardGL(string InName, CDFRExternal* InParent)
-	:GLWindow(), name(InName), Parent(InParent)
+BoardGL::BoardGL(string InName)
+	:GLWindow(), name(InName)
 {
-	if (InParent)
-	{
-		Start();
-	}
-	else
-	{
-		Init();
-	}
+
 }
 
 BoardGL::~BoardGL()
 {
-	killed = true;
-	if (ThreadHandle)
-	{
-		ThreadHandle->join();
-		ThreadHandle.reset();
-	}
-	
 	for (auto &&i : Meshes)
 	{
 		i.second.Release();
@@ -437,19 +423,6 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 	glfwMakeContextCurrent(NULL);
 
 	return IsDone;
-}
-
-void BoardGL::ThreadEntryPoint()
-{
-	assert(Parent != nullptr);
-	Init();
-	LoadTags();
-	while (!killed && !Parent->IsKilled())
-	{
-		closed = !Tick(ObjectData::ToGLObjects(Parent->GetObjectData()));
-		killed |= closed;		
-	}
-	killed = true;
 }
 
 void BoardGL::runTest()

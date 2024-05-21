@@ -5,11 +5,14 @@
 #include <Communication/JsonListener.hpp>
 #include <Communication/Transport/TCPTransport.hpp>
 #include <EntryPoints/CDFRExternal.hpp>
+#include <thirdparty/thread-rename.hpp>
 
 using namespace std;
 
 void TCPJsonHost::ThreadEntryPoint(GenericTransport::NetworkInterface interface)
 {
+	string ThreadName = string("TCP Json Host on ") + interface.name;
+	SetThreadName(ThreadName.c_str());
 	unique_ptr<TCPTransport> Transport = make_unique<TCPTransport>(true, "0.0.0.0", Port, interface.name);
 	set<shared_ptr<JsonListener>> Listeners;
 	while (!killed)

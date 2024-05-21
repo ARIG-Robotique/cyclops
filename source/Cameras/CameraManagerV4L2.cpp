@@ -3,6 +3,7 @@
 #include <Cameras/Calibfile.hpp>
 #include <Misc/GlobalConf.hpp>
 #include <Misc/path.hpp>
+#include <thirdparty/thread-rename.hpp>
 
 using namespace std;
 
@@ -92,6 +93,7 @@ vector<VideoCaptureCameraSettings> CameraManagerV4L2::autoDetectCameras(CameraSt
 
 void CameraManagerV4L2::ThreadEntryPoint()
 {
+	SetThreadName("CameraManagerV4L2");
 	while (!killed)
 	{
 		std::vector<v4l2::devices::DEVICE_INFO> devices;

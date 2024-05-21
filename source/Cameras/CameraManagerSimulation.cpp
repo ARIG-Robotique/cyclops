@@ -5,11 +5,13 @@
 #include <nlohmann/json.hpp>
 #include <Cameras/Calibfile.hpp>
 #include <Misc/GlobalConf.hpp>
+#include <thirdparty/thread-rename.hpp>
 
 using namespace std;
 
 void CameraManagerSimulation::ThreadEntryPoint()
 {
+	SetThreadName("CameraManagerSimulation");
 	while (!killed)
 	{
 		{

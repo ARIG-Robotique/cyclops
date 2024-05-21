@@ -49,9 +49,8 @@ struct GLObject
 	GLObject(MeshNames InType, double x, double y, double z, std::string InMetadata = "");
 };
 
-class CDFRExternal;
 
-class BoardGL : public GLWindow, public Task
+class BoardGL : public GLWindow
 {
 private:
 	GLuint VertexArrayID;
@@ -63,25 +62,13 @@ private:
 	std::map<MeshNames, Mesh> Meshes;
 	std::vector<Texture> TagTextures;
 
-	CDFRExternal *Parent = nullptr;
-	bool closed = false;
-
 	glm::mat4 GetVPMatrix(glm::vec3 forward, glm::vec3 up) const;
 public:
 	//if parent is not null, visualiser is started in another thread
-	BoardGL(std::string InName = "Cyclops", CDFRExternal* InParent = nullptr);
+	BoardGL(std::string InName = "Cyclops");
 
 	virtual ~BoardGL();
 
-	bool IsThreaded()
-	{
-		return Parent != nullptr;
-	}
-
-	bool GetClosed()
-	{
-		return closed;
-	}
 
 	bool LookingAround = false; //Is left button pressed ?
 	double lastCursorX, lastCursorY;
@@ -106,8 +93,6 @@ public:
 
 	void runTest();
 
-protected:
-	virtual void ThreadEntryPoint() override;
 
 public:
 	virtual void WindowSizeCallback(int width, int height) override;

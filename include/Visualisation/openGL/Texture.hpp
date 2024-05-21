@@ -21,6 +21,7 @@ public:
 	bool valid = false;
 
 	Texture()
+		:SourceImage()
 	{}
 
 	//Must be deleted in the context that created it

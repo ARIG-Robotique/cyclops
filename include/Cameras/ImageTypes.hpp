@@ -67,4 +67,5 @@ struct CameraImageData
 	cv::Mat DistanceCoefficients;
 	std::chrono::steady_clock::time_point GrabTime;
 	bool Distorted;
+	bool Valid = false;
 };

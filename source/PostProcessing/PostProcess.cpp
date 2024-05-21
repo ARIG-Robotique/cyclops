@@ -18,7 +18,7 @@ vector<ObjectData> PostProcess::GetEnemyRobots(vector<ObjectData> &Objects) cons
 	assert(Owner != nullptr);
 	auto OurTeam = Owner->GetTeam();
 	auto EnemyTeam = GetOtherTeam(OurTeam);
-	const string& EnemyTeamName = TeamNames.at(EnemyTeam);
+	const string& EnemyTeamName = TeamNames.at(EnemyTeam).JavaName;
 	vector<ObjectData> robots;
 	for (auto &obj : Objects)
 	{

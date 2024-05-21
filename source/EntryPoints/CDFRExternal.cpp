@@ -9,8 +9,8 @@
 #include <DetectFeatures/ArucoDetect.hpp>
 #include <DetectFeatures/YoloDetect.hpp>
 
-#include <Visualisation/BoardGL.hpp>
-#include <Visualisation/ImguiWindow.hpp>
+#include <Visualisation/external/ExternalBoardGL.hpp>
+#include <Visualisation/external/ExternalImgui.hpp>
 
 #include <Misc/ManualProfiler.hpp>
 #include <Misc/math2d.hpp>
@@ -26,6 +26,8 @@
 #include <PostProcessing/StockPlants.hpp>
 #include <PostProcessing/Jardinieres.hpp>
 #include <PostProcessing/SolarPanel.hpp>
+
+#include <thirdparty/thread-rename.hpp>
 
 #include <thread>
 #include <memory>
@@ -123,6 +125,7 @@ using ExternalProfType = ManualProfiler<false>;
 
 void CDFRExternal::ThreadEntryPoint()
 {
+	SetThreadName("CDFRExternal runner");
 	ExternalProfType prof("External Global Profile");
 	ExternalProfType ParallelProfiler("Parallel Cameras Detail");
 	
@@ -371,6 +374,10 @@ void CDFRExternal::ThreadEntryPoint()
 		ObjDataLocal = TrackerToUse->GetObjectDataVector(GrabTick);
 		for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
 		{
+			if (!ImageDataLocal[camidx].Valid)
+			{
+				continue;
+			}
 			auto YoloObjects = YoloDetector->Project(ImageDataLocal[camidx], FeatureDataLocal[camidx]);
 			ObjDataLocal.insert(ObjDataLocal.end(), YoloObjects.begin(), YoloObjects.end());
 		}
@@ -468,7 +475,7 @@ std::vector<ObjectData> CDFRExternal::GetObjectData() const
 
 void CDFRExternal::Open3DVisualizer()
 {
-	OpenGLBoard = make_unique<BoardGL>("Cyclops", this);
+	OpenGLBoard = make_unique<ExternalBoardGL>("Cyclops", this);
 	if (OpenGLBoard->IsThreaded())
 	{
 		
@@ -487,7 +494,7 @@ void CDFRExternal::Open3DVisualizer()
 
 void CDFRExternal::OpenDirectVisualizer()
 {
-	DirectImage = make_unique<ImguiWindow>("External Direct Visualizer", this);
+	DirectImage = make_unique<ExternalImgui>("External Direct Visualizer", this);
 	if (!DirectImage->IsThreaded() && !DirectImage->HasWindow())
 	{
 		cout << "No 2D visualizer created: No window" << endl;

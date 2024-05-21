@@ -8,6 +8,7 @@
 #include <Misc/math3d.hpp>
 #include <Misc/math2d.hpp>
 #include <Misc/GlobalConf.hpp>
+#include <thirdparty/thread-rename.hpp>
 
 #include <opencv2/imgcodecs.hpp>
 #include <libbase64.h>
@@ -816,6 +817,8 @@ void JsonListener::CheckAlive()
 
 void JsonListener::ThreadEntryPoint()
 {
+	string ThreadName = string("Json Listener for ") + ClientName;
+	SetThreadName(ThreadName.c_str());
 	while (!killed)
 	{
 		CheckAlive();

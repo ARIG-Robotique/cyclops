@@ -47,7 +47,6 @@ namespace HsvConverter
         uint8_t graphSection = hue / 255;
     
         const uint8_t valueInGraphPortion = hue % 255; // Aka hue % 60
-        uint32_t r, g, b;
         switch (graphSection)
         {
         case 0: // 0 to 59 degrees

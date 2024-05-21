@@ -13,6 +13,7 @@
 #include <arpa/inet.h>
 
 #include <mutex>
+#include <thirdparty/thread-rename.hpp>
 
 using namespace std;
 
@@ -399,6 +400,7 @@ void TCPTransport::DisconnectClient(std::string client)
 
 void TCPTransport::ThreadEntryPoint()
 {
+	SetThreadName("TCP Transport");
 	cout << "TCP Webserver thread started..." << endl;
 	while (1)
 	{
