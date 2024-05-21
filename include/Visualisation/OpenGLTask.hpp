@@ -9,11 +9,12 @@ class OpenGLTask
 {
 private:
 	static std::vector<OpenGLTask*> Tasks;
-	static std::mutex TaskMutex;
+	static std::recursive_mutex TaskMutex;
 	static std::unique_ptr<std::thread> TaskThread;
 protected:
 	bool started = false;
 	bool killed = false;
+	bool initialized = false;
 public:
 	OpenGLTask();
 	virtual ~OpenGLTask();

@@ -12,6 +12,7 @@ private:
 	bool closed = false;
 	bool ShowAruco = true, ShowYolo = true;
 	bool FocusPeeking = false;
+	std::vector<cv::UMatData*> LastMatrices;
 public:
 
 	ExternalImgui(std::string InWindowName = "ImGui", CDFRExternal *InParent = nullptr);
