@@ -49,6 +49,7 @@ class PostProcessYoloDeflicker : public PostProcess
 			Lifetime += std::chrono::milliseconds(confidence*10);//if 100% confident, add 1s lifetime
 			Lifetime = std::max(Lifetime, ObjectData::Clock::now() + std::chrono::seconds(3)); //max 3s lifetime
 			LastSeen = other.LastSeen;
+			metadata = other.metadata;
 			type = other.type;
 		}
 	};

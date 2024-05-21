@@ -25,6 +25,7 @@
 #include <PostProcessing/YoloDeflicker.hpp>
 #include <PostProcessing/StockPlants.hpp>
 #include <PostProcessing/Jardinieres.hpp>
+#include <PostProcessing/SolarPanel.hpp>
 
 #include <thread>
 #include <memory>
@@ -141,6 +142,7 @@ void CDFRExternal::ThreadEntryPoint()
 	PostProcesses.emplace_back(make_unique<PostProcessYoloDeflicker>(this));
 	PostProcesses.emplace_back(make_unique<PostProcessStockPlants>(this));
 	PostProcesses.emplace_back(make_unique<PostProcessJardinieres>(this));
+	PostProcesses.emplace_back(make_unique<PostProcessSolarPanel>(this));
 
 	//display/debug section
 	FrameCounter fps;

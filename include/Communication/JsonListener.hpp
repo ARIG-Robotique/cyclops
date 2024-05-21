@@ -60,7 +60,7 @@ private:
 
 	static CDFRTeam StringToTeam(std::string team);
 
-	nlohmann::json ObjectToJson(const struct ObjectData& Object);
+	std::optional<nlohmann::json> ObjectToJson(const struct ObjectData& Object);
 
 	static std::string JavaCapitalize(std::string source);
 
