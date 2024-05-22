@@ -177,15 +177,28 @@ static_assert(sizeof(Matx31d) == sizeof(Vec3d));
 vector<ObjectData> YoloDetect::Project(const CameraImageData &ImageData, const CameraFeatureData& FeatureData)
 {
 	vector<ObjectData> objects;
-	objects.reserve(FeatureData.YoloDetections.size());
-	const Matx33d InvCameraMatrix = Mat(ImageData.CameraMatrix.inv());
-	for (size_t i = 0; i < FeatureData.YoloDetections.size(); i++)
+	size_t NumDetections = FeatureData.YoloDetections.size();
+	if (NumDetections == 0)
+	{
+		return objects;
+	}
+	
+	objects.reserve(NumDetections);
+
+	vector<Point2f> DistortedImagePoints, UndistortedImagePoints;
+	DistortedImagePoints.resize(NumDetections);
+	for (size_t i = 0; i < NumDetections; i++)
+	{
+		auto &Detection = FeatureData.YoloDetections[i];
+		DistortedImagePoints[i] = (Detection.Corners.tl() + Detection.Corners.br())/2.0;
+	}
+	undistortPoints(DistortedImagePoints, UndistortedImagePoints, ImageData.CameraMatrix, ImageData.DistanceCoefficients);
+	for (size_t i = 0; i < NumDetections; i++)
 	{
 		auto &Detection = FeatureData.YoloDetections[i];
 		//auto ROI = ImageData.Image(Detection.Corners);
-		auto center = (Detection.Corners.tl() + Detection.Corners.br())/2.0;
-		Matx31d position = {center.x, center.y, 1};
-		Matx31d vector(InvCameraMatrix * position); //TODO: This doesn't take into account distortion coeffs
+		auto center = UndistortedImagePoints[i];
+		Matx31d vector = {center.x, center.y, 1};
 		Matx31d WorldVector = FeatureData.CameraTransform.rotation() * vector;
 		double InterceptHeight = Detection.Class >= 2 ? 0.03 : 0.02;
 		Vec3d WorldPosition = LinePlaneIntersection(FeatureData.CameraTransform.translation(), 
