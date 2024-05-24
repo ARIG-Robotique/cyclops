@@ -4,6 +4,7 @@
 
 #include <shared_mutex>
 #include <vector>
+#include <map>
 #include <netinet/in.h>
 
 #include <Misc/Task.hpp>
@@ -12,7 +13,7 @@
 
 
 
-class TCPTransport : public GenericTransport, public Task
+class TCPTransport : public GenericTransport
 {
 private:
 	struct TCPConnection
@@ -28,7 +29,7 @@ private:
 	int sockfd;
 	bool Connected;
 	mutable std::shared_mutex listenmutex; //protects connections
-	std::vector<TCPConnection> connections;
+	std::map<std::shared_ptr<ConnectionToken>, TCPConnection> connections;
 public:
 
 	TCPTransport(bool inServer, std::string inIP, int inPort, std::string inInterface);
@@ -41,18 +42,22 @@ private:
 	void CheckConnection();
 	void LowerLatency(int fd);
 	void DeleteSocket(int fd);
-	void ServerDeleteSocket(int clientidx);
 public:
 
-	virtual std::vector<std::string> GetClients() const override;
+	virtual std::vector<std::shared_ptr<ConnectionToken>> GetClients() const override;
 
 	virtual int Receive(void *buffer, int maxlength, std::string client, bool blocking=false) override;
 
 	virtual bool Send(const void* buffer, int length, std::string client) override;
 
-	std::vector<std::string> AcceptNewConnections();
 
-	void DisconnectClient(std::string client);
-	
-	virtual void ThreadEntryPoint() override;
+
+	std::vector<std::shared_ptr<ConnectionToken>> AcceptNewConnections();
+
+protected:
+	virtual std::optional<int> Receive(void* buffer, int maxlength, std::shared_ptr<ConnectionToken> token) override;
+
+	virtual bool Send(const void* buffer, int length,  std::shared_ptr<ConnectionToken> token) override;
+
+	virtual void DisconnectClient(std::shared_ptr<ConnectionToken> token) override;
 };

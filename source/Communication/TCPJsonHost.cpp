@@ -4,6 +4,7 @@
 
 #include <Communication/JsonListener.hpp>
 #include <Communication/Transport/TCPTransport.hpp>
+#include <Communication/Transport/ConnectionToken.hpp>
 #include <EntryPoints/CDFRExternal.hpp>
 #include <thirdparty/thread-rename.hpp>
 
@@ -20,7 +21,7 @@ void TCPJsonHost::ThreadEntryPoint(GenericTransport::NetworkInterface interface)
 		auto newconnections = Transport->AcceptNewConnections();
 		for (auto &&connection : newconnections)
 		{
-			JsonListener* listener = new JsonListener(Transport.get(), connection, this);
+			JsonListener* listener = new JsonListener(connection, this);
 			Listeners.emplace(listener);
 			NumClients++;
 			ExternalRunner->SetHasNoClients(NumClients == 0);
@@ -31,8 +32,7 @@ void TCPJsonHost::ThreadEntryPoint(GenericTransport::NetworkInterface interface)
 			shared_ptr<JsonListener> lptr = *it;
 			if (lptr->IsKilled())
 			{
-				cout << "Client at " << lptr->ClientName << " is killed, cleaning..." << endl;
-				Transport->DisconnectClient(lptr->ClientName);
+				cout << "Client at " << lptr->token->GetConnectionName() << " is killed, cleaning..." << endl;
 				it=Listeners.erase(it);
 				NumClients--;
 				ExternalRunner->SetHasNoClients(NumClients == 0);

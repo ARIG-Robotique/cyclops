@@ -1,5 +1,5 @@
 #include "Communication/Transport/TCPTransport.hpp"
-
+#include <Communication/Transport/ConnectionToken.hpp>
 
 #include <iostream>
 #include <filesystem>
@@ -35,10 +35,11 @@ TCPTransport::TCPTransport(bool inServer, string inIP, int inPort, string inInte
 TCPTransport::~TCPTransport()
 {
 	cout << "Destroying TCP transport " << IP << ":" << Port << " @ " << Interface <<endl;
-	for (size_t i = 0; i < connections.size(); i++)
+	for (auto &connection : connections)
 	{
-		shutdown(connections[i].filedescriptor, SHUT_RDWR);
-		close(connections[i].filedescriptor);
+		shutdown(connection.second.filedescriptor, SHUT_RDWR);
+		close(connection.second.filedescriptor);
+		connection.first->Disconnect();
 	}
 	if (sockfd != -1)
 	{
@@ -113,13 +114,15 @@ bool TCPTransport::Connect()
 			//cerr << "Failed to connect to server" << endl;
 			return false;
 		}
-		else
-		{
-			cout << "TCP connected to server" << endl;
-			Connected = true;
-			return true;
-		}
-		
+		cout << "TCP connected to server" << endl;
+		Connected = true;
+		TCPConnection connection;
+		connection.name = ip;
+		connection.address = serverAddress;
+		connection.filedescriptor = sockfd;
+		auto token = make_shared<ConnectionToken>(ip, this);
+		connections[token] = connection;
+		return true;
 	}
 }
 
@@ -154,30 +157,16 @@ void TCPTransport::DeleteSocket(int fd)
 	close(fd);
 }
 
-void TCPTransport::ServerDeleteSocket(int clientidx)
+vector<shared_ptr<ConnectionToken>> TCPTransport::GetClients() const
 {
-	DeleteSocket(connections[clientidx].filedescriptor);
-	connections.erase(next(connections.begin(), clientidx));
-}
-
-
-vector<string> TCPTransport::GetClients() const
-{
-	if (Server)
+	vector<shared_ptr<ConnectionToken>> clients;
+	shared_lock lock(listenmutex);
+	clients.reserve(connections.size());
+	for (auto &connection : connections)
 	{
-		vector<string> clients;
-		shared_lock lock(listenmutex);
-		clients.reserve(connections.size());
-		for (size_t i = 0; i < connections.size(); i++)
-		{
-			clients.push_back(connections[i].name);
-		}
-		return clients;
+		clients.push_back(connection.first);
 	}
-	else
-	{
-		return {BroadcastClient};
-	}
+	return clients;
 }
 
 int TCPTransport::Receive(void *buffer, int maxlength, string client, bool blocking)
@@ -188,20 +177,20 @@ int TCPTransport::Receive(void *buffer, int maxlength, string client, bool block
 
 	if (Server)
 	{
-		set<string> DisconnectedClients;
+		set<shared_ptr<ConnectionToken>> DisconnectedClients;
 		{
 			shared_lock lock(listenmutex);
-			for (size_t i = 0; i < connections.size(); i++)
+			for (auto &connection : connections)
 			{
-				if (client != connections[i].name && client != BroadcastClient)
+				if (client != connection.second.name && client != BroadcastClient)
 				{
 					continue;
 				}
 				//errno = 0;
-				n = recv(connections[i].filedescriptor, buffer, maxlength, flags);
+				n = recv(connection.second.filedescriptor, buffer, maxlength, flags);
 				if (n == 0/*|| errno == EWOULDBLOCK || errno == EAGAIN*/)
 				{
-					DisconnectedClients.emplace(connections[i].name);
+					DisconnectedClients.emplace(connection.first);
 				} else if (n < 0) {
 					continue;
 				}
@@ -250,51 +239,41 @@ bool TCPTransport::Send(const void* buffer, int length, string client)
 
 	if (Server)
 	{
-		set<string> DisconnectedClients;
-		bool failed = false;
+		set<shared_ptr<ConnectionToken>> DisconnectedClients;
+		bool sentsomething = false;
 		{
 			shared_lock lock(listenmutex);
-			size_t i;
-			for (i = 0; i < connections.size(); i++)
+			for (auto &connection : connections)
 			{
-				if (client != connections[i].name && client != BroadcastClient)
+				if (client != connection.second.name && client != BroadcastClient)
 				{
 					continue;
 				}
-				int err = send(connections[i].filedescriptor, buffer, length, MSG_NOSIGNAL);
+				int err = send(connection.second.filedescriptor, buffer, length, MSG_NOSIGNAL);
 				int errnocp = errno;
 				if (err ==-1 && (errnocp != EAGAIN && errnocp != EWOULDBLOCK))
 				{
 					if (errnocp == EPIPE)
 					{
-						DisconnectedClients.emplace(connections[i].name);
-						failed = true;
+						DisconnectedClients.emplace(connection.first);
 					}
 					else
 					{
-						cerr << "TCP Server failed to send data to client " << connections[i].name << " : " << errnocp << " (" << strerror(errnocp) << ")" << endl;
-						failed = true;
+						cerr << "TCP Server failed to send data to client " << connection.second.name << " : " << errnocp << " (" << strerror(errnocp) << ")" << endl;
 					}
-					
 				}
-				if (client != BroadcastClient)
+				else
 				{
-					break;
+					sentsomething = true;
 				}
 			}
-			//If nothing was sent because no client matched 
-			if (i == connections.size() && client != BroadcastClient)
-			{
-				failed = true;
-			}
-			
 		}
 		for (auto & client : DisconnectedClients) //Disconnection must be done outside of loop because the listenmutex is taken
 		{
 			DisconnectClient(client);
 		}
 		
-		return !failed;
+		return sentsomething;
 	}
 	else
 	{
@@ -320,13 +299,82 @@ bool TCPTransport::Send(const void* buffer, int length, string client)
 	}
 }
 
-vector<string> TCPTransport::AcceptNewConnections()
+
+
+std::optional<int> TCPTransport::Receive(void* buffer, int maxlength, std::shared_ptr<ConnectionToken> token)
+{
+	if (!CheckToken(token))
+	{
+		return false;
+	}
+	int fd;
+	{
+		shared_lock lock(listenmutex);
+		auto value = connections.find(token);
+		if (value == connections.end())
+		{
+			cerr << "Token not found in connections while receiving !" << endl;
+			return false;
+		}
+		fd = value->second.filedescriptor;
+	}
+	int numreceived = recv(fd, buffer, maxlength, MSG_DONTWAIT);
+	if (numreceived <= 0)
+	{
+		if (numreceived == 0)
+		{
+			//got disconnected
+			token->Disconnect();
+		}
+		else if (numreceived == -1)
+		{
+			//do nothing || errno == EWOULDBLOCK || errno == EAGAIN
+			numreceived = 0;
+		}
+	}
+	if (!token->IsConnected())
+	{
+		return nullopt;
+	}
+	return numreceived;
+}
+
+
+bool TCPTransport::Send(const void* buffer, int length,  std::shared_ptr<ConnectionToken> token)
+{
+	if (!CheckToken(token))
+	{
+		return false;
+	}
+	int fd = 0;
+	{
+		shared_lock lock(listenmutex);
+		auto value = connections.find(token);
+		if (value == connections.end())
+		{
+			cerr << "Token not found in connections while sending !" << endl;
+			return false;
+		}
+		fd = value->second.filedescriptor;
+	}
+	int numsent = send(fd, buffer, length, MSG_NOSIGNAL);
+	int errnocp = errno;
+	if (numsent == -1 && (errnocp != EAGAIN && errnocp != EWOULDBLOCK))
+	{
+		//got disconnected
+		token->Disconnect();
+	}
+	return token->IsConnected();
+}
+
+
+vector<shared_ptr<ConnectionToken>> TCPTransport::AcceptNewConnections()
 {
 	if (!Server)
 	{
 		return {};	
 	}
-	vector<string> newconnections;
+	vector<shared_ptr<ConnectionToken>> newconnections;
 	CheckConnection();
 	while (1)
 	{
@@ -342,28 +390,26 @@ vector<string> TCPTransport::AcceptNewConnections()
 			buffer[sizeof(buffer)-1] = 0;
 			connection.name = string(buffer, strlen(buffer));
 			cout << "TCP Client connecting from " << connection.name << " fd=" << connection.filedescriptor << endl;
-			bool unique = true;
+			int num_connections_from_same_ip = 0;
 			{
 				shared_lock lock(listenmutex);
 				for (auto &already : connections)
 				{
-					if (already.name == connection.name)
+					if (already.second.name == connection.name)
 					{
-						unique = false;
-						break;
+						num_connections_from_same_ip++;
 					}
 				}
-				if (!unique)
+				if (num_connections_from_same_ip > 0)
 				{
-					close(connection.filedescriptor);
-					cerr << "Refusing connection from " << connection.name << " as it's already connected" << endl;
-					continue;
+					cerr << "Warning: " << connection.name << " is already connected " << num_connections_from_same_ip << " times" << endl;
 				}
 			}
 			
 			unique_lock lock(listenmutex);
-			connections.push_back(connection);
-			newconnections.push_back(connection.name);
+			auto token = make_shared<ConnectionToken>(connection.name, this);
+			connections[token] = connection;
+			newconnections.push_back(token);
 		}
 		else 
 		{
@@ -382,31 +428,17 @@ vector<string> TCPTransport::AcceptNewConnections()
 	return newconnections;
 }
 
-void TCPTransport::DisconnectClient(std::string client)
+void TCPTransport::DisconnectClient(std::shared_ptr<ConnectionToken> token)
 {
 	unique_lock lock(listenmutex);
-	for (size_t i = 0; i < connections.size(); i++)
+	auto value = connections.find(token);
+	if (value == connections.end())
 	{
-		if (client != connections[i].name && client != BroadcastClient)
-		{
-			continue;
-		}
-		cout << "TCP Client " << connections[i].name << "@fd" << connections[i].filedescriptor << " disconnected." <<endl;
-		
-		ServerDeleteSocket(i);
-		i--;
-	}
-}
-
-void TCPTransport::ThreadEntryPoint()
-{
-	SetThreadName("TCP Transport");
-	cout << "TCP Webserver thread started..." << endl;
-	while (1)
-	{
-		this_thread::sleep_for(chrono::milliseconds(100));
-		CheckConnection();
-		AcceptNewConnections();
+		cerr << "Token not found in connections while disconnecting !" << endl;
+		return;
 	}
 	
+	DeleteSocket(value->second.filedescriptor);
+	cout << "TCP Client " << value->second.name << "@fd" << value->second.filedescriptor << " disconnected." <<endl;
+	connections.erase(value);
 }

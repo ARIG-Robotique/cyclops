@@ -10,8 +10,6 @@
 #include <ArucoPipeline/ObjectIdentity.hpp>
 #include <Misc/Task.hpp>
 
-class TCPTransport;
-
 //Get Cameras
 //Get image from camera #
 //	-jpeg, base64
@@ -23,14 +21,14 @@ class TCPTransport;
 //	-stated
 
 class TCPJsonHost;
+class ConnectionToken;
 
 class JsonListener : public Task
 {
 private:
 	std::vector<char> ReceiveBuffer;
 public:
-	TCPTransport *Transport = nullptr;
-	std::string ClientName = "none";
+	std::shared_ptr<ConnectionToken> token = nullptr;
 	TCPJsonHost *Parent = nullptr;
 	std::chrono::steady_clock::time_point LastAliveSent, LastAliveReceived;
 	enum class TransformMode
@@ -47,7 +45,7 @@ public:
 	TransformMode ObjectMode = TransformMode::Millimeter2D;
 
 
-	JsonListener(TCPTransport* InTransport, std::string InClientName, class TCPJsonHost* InParent);
+	JsonListener(std::shared_ptr<ConnectionToken> InToken, class TCPJsonHost* InParent);
 
 	~JsonListener();
 

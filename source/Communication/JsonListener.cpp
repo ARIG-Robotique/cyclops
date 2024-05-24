@@ -1,5 +1,6 @@
 #include "Communication/JsonListener.hpp"
-#include <Communication/Transport/TCPTransport.hpp>
+
+#include <Communication/Transport/ConnectionToken.hpp>
 #include <Communication/TCPJsonHost.hpp>
 #include <Cameras/ImageTypes.hpp>
 #include <EntryPoints/CDFRCommon.hpp>
@@ -21,18 +22,18 @@
 using namespace std;
 using namespace nlohmann;
 
-JsonListener::JsonListener(TCPTransport* InTransport, string InClientName, TCPJsonHost* InParent)
-	:Transport(InTransport), ClientName(InClientName), Parent(InParent)
+JsonListener::JsonListener(shared_ptr<ConnectionToken> InToken, TCPJsonHost* InParent)
+	:token(InToken), Parent(InParent)
 {
 	LastAliveSent = chrono::steady_clock::now();
 	LastAliveReceived = LastAliveSent;
 	Start();
-	cout << "Json listen thread for " << ClientName << " started" << endl;
+	//cout << "Json listen thread for " << token->GetConnectionName() << " started" << endl;
 }
 
 JsonListener::~JsonListener()
 {
-	cout << "Json listen thread for " << ClientName << " stoppped" << endl;
+	//cout << "Json listen thread for " << token->GetConnectionName() << " stoppped" << endl;
 }
 
 string JsonListener::JavaCapitalize(string source)
@@ -784,7 +785,12 @@ void JsonListener::SendJson(const json &object)
 {
 	string SendBuffer = object.dump() + "\n";
 
-	if(!Transport->Send(SendBuffer.data(), SendBuffer.length(), ClientName))
+	if (!token->IsConnected())
+	{
+		killed = true;
+		return;
+	}
+	if (!token->Send(SendBuffer.data(), SendBuffer.size()))
 	{
 		killed = true;
 	}
@@ -798,7 +804,7 @@ void JsonListener::CheckAlive()
 	chrono::duration<double> TimeSinceLastAliveSent = chrono::steady_clock::now() - LastAliveSent;
 	if (settings.kick_delay > 0 && TimeSinceLastAliveReceived.count() > settings.kick_delay)
 	{
-		cout << "Got no activity from " << ClientName << ", closing..." << endl;
+		cout << "Got no activity from " << token->GetConnectionName() << ", closing..." << endl;
 		killed = true;
 		return;
 	}
@@ -806,37 +812,51 @@ void JsonListener::CheckAlive()
 	if (settings.poke_delay > 0 && TimeSinceLastAliveReceived.count() > settings.poke_delay && TimeSinceLastAliveSent.count() > settings.poke_delay)
 	{
 		LastAliveSent = chrono::steady_clock::now();
-		if (!Transport->Send(" ", 1, ClientName))
+		if (!token->IsConnected())
 		{
-			cout << "Client " << ClientName << " disconnect while checking alive, closing..." << endl;
+			killed = true;
+			return;
+		}
+		if (!token->Send(" ", 1))
+		{
+			cout << "Client " << token->GetConnectionName() << " disconnect while checking alive, closing..." << endl;
 			killed = true;
 		}
-
 	}
 }
 
 void JsonListener::ThreadEntryPoint()
 {
-	string ThreadName = string("Json Listener for ") + ClientName;
+	if (!token)
+	{
+		killed = true;
+		return;
+	}
+	auto transport = token->GetParent();
+	if (!transport)
+	{
+		killed = true;
+		return;
+	}
+	string ThreadName = string("Json ") + token->GetConnectionName();
 	SetThreadName(ThreadName.c_str());
-	while (!killed)
+	while (!killed && token->IsConnected())
 	{
 		CheckAlive();
 
 		array<char, 1<<10> bufferraw;
-		int numreceived = Transport->Receive(bufferraw.data(), bufferraw.size(), ClientName, false);
-		if (numreceived < 0)
+		auto numreceived = token->Receive(bufferraw.data(), bufferraw.size());
+		if (!numreceived.has_value())
 		{
-			this_thread::sleep_for(chrono::microseconds(500));
-			continue;
-		} else if (numreceived == 0) {
 			killed = true;
 			break;
+		} else if (numreceived.value() == 0) {
+			this_thread::sleep_for(chrono::microseconds(500));
 		}
 		int rcvbufstartpos = 0;
 		int rcvbufinsertpos = ReceiveBuffer.size();
 
-		ReceiveBuffer.insert(ReceiveBuffer.end(), bufferraw.data(), bufferraw.data() + numreceived);
+		ReceiveBuffer.insert(ReceiveBuffer.end(), bufferraw.data(), bufferraw.data() + numreceived.value());
 
 		for (size_t i = rcvbufinsertpos; i < ReceiveBuffer.size(); i++)
 		{
@@ -862,4 +882,6 @@ void JsonListener::ThreadEntryPoint()
 			ReceiveBuffer.erase(ReceiveBuffer.begin(), ReceiveBuffer.begin()+rcvbufstartpos);
 		}
 	}
+	token->Disconnect();
+	killed = true;
 }

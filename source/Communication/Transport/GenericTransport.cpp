@@ -1,4 +1,5 @@
 #include "Communication/Transport/GenericTransport.hpp"
+#include <Communication/Transport/ConnectionToken.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -55,9 +56,26 @@ void GenericTransport::printBuffer(const void* buffer, int length)
 	cout << stream.str();
 }
 
-vector<string> GenericTransport::GetClients() const
+vector<shared_ptr<ConnectionToken>> GenericTransport::GetClients() const
 {
 	return {};
+}
+
+bool GenericTransport::CheckToken(const std::shared_ptr<ConnectionToken> &token)
+{
+	if (!token)
+	{
+		return false;
+	}
+	if (!token->IsConnected())
+	{
+		return false;
+	}
+	if (!token->GetParent())
+	{
+		return false;
+	}
+	return true;
 }
 
 int GenericTransport::Receive(void *buffer, int maxlength, string client, bool blocking)
@@ -77,6 +95,29 @@ bool GenericTransport::Send(const void* buffer, int length, string client)
 	(void)client;
 	cerr << "Called Send on base transport class" << endl;
 	return false;
+}
+
+
+
+optional<int> GenericTransport::Receive(void *buffer, int maxlength, std::shared_ptr<ConnectionToken> token)
+{
+	int numreceived = Receive(buffer, maxlength, token->GetConnectionName(), false);
+	if (numreceived == 0)
+	{
+		return nullopt;
+	}
+	return numreceived;
+}
+
+
+bool GenericTransport::Send(const void* buffer, int length, std::shared_ptr<ConnectionToken> token)
+{
+	return Send(buffer, length, token->GetConnectionName());
+}
+
+void GenericTransport::DisconnectClient(std::shared_ptr<ConnectionToken> token)
+{
+	(void) token;
 }
 
 #include <arpa/inet.h>
