@@ -28,19 +28,8 @@ ExternalImgui::~ExternalImgui()
 {
 }
 
-void ExternalImgui::ThreadEntryPoint()
+bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 {
-	if (!initialized)
-	{
-		Init();
-		initialized = true;
-	}
-	if (killed || !Parent || Parent->IsKilled())
-	{
-		killed = true;
-		return;
-	}
-
 	StartFrame();
 	int DisplaysPerCam = 1;
 	auto Cameras = Parent->GetImage();
@@ -236,4 +225,22 @@ void ExternalImgui::ThreadEntryPoint()
 		killed = true;
 		closed = true;
 	}
+
+	return killed;
+}
+
+void ExternalImgui::ThreadEntryPoint()
+{
+	if (!initialized)
+	{
+		Init();
+		initialized = true;
+	}
+	if (killed || !Parent || Parent->IsKilled())
+	{
+		killed = true;
+		return;
+	}
+
+	DisplayFrame(Parent);
 }

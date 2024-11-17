@@ -13,6 +13,11 @@ filesystem::path GetCyclopsPath()
     return CyclopsPath;
 }
 
+filesystem::path GetScreenCapturePath()
+{
+    return GetCyclopsPath()/"ScreenCapture";
+}
+
 void SetExecutablePath(const char* path)
 {
     ExecutablePath = filesystem::weakly_canonical(filesystem::path(path));

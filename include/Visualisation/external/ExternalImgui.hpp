@@ -28,6 +28,8 @@ public:
 		return closed;
 	}
 
+	bool DisplayFrame(CDFRExternal *Parent);
+
 protected:
 
 	virtual void ThreadEntryPoint() override;

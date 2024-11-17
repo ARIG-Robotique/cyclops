@@ -26,6 +26,8 @@ std::filesystem::path GetAssetsPath();
 
 std::string GetScenario();
 
+bool DoScreenCapture();
+
 const cv::aruco::ArucoDetector& GetArucoDetector();
 
 cv::Size GetFrameSize();

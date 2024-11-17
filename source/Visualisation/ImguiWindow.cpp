@@ -2,6 +2,7 @@
 #include "Visualisation/ImguiWindow.hpp"
 
 #include <Misc/path.hpp>
+#include <Misc/GlobalConf.hpp>
 #include <Cameras/ImageTypes.hpp>
 
 
@@ -59,7 +60,19 @@ ImVec2 ImguiWindow::GetWindowSize()
 void ImguiWindow::Init()
 {
 	cout << "Creating ImGui window" << endl;
-	GLCreateWindow(1280, 720, WindowName);
+	GLCreateWindow(DoScreenCapture() ? 1920 : 1280, DoScreenCapture() ? 1080 : 720, WindowName);
+	if (DoScreenCapture())
+	{
+		try
+		{
+			filesystem::remove_all(GetScreenCapturePath()/"2D");
+		}
+		catch(const std::exception& e)
+		{
+			std::cerr << "Screen capture 2D remove_all: " << e.what() << '\n';
+		}
+		filesystem::create_directories(GetScreenCapturePath()/"2D");
+	}
 	if (!Window)
 	{
 		return;
@@ -122,8 +135,14 @@ bool ImguiWindow::EndFrame()
 	glfwSwapBuffers(Window);
 
 	bool IsDone = glfwWindowShouldClose(Window) == 0;
-	glfwMakeContextCurrent(NULL);
 
+	if (DoScreenCapture())
+	{
+		CaptureWindow(GetScreenCapturePath()/"2D"/(to_string(FrameIndex)+".jpeg"));
+	}
+	
+	glfwMakeContextCurrent(NULL);
+	FrameIndex++;
 	return IsDone;
 }
 

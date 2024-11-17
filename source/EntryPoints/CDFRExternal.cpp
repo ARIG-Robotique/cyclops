@@ -157,11 +157,11 @@ void CDFRExternal::ThreadEntryPoint()
 	FrameCounter fps;
 	
 	//OpenGLBoard.InspectObject(blue1);
-	if (CDFRCommon::ExternalSettings.v3d)
+	if (CDFRCommon::ExternalSettings.v3d || DoScreenCapture())
 	{
 		Open3DVisualizer();
 	}
-	if (CDFRCommon::ExternalSettings.direct)
+	if (CDFRCommon::ExternalSettings.direct || DoScreenCapture())
 	{
 		OpenDirectVisualizer();
 	}
@@ -446,6 +446,15 @@ void CDFRExternal::ThreadEntryPoint()
 					DirectImage.reset();
 				}				
 			}
+			else
+			{
+				if (DirectImage->DisplayFrame(this))
+				{
+					killed = true;
+					cout << "2D visualizer closed, shutting down..." << endl;
+					return;
+				}
+			}
 		}
 
 		prof.EnterSection("");
@@ -481,7 +490,7 @@ std::vector<ObjectData> CDFRExternal::GetObjectData() const
 
 void CDFRExternal::Open3DVisualizer()
 {
-	OpenGLBoard = make_unique<ExternalBoardGL>("Cyclops", this);
+	OpenGLBoard = make_unique<ExternalBoardGL>("Cyclops", DoScreenCapture() ? nullptr : this);
 	if (OpenGLBoard->IsThreaded())
 	{
 		
@@ -500,12 +509,20 @@ void CDFRExternal::Open3DVisualizer()
 
 void CDFRExternal::OpenDirectVisualizer()
 {
-	DirectImage = make_unique<ExternalImgui>("External Direct Visualizer", this);
-	if (!DirectImage->IsThreaded() && !DirectImage->HasWindow())
+	DirectImage = make_unique<ExternalImgui>("External Direct Visualizer", DoScreenCapture() ? nullptr : this);
+	if (DirectImage->IsThreaded())
+	{
+	}
+	else if (DirectImage->HasWindow())
+	{
+		DirectImage->DisplayFrame(this);
+	}
+	else
 	{
 		cout << "No 2D visualizer created: No window" << endl;
 		DirectImage.reset();
 	}
+	
 }
 
 CDFRExternal::~CDFRExternal()

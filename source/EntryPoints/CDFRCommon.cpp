@@ -79,7 +79,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		Camera* cam, const CameraImageData& ImData, CameraFeatureData& FeatData, 
 		ObjectTracker& Tracker, std::chrono::steady_clock::time_point GrabTick, YoloDetect *YoloDetector)
 {
-	const bool use_threads = false;
+	constexpr bool use_threads = false;
 	FeatData.Clear();
 	FeatData.CopyEssentials(ImData);
 	bool doYolo = Settings.YoloDetection && YoloDetector;
@@ -126,7 +126,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 	
 	if (cam)
 	{
-		if (Settings.SolveCameraLocation)
+		if (Settings.SolveCameraLocation && !cam->PositionLocked)
 		{
 			if (arucoThread)
 			{

@@ -1,9 +1,11 @@
 #include "Visualisation/GLWindow.hpp"
 
 #include <iostream>
-
+#include <vector>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+#include <opencv2/opencv.hpp>
 
 using namespace std;
 
@@ -85,6 +87,20 @@ GLFWwindow* GLWindow::GLCreateWindow(int width, int height, std::string name)
 	glfwSetWindowSizeCallback(Window, window_size_callback_generic);
 	windowmap[Window] = this;
 	return Window;
+}
+
+void GLWindow::CaptureWindow(std::filesystem::path path)
+{
+	cv::Mat frame;
+	{
+		int width, height;
+		glfwGetFramebufferSize(Window, &width, &height);
+		std::vector<unsigned char> pixels(3 * width * height);
+		glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels.data());
+		cv::Mat flipped(height, width, CV_8UC3, pixels.data());
+		cv::flip(flipped, frame, 0);
+	}
+	cv::imwrite(path, frame);
 }
 
 void GLWindow::WindowSizeCallback(int width, int height)

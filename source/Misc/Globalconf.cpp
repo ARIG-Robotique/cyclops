@@ -11,6 +11,7 @@
 using namespace std;
 using namespace cv;
 
+bool ScreenCapture = false;
 string Scenario = "";
 aruco::ArucoDetector ArucoDet;
 bool HasDetector = false;
@@ -71,6 +72,7 @@ void InitConfig()
 	}
 
 	CopyOrDefaultRef(configobj, "Scenario", Scenario);
+	CopyOrDefaultRef(configobj, "ScreenCapture", ScreenCapture);
 
 	nlohmann::json &Capture = CopyOrDefaultJson(configobj, "Capture");
 	{
@@ -144,6 +146,12 @@ string GetScenario()
 {
 	InitConfig();
 	return Scenario;
+}
+
+bool DoScreenCapture()
+{
+	InitConfig();
+	return ScreenCapture;
 }
 
 const aruco::ArucoDetector& GetArucoDetector(){

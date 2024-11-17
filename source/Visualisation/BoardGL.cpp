@@ -15,6 +15,7 @@
 #include <assimp/Importer.hpp>
 
 #include <ArucoPipeline/ArucoTypes.hpp>
+#include <Misc/path.hpp>
 #include <Misc/GlobalConf.hpp>
 #include <Visualisation/openGL/Mesh.hpp>
 
@@ -308,7 +309,20 @@ void BoardGL::LoadTags()
 
 void BoardGL::Init()
 {
-	GLCreateWindow(1280, 720, name);
+	GLCreateWindow(DoScreenCapture() ? 1920 : 1280, DoScreenCapture() ? 1080 : 720, name);
+	if (DoScreenCapture())
+	{
+		try
+		{
+			filesystem::remove_all(GetScreenCapturePath()/"3D");
+		}
+		catch(const std::exception& e)
+		{
+			std::cerr << "Screen capture 3D remove_all: " << e.what() << '\n';
+		}
+		filesystem::create_directories(GetScreenCapturePath()/"3D");
+	}
+	
 	if (!Window)
 	{
 		return;
@@ -420,8 +434,14 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 
 	bool IsDone = glfwGetKey(Window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(Window) == 0;
 
-	glfwMakeContextCurrent(NULL);
+	if (DoScreenCapture())
+	{
+		CaptureWindow(GetScreenCapturePath()/"3D"/(to_string(FrameIndex)+".jpeg"));
+	}
+	
 
+	glfwMakeContextCurrent(NULL);
+	FrameIndex++;
 	return IsDone;
 }
 

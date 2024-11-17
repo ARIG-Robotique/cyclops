@@ -66,15 +66,55 @@ bool Camera::StartFeed()
 	return false;
 }
 
+void Camera::SetPositionLock(bool state)
+{
+	if (state == PositionLocked)
+	{
+		return;
+	}
+	
+	PositionLocked = state;
+
+	cout << "Camera " << Name << " is now " << (PositionLocked ? "LOCKED" : "Unlocked") << endl;
+}
+
+void Camera::UpdateFrameNumber()
+{
+	FrameNumber++;
+	for (size_t i = 0; i < Settings->CameraLockToggles.size(); i++)
+	{
+		if (FrameNumber == (int)Settings->CameraLockToggles[i])
+		{
+			SetPositionLock(!PositionLocked);
+		}
+	}
+}
+
 bool Camera::Grab()
 {
-	cerr << "ERROR : Tried to grab on base class Camera !" << endl;
+	if (!connected)
+	{
+		return false;
+	}
+	
+	UpdateFrameNumber();
+	captureTime = std::chrono::steady_clock::now();
+	grabbed = true;
 	return false;
 }
 
 bool Camera::Read()
 {
-	cerr << "ERROR : Tried to read on base class Camera !" << endl;
+	if (!connected)
+	{
+		return false;
+	}
+	if (!grabbed)
+	{
+		UpdateFrameNumber();
+		captureTime = std::chrono::steady_clock::now();
+	}
+	grabbed = false;
 	return false;
 }
 

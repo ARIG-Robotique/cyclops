@@ -27,6 +27,9 @@ struct CameraSettings
 	//Distortion
 	cv::Mat distanceCoeffs;
 
+	//Frame number at which to toggle camera position lock (camera always starts unlocked, used for simulation)
+	std::vector<int> CameraLockToggles;
+
 	CameraSettings()
 	:Resolution(-1,-1), Framerate(0), FramerateDivider(1)
 	{}

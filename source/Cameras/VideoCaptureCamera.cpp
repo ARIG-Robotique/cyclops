@@ -110,9 +110,8 @@ bool VideoCaptureCamera::Grab()
 	grabsuccess = feed->grab();
 	if (grabsuccess)
 	{
-		grabbed = true;
-		captureTime = std::chrono::steady_clock::now();
 		RegisterNoError();
+		Camera::Grab();
 	}
 	else
 	{
@@ -132,7 +131,6 @@ bool VideoCaptureCamera::Read()
 	}
 	bool ReadSuccess = false;
 	bool HadGrabbed = grabbed;
-	grabbed = false;
 	LastFrameDistorted = UMat();
 	LastFrameUndistorted = UMat();
 	if (HadGrabbed)
@@ -142,16 +140,20 @@ bool VideoCaptureCamera::Read()
 	else
 	{
 		ReadSuccess = feed->read(LastFrameDistorted);
-		captureTime = std::chrono::steady_clock::now();
 	}
 	
-	if (!ReadSuccess)
+	if (ReadSuccess)
+	{
+		RegisterNoError();
+		Camera::Read();
+	}
+	else
 	{
 		cerr << "Failed to read frame for camera " << Name <<endl;
+		grabbed = false;
 		RegisterError();
 		return false;
 	}
-	RegisterNoError();
 	
-	return true;
+	return ReadSuccess;
 }

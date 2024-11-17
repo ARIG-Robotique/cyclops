@@ -1,6 +1,7 @@
 [
     {
         "calibration": "calreal.yaml",
-        "video": "rec0.mp4"
+        "video": "rec0.mp4",
+        "locks" : [10]
     }
 ]

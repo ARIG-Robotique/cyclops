@@ -54,7 +54,10 @@ public:
 	//status
 	bool connected;
 	bool grabbed;
+	unsigned int FrameNumber;
 	std::chrono::steady_clock::time_point captureTime;
+
+	bool PositionLocked;
 
 public:
 
@@ -62,7 +65,9 @@ public:
 		:TrackedObject(), Settings(InSettings),
 		HasUndistortionMaps(false),
 		errors(0),
-		connected(false)
+		connected(false),
+		FrameNumber(-1),
+		PositionLocked(false)
 	{}
 
 	virtual ~Camera()
@@ -91,6 +96,10 @@ public:
 
 	//Start the camera
 	virtual bool StartFeed();
+
+	void SetPositionLock(bool state);
+
+	void UpdateFrameNumber();
 
 	//Lock a frame to be capture at this time
 	//This allow for simultaneous capture
