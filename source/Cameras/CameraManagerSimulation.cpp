@@ -26,7 +26,7 @@ void TurnFolderToVideo(std::filesystem::path folderPath)
 {
 	std::string outputVideo = folderPath; // Output video file
 	outputVideo.append(".avi");
-	int frameRate = 30; // Frames per second for the video
+	int frameRate = 24; // Frames per second for the video
 
 	try
 	{
@@ -94,8 +94,17 @@ void TurnFolderToVideo(std::filesystem::path folderPath)
 		// Write the frame to the video
 		videoWriter.write(frame);
 	}
-
-	std::filesystem::remove_all(folderPath);
+	
+	try
+	{
+		std::filesystem::remove_all(folderPath);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
+	
+	
 }
 
 void CameraManagerSimulation::ThreadEntryPoint()

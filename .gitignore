@@ -7,3 +7,4 @@ config.*
 *.mp4
 .idea/**
 Recordings/**
+ScreenCapture/**
