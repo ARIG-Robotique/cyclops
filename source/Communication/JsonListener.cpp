@@ -370,7 +370,7 @@ bool JsonListener::GetZone(const json &Query, json &Response)
 		{
 			cv::Vec3d pos3d = Object.location.translation();
 			cv::Vec2d pos2d(pos3d.val);
-			if (zone.second.contains(pos2d))
+			if (zone.second.contains<double>(pos2d))
 			{
 				SeenZones.insert(zone.first);
 				break;

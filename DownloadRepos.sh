@@ -22,7 +22,7 @@ cd ..
 #cd ../..
 #sudo -v
 
-OPENCV_VERSION=4.10.0
+OPENCV_VERSION=4.11.0
 
 #git clone https://github.com/opencv/opencv_contrib.git || echo "Failed to clone opencv_contrib : already exists"
 #cd opencv_contrib/

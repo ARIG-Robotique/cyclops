@@ -32,19 +32,6 @@ add_subdirectory("thirdparty/json")
 # base64
 add_subdirectory("thirdparty/base64")
 
-# Coral / EdgeTPU
-find_library(edgetpu_FOUND edgetpu)
-if(edgetpu_FOUND)
-	add_subdirectory(
-		"thirdparty/tensorflow/tensorflow/lite"
-		"${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite" EXCLUDE_FROM_ALL)
-	set(CORALLIBS tensorflow-lite edgetpu)
-	message("EdgeTPU library installed on system, including tensorflow...")
-	add_compile_definitions(WITH_CORAL)
-else(edgetpu_FOUND)
-	message("EdgeTPU library not installed on system, not including tensorflow...")
-endif(edgetpu_FOUND)
-
 # Auto include subfolders
 MACRO(HEADER_DIRECTORIES return_list)
 	FILE(GLOB_RECURSE new_list include/*.h*)
@@ -105,6 +92,5 @@ target_link_libraries(${PROJECT_NAME}
 	glm::glm
 	assimp
 	nlohmann_json::nlohmann_json
-	${CORALLIBS}
 	base64
 )

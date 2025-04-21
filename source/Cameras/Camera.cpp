@@ -83,7 +83,7 @@ void Camera::UpdateFrameNumber()
 	FrameNumber++;
 	for (size_t i = 0; i < Settings->CameraLockToggles.size(); i++)
 	{
-		if (FrameNumber == (int)Settings->CameraLockToggles[i])
+		if (FrameNumber == Settings->CameraLockToggles[i])
 		{
 			SetPositionLock(!PositionLocked);
 		}

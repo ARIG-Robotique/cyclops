@@ -169,7 +169,7 @@ void CameraManagerSimulation::ThreadEntryPoint()
 		for (auto &i : decoded.items())
 		{
 			filesystem::path calibpath, videopath;
-			vector<int> CameraLockToggles;
+			vector<unsigned int> CameraLockToggles;
 			try
 			{
 				auto value = i.value();
