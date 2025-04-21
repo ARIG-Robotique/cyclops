@@ -1,6 +1,6 @@
 #include "Communication/JsonListener.hpp"
 
-#include <Communication/Transport/ConnectionToken.hpp>
+#include <Transport/ConnectionToken.hpp>
 #include <Communication/TCPJsonHost.hpp>
 #include <Cameras/ImageTypes.hpp>
 #include <EntryPoints/CDFRCommon.hpp>
@@ -9,7 +9,7 @@
 #include <Misc/math3d.hpp>
 #include <Misc/math2d.hpp>
 #include <Misc/GlobalConf.hpp>
-#include <thirdparty/thread-rename.hpp>
+#include <Transport/thread-rename.hpp>
 
 #include <opencv2/imgcodecs.hpp>
 #include <libbase64.h>

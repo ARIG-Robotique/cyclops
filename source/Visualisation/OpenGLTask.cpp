@@ -1,7 +1,7 @@
 #include <Visualisation/OpenGLTask.hpp>
 #include <algorithm>
 #include <iostream>
-#include <thirdparty/thread-rename.hpp>
+#include <Transport/thread-rename.hpp>
 
 using namespace std;
 

@@ -11,7 +11,7 @@
 #include <ArucoPipeline/ObjectTracker.hpp>
 #include <Cameras/ImageTypes.hpp>
 #include <Misc/FrameCounter.hpp>
-#include <Misc/Task.hpp>
+#include <Transport/Task.hpp>
 #include <PostProcessing/PostProcess.hpp>
 
 class CDFRExternal : public Task

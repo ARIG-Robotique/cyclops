@@ -7,7 +7,7 @@
 #include <Cameras/Calibfile.hpp>
 #include <Misc/path.hpp>
 #include <Misc/GlobalConf.hpp>
-#include <thirdparty/thread-rename.hpp>
+#include <Transport/thread-rename.hpp>
 #include <opencv2/imgcodecs.hpp>
 
 using namespace std;

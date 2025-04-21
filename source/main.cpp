@@ -26,7 +26,7 @@
 
 #include <Communication/AdvertiseMV.hpp>
 #include <Communication/TCPJsonHost.hpp>
-#include <Communication/Transport/GenericTransport.hpp>
+#include <Transport/GenericTransport.hpp>
 
 #include <DetectFeatures/YoloDetect.hpp>
 

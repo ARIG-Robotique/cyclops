@@ -3,7 +3,7 @@
 #include <Cameras/Calibfile.hpp>
 #include <Misc/GlobalConf.hpp>
 #include <Misc/path.hpp>
-#include <thirdparty/thread-rename.hpp>
+#include <Transport/thread-rename.hpp>
 
 using namespace std;
 

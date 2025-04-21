@@ -4,7 +4,7 @@
 #include <set>
 #include <thread>
 #include <atomic>
-#include <Communication/Transport/GenericTransport.hpp>
+#include <Transport/GenericTransport.hpp>
 
 class TCPJsonHost
 {

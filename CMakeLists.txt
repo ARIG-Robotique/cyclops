@@ -32,6 +32,8 @@ add_subdirectory("thirdparty/json")
 # base64
 add_subdirectory("thirdparty/base64")
 
+add_subdirectory("thirdparty/CyclopsTransport")
+
 # Auto include subfolders
 MACRO(HEADER_DIRECTORIES return_list)
 	FILE(GLOB_RECURSE new_list include/*.h*)
@@ -92,5 +94,6 @@ target_link_libraries(${PROJECT_NAME}
 	glm::glm
 	assimp
 	nlohmann_json::nlohmann_json
+	CyclopsTransport
 	base64
 )

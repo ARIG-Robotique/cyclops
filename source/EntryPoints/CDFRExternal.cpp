@@ -16,8 +16,8 @@
 #include <Misc/math2d.hpp>
 #include <Misc/path.hpp>
 
-#include <Communication/Transport/TCPTransport.hpp>
-#include <Communication/Transport/UDPTransport.hpp>
+#include <Transport/TCPTransport.hpp>
+#include <Transport/UDPTransport.hpp>
 #include <Cameras/CameraManagerV4L2.hpp>
 #include <Cameras/CameraManagerSimulation.hpp>
 #include <Cameras/VideoCaptureCamera.hpp>
@@ -27,7 +27,7 @@
 #include <PostProcessing/Jardinieres.hpp>
 #include <PostProcessing/SolarPanel.hpp>
 
-#include <thirdparty/thread-rename.hpp>
+#include <Transport/thread-rename.hpp>
 
 #include <thread>
 #include <memory>
