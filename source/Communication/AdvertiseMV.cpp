@@ -7,10 +7,11 @@ void AdvertiseMV::ThreadStartPoint(GenericTransport::NetworkInterface interface)
 {
 	string message = "Hello, this is a MV server";
 	UDPTransport transport(50666, interface);
+	auto broadcast_token = transport.Connect(GenericTransport::BroadcastClient);
 	cout << "Opening advertising server on " << interface.name << endl;
 	while (!killmutex)
 	{
-		transport.Send(message.c_str(), message.length()+1, GenericTransport::BroadcastClient);
+		transport.Send(message.c_str(), message.length()+1, broadcast_token);
 		this_thread::sleep_for(chrono::milliseconds(100));
 	}
 }

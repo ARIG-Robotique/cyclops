@@ -40,18 +40,20 @@ void YoloDetect::loadNames()
 	for (size_t i = 0; i < ClassNames.size(); i++)
 	{
 		NamesFile >> ClassNames[i];
-		cout << "Yolo class " << i << " is " << ClassNames[i] << endl;
+		//cout << "Yolo class " << i << " is " << ClassNames[i] << endl;
 	}
 }
 
 void YoloDetect::loadNet()
 {
+	#if 0 //Enable to list YOLO backends
 	auto backends = dnn::getAvailableBackends();
 	cout << "Listing available backends and targets" << endl;
 	for (auto &&backend : backends)
 	{
 		cout << "Backend " << backend.first << " is available with target " << backend.second << endl;
 	}
+	#endif
 	network = dnn::readNetFromDarknet(GetNetworkPath(".cfg"), GetNetworkPath(".weights"));
 }
 

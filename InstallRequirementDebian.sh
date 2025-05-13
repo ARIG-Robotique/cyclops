@@ -1,5 +1,5 @@
 #build
-sudo apt-get install -y cmake ninja-build
+sudo apt-get install -y cmake ninja-build g++ gcc
 #opengl
 sudo apt-get install -y libassimp-dev freeglut3-dev libglew-dev libglm-dev libglfw3-dev
 #image formats

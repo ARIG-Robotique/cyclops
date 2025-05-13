@@ -83,8 +83,6 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 
-# Link your application with OpenCV libraries
-
 target_link_libraries(${PROJECT_NAME} 
 	${OpenCV_LIBS} 
 	stdc++fs
