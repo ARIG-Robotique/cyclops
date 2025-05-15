@@ -132,19 +132,25 @@ bool readCameraParameters(std::filesystem::path path, CameraSettings &Settings)
 			{
 				continue;
 			}
-			
+			Settings.Lenses.clear();
 			for (auto &&lens_json : calibration.at("Lenses"))
 			{
 				LensSettings lens_struct;
 				lens_struct.CameraMatrix = JsonToMatrix<double>(lens_json.at("Camera Matrix"));
 				lens_struct.distanceCoeffs = JsonToMatrix<double>(lens_json.at("Distortion Coefficients"));
 				lens_struct.ROI = JsonToRect<int>(lens_json.at("ROI"));
+				Settings.Lenses.push_back(lens_struct);
 			}
+			Settings.Resolution = current_resolution;
+			return true;
 		}
-		
-		
-		return true;
+		return false;
 	}
+	else
+	{
+		return false;
+	}
+	
 }
 
 void writeCameraParameters(std::filesystem::path path, const CameraSettings &Settings)
@@ -167,12 +173,13 @@ void writeCameraParameters(std::filesystem::path path, const CameraSettings &Set
 	nlohmann::json object, calibration;
 	object["Current Resolution"] = SizeToJson<int>(Settings.Resolution);
 	calibration["Resolution"] = SizeToJson<int>(Settings.Resolution);
-	auto lenses = calibration["Lenses"];
+	nlohmann::json &lenses = calibration["Lenses"];
 	for (size_t i = 0; i < Settings.Lenses.size(); i++)	
 	{
-		lenses[i]["Camera Matrix"] = MatrixToJson<double>(Settings.Lenses[i].CameraMatrix);
-		lenses[i]["Distortion Coefficients"] = MatrixToJson<double>(Settings.Lenses[i].distanceCoeffs);
-		lenses[i]["ROI"] = RectToJson<int>(Settings.Lenses[i].ROI);
+		nlohmann::json &lens = lenses[i];
+		lens["Camera Matrix"] = MatrixToJson<double>(Settings.Lenses[i].CameraMatrix);
+		lens["Distortion Coefficients"] = MatrixToJson<double>(Settings.Lenses[i].distanceCoeffs);
+		lens["ROI"] = RectToJson<int>(Settings.Lenses[i].ROI);
 	}
 	object["Calibrations"][0] = calibration;
 	path.replace_extension(".json");
