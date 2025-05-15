@@ -92,6 +92,8 @@ public:
 
 	virtual bool SetCalibrationSetting(cv::Mat CameraMatrix, cv::Mat DistanceCoefficients);
 
+	virtual bool SetLensSetting(std::vector<LensSettings> lenses);
+
 	virtual void GetCameraSettingsAfterUndistortion(cv::Mat& CameraMatrix, cv::Mat& DistanceCoefficients) const;
 
 	//Start the camera

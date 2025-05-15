@@ -2,6 +2,7 @@
 
 #include <iostream> // for standard I/O
 #include <math.h>
+#include <cassert>
 
 #include <opencv2/core.hpp>
 #include <opencv2/calib3d.hpp>
@@ -47,15 +48,25 @@ bool Camera::SetCameraSetting(std::shared_ptr<CameraSettings> InSettings)
 
 bool Camera::SetCalibrationSetting(Mat CameraMatrix, Mat DistanceCoefficients)
 {
-	Settings->CameraMatrix = CameraMatrix;
-	Settings->distanceCoeffs = DistanceCoefficients;
+	assert(Settings->IsMono());
+
+	Settings->Lenses[0].CameraMatrix = CameraMatrix;
+	Settings->Lenses[0].distanceCoeffs = DistanceCoefficients;
+	HasUndistortionMaps = false;
+	return true;
+}
+
+bool Camera::SetLensSetting(std::vector<LensSettings> lenses)
+{
+	Settings->Lenses = lenses;
 	HasUndistortionMaps = false;
 	return true;
 }
 
 void Camera::GetCameraSettingsAfterUndistortion(Mat& CameraMatrix, Mat& DistanceCoefficients) const
 {
-	CameraMatrix = Settings->CameraMatrix;
+	assert(Settings->IsMono());
+	CameraMatrix = Settings->Lenses[0].CameraMatrix;
 	//DistanceCoefficients = Settings.distanceCoeffs; //FIXME
 	DistanceCoefficients = Mat::zeros(4,1, CV_64F);
 }
@@ -123,7 +134,8 @@ void Camera::Undistort()
 	
 	if (!HasUndistortionMaps)
 	{
-		Size cammatsz = Settings->CameraMatrix.size();
+		assert(Settings->IsMono());
+		Size cammatsz = Settings->Lenses[0].CameraMatrix.size();
 		if (cammatsz.height != 3 || cammatsz.width != 3)
 		{
 			RegisterError();
@@ -134,8 +146,8 @@ void Camera::Undistort()
 		//<< " and Distance coeffs " << endl << setcopy.distanceCoeffs << endl;
 		Mat map1, map2;
 
-		initUndistortRectifyMap(Settings->CameraMatrix, Settings->distanceCoeffs, Mat::eye(3,3, CV_64F), 
-		Settings->CameraMatrix, Settings->Resolution, CV_32FC1, map1, map2);
+		initUndistortRectifyMap(Settings->Lenses[0].CameraMatrix, Settings->Lenses[0].distanceCoeffs, Mat::eye(3,3, CV_64F), 
+		Settings->Lenses[0].CameraMatrix, Settings->Resolution, CV_32FC1, map1, map2);
 		map1.copyTo(UndistMap1);
 		map2.copyTo(UndistMap2);
 		HasUndistortionMaps = true;
@@ -153,13 +165,15 @@ void Camera::Undistort()
 
 CameraImageData Camera::GetFrame(bool Distorted) const
 {
+	assert(Settings->IsMono());
 	CameraImageData frame;
 	frame.Distorted = Distorted;
 	frame.CameraName = Name;
 	if (Distorted)
 	{
-		frame.CameraMatrix = Settings->CameraMatrix;
-		frame.DistanceCoefficients = Settings->distanceCoeffs;
+
+		frame.CameraMatrix = Settings->Lenses[0].CameraMatrix;
+		frame.DistanceCoefficients = Settings->Lenses[0].distanceCoeffs;
 		frame.Image = LastFrameDistorted;
 	}
 	else

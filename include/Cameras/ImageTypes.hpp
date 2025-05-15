@@ -7,11 +7,20 @@
 
 #include <thirdparty/list-devices.hpp>
 
+struct LensSettings
+{
+	cv::Rect2i ROI;
+	//FOV and center
+	cv::Mat CameraMatrix;
+	//Distortion
+	cv::Mat distanceCoeffs;
+
+	bool IsValid();
+};
+
 //All the settings needed to start a camera, in the palm of your hand...
 struct CameraSettings
 {
-	
-
 	//General data
 	//Resolution of the frame to be captured
 	cv::Size Resolution;
@@ -20,12 +29,9 @@ struct CameraSettings
 	//Framerate divider : you can set 60fps but only sample 1 of 2 frames to have less latency and less computation
 	uint8_t FramerateDivider;
 
-	
+	//single lens settings, for side-by-side cams
+	std::vector<LensSettings> Lenses;
 
-	//FOV and center
-	cv::Mat CameraMatrix;
-	//Distortion
-	cv::Mat distanceCoeffs;
 
 	//Frame number at which to toggle camera position lock (camera always starts unlocked, used for simulation)
 	std::vector<unsigned int> CameraLockToggles;
@@ -38,6 +44,16 @@ struct CameraSettings
 
 	bool IsValidCalibration();
 	bool IsValid();
+
+	bool IsMono()
+	{
+		return Lenses.size() == 1;
+	}
+
+	bool IsStereo()
+	{
+		return Lenses.size() == 2;
+	}
 };
 
 //Camera API and configuration selection

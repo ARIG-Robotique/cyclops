@@ -193,7 +193,7 @@ void CameraManagerSimulation::ThreadEntryPoint()
 			}
 			
 			VideoCaptureCameraSettings settings;
-			readCameraParameters(calibpath, settings.CameraMatrix, settings.distanceCoeffs, settings.Resolution);
+			readCameraParameters(calibpath, settings);
 			settings.StartType = CameraStartType::PLAYBACK;
 			settings.StartPath = videopath;
 			settings.DeviceInfo.device_paths.push_back(videopath);

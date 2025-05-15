@@ -62,7 +62,6 @@ struct CameraCalibrationSourceData
 		bool Use = true;
 	};
 	vector<CalibrationImageData> Images;
-	Camera* CamToCalibrate;
 	Size FrameSize;
 };
 
@@ -229,7 +228,7 @@ int GetCalibrationImagesLastIndex(vector<String> Pathes)
 	return next;
 }
 
-Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamToCalibrate)
+Size ReadAndCalibrate(LensSettings &Lens)
 {
 	auto calconf = GetCalibrationConfig();
 	Size CheckerSize = calconf.NumIntersections;
@@ -237,11 +236,12 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 	size_t numpathes = pathes.size();
 
 	CameraCalibrationSourceData SourceData;
-	SourceData.CamToCalibrate = CamToCalibrate;
 	SourceData.Images.resize(numpathes);
 
 	vector<Size> resolutions;
 	resolutions.resize(numpathes);
+
+	bool hasROI = Lens.ROI.area() > 0;
 
 	parallel_for_(Range(0, numpathes), [&](const Range InRange)
 	{
@@ -253,11 +253,12 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 			Mat frame = imread(ThisImageData.ImagePath, IMREAD_GRAYSCALE);
 			resolutions[i] = frame.size();
 			vector<Point2f> foundPoints;
-			bool found = findChessboardCorners(frame, CheckerSize, foundPoints, CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE);
+			Mat frame_cropped = hasROI ? frame(Lens.ROI) : frame;
+			bool found = findChessboardCorners(frame_cropped, CheckerSize, foundPoints, CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE);
 			if (found)
 			{
 				TermCriteria criteria(TermCriteria::COUNT | TermCriteria::EPS, 100, 0.001);
-				cornerSubPix(frame, foundPoints, Size(4,4), Size(-1,-1), criteria);
+				cornerSubPix(frame_cropped, foundPoints, Size(4,4), Size(-1,-1), criteria);
 				//Scalar sharpness = estimateChessboardSharpness(frame, CheckerSize, foundPoints);
 				ThisImageData.CheckerboardImageSpacePoints = foundPoints;
 				CreateKnownBoardPos(CheckerSize, calconf.SquareSideLength/1000.f, ThisImageData.CheckerboardWorldSpacePoints);
@@ -305,9 +306,9 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 	{
 		SourceData.FrameSize = sizes[0];
 		auto OutputData = CameraCalibration(SourceData);
-		CameraMatrix = OutputData.CameraMatrix;
-		DistanceCoefficients = OutputData.DistanceCoefficients;
-		cout << "Calibration done ! Matrix : " << CameraMatrix << " / Distance Coefficients : " << DistanceCoefficients << endl;
+		Lens.CameraMatrix = OutputData.CameraMatrix;
+		Lens.distanceCoeffs = OutputData.DistanceCoefficients;
+		cout << "Calibration done ! Matrix : " << Lens.CameraMatrix << " / Distance Coefficients : " << Lens.distanceCoeffs << endl;
 		return sizes[0];
 	}
 	else if (sizes.size() == 0)
@@ -330,8 +331,7 @@ Size ReadAndCalibrate(Mat& CameraMatrix, Mat& DistanceCoefficients, Camera* CamT
 }
 
 Camera* CamToCalib;
-Mat CameraMatrix;
-Mat distanceCoefficients;
+std::vector<Rect> ROIs;
 
 bool Calibrating = false;
 bool ShowUndistorted = false;
@@ -339,45 +339,62 @@ bool ShowUndistorted = false;
 void CalibrationWorker()
 {
 	Calibrating = true;
-	Size resolution = ReadAndCalibrate(CameraMatrix, distanceCoefficients, CamToCalib);
-	if (CamToCalib->connected)
+
+	std::vector<LensSettings> lenses;
+	for (size_t i = 0; i < ROIs.size() || i == 0; i++)
 	{
-		CamToCalib->SetCalibrationSetting(CameraMatrix, distanceCoefficients);
-		if (resolution != CamToCalib->GetCameraSettings()->Resolution)
+		LensSettings lens;
+		if (ROIs.size() > i)
 		{
-			cerr << "WARNING : Resolution of the stored images isn't the same as the resolution of the live camera!" <<endl;
+			lens.ROI = ROIs[i];
 		}
 		
-	}
-	else
-	{
-		VideoCaptureCameraSettings CamSett = *dynamic_cast<const VideoCaptureCameraSettings*>(CamToCalib->GetCameraSettings());
+		Size resolution = ReadAndCalibrate(lens);
+		if (CamToCalib->connected)
+		{
+			CamToCalib->SetCalibrationSetting(lens.CameraMatrix, lens.distanceCoeffs);
+			if (resolution != CamToCalib->GetCameraSettings()->Resolution)
+			{
+				cerr << "WARNING : Resolution of the stored images isn't the same as the resolution of the live camera!" <<endl;
+			}
+		}
+		else
+		{
+			VideoCaptureCameraSettings CamSett = *dynamic_cast<const VideoCaptureCameraSettings*>(CamToCalib->GetCameraSettings());
 
-		CamSett.Resolution = resolution;
-		CamSett.CameraMatrix = CameraMatrix;
-		CamSett.distanceCoeffs = distanceCoefficients;
-		CamSett.DeviceInfo.device_description = "NoCam";
-		CamToCalib->SetCameraSetting(make_shared<VideoCaptureCameraSettings>(CamSett));
+			CamSett.Resolution = resolution;
+			CamSett.Lenses.resize(1);
+			CamSett.Lenses[0].CameraMatrix = lens.CameraMatrix;
+			CamSett.Lenses[0].distanceCoeffs = lens.distanceCoeffs;
+			CamSett.DeviceInfo.device_description = "NoCam";
+			CamToCalib->SetCameraSetting(make_shared<VideoCaptureCameraSettings>(CamSett));
+		}
+		
+		
+		auto calconf = GetCalibrationConfig();
+		double apertureWidth = calconf.SensorSize.width, apertureHeight = calconf.SensorSize.height, fovx, fovy, focalLength, aspectRatio;
+		Point2d principalPoint;
+		calibrationMatrixValues(lens.CameraMatrix, CamToCalib->GetCameraSettings()->Resolution, apertureWidth, apertureHeight, fovx, fovy, focalLength, principalPoint, aspectRatio);
+		cout << "Computed camera parameters for sensor of size " << apertureWidth << "x" << apertureHeight <<"mm :" << endl
+		<< " fov:" << fovx << "x" << fovy << "°, focal length=" << focalLength << ", aspect ratio=" << aspectRatio << endl
+		<< "Principal point @ " << principalPoint << endl;
+
+		lenses.push_back(lens);
+
 	}
-	
-	
-	auto calconf = GetCalibrationConfig();
-	double apertureWidth = calconf.SensorSize.width, apertureHeight = calconf.SensorSize.height, fovx, fovy, focalLength, aspectRatio;
-	Point2d principalPoint;
-	calibrationMatrixValues(CameraMatrix, CamToCalib->GetCameraSettings()->Resolution, apertureWidth, apertureHeight, fovx, fovy, focalLength, principalPoint, aspectRatio);
-	cout << "Computed camera parameters for sensor of size " << apertureWidth << "x" << apertureHeight <<"mm :" << endl
-	<< " fov:" << fovx << "x" << fovy << "°, focal length=" << focalLength << ", aspect ratio=" << aspectRatio << endl
-	<< "Principal point @ " << principalPoint << endl;
 	const CameraSettings* CamSett = CamToCalib->GetCameraSettings();
+	
 	string filename = "noname";
 	const VideoCaptureCameraSettings* VCCamSett = dynamic_cast<const VideoCaptureCameraSettings*>(CamSett);
 	if (VCCamSett)
 	{
 		filename = VCCamSett->DeviceInfo.device_description;
 	}
+
+
 	
 
-	writeCameraParameters(GetCyclopsPath() / "build" / filename, CameraMatrix, distanceCoefficients, CamSett->Resolution);
+	writeCameraParameters(GetCyclopsPath() / "build" / filename, *CamSett);
 	//distanceCoefficients = Mat::zeros(8, 1, CV_64F);
 	ShowUndistorted = true;
 	Calibrating = false;

@@ -47,7 +47,7 @@ VideoCaptureCameraSettings CameraManagerV4L2::DeviceToSettings(v4l2::devices::DE
 	}*/
 	
 
-	readCameraParameters(CalibrationPath, settings.CameraMatrix, settings.distanceCoeffs, settings.Resolution);
+	readCameraParameters(CalibrationPath, settings);
 	//cout << "Camera matrix : " << settings.CameraMatrix << " / Distance coeffs : " << settings.distanceCoeffs << endl;
 	return settings;
 }
