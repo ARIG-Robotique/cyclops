@@ -2,6 +2,7 @@
 
 #include <nlohmann/json.hpp>
 #include <opencv2/core.hpp>
+#include <opencv2/calib3d.hpp>
 #include <cassert>
 #include <vector>
 
@@ -40,6 +41,22 @@ cv::Point_<T> JsonToPoint(const nlohmann::json &object)
 	return point;
 }
 
+template<class T>
+nlohmann::json Point3ToJson(const cv::Point3_<T> &point)
+{
+	nlohmann::json object;
+	object["x"] = point.x;
+	object["y"] = point.y;
+	object["z"] = point.z;
+	return object;
+}
+
+template<class T>
+cv::Point3_<T> JsonToPoint3(const nlohmann::json &object)
+{
+	cv::Point3_<T> point(object.at("x"), object.at("y"), object.at("z"));
+	return point;
+}
 
 
 template<class T>
@@ -60,6 +77,24 @@ cv::Rect_<T> JsonToRect(const nlohmann::json &object)
 	return rect;
 }
 
+template<class T>
+nlohmann::json Affine3ToJson(const cv::Affine3<T> &pos)
+{
+	nlohmann::json object;
+	cv::Vec<T, 3> translation = pos.translation(), rotVec;
+	auto rotation = pos.rotation();
+	cv::Rodrigues(rotation, rotVec);
+	object["translation"] = Point3ToJson<T>(translation);
+	object["rotation"] = Point3ToJson<T>(rotVec);
+	return object;
+}
+
+template<class T>
+cv::Affine3<T> JsonToAffine3(const nlohmann::json &object)
+{
+	cv::Vec<T, 3> translation = JsonToPoint3<T>(object.at("translation")), rotVec = JsonToPoint3<T>(object.at("rotation"));
+	return cv::Affine3<T>(rotVec, translation);
+}
 
 
 template<class T>

@@ -339,7 +339,7 @@ int DetectArucoPOI(CameraImageData InData, CameraFeatureData *OutData, const vec
 	assert(OutData != nullptr);
 	MakeDetectors();
 	Size framesize = InData.Image.size();
-	vector<Rect> poirects = GetPOIRects(POIs, framesize, OutData->CameraTransform, InData.CameraMatrix, InData.DistanceCoefficients);
+	vector<Rect> poirects = GetPOIRects(POIs, framesize, OutData->CameraTransform, InData.lenses[0].CameraMatrix, InData.lenses[0].distanceCoeffs); //TODO : Support stereo
 
 	return DetectArucoSegmented(InData, OutData, poirects, POIDetector.get());
 }

@@ -46,16 +46,6 @@ bool Camera::SetCameraSetting(std::shared_ptr<CameraSettings> InSettings)
 	return true;
 }
 
-bool Camera::SetCalibrationSetting(Mat CameraMatrix, Mat DistanceCoefficients)
-{
-	assert(Settings->IsMono());
-
-	Settings->Lenses[0].CameraMatrix = CameraMatrix;
-	Settings->Lenses[0].distanceCoeffs = DistanceCoefficients;
-	HasUndistortionMaps = false;
-	return true;
-}
-
 bool Camera::SetLensSetting(std::vector<LensSettings> lenses)
 {
 	Settings->Lenses = lenses;
@@ -63,12 +53,15 @@ bool Camera::SetLensSetting(std::vector<LensSettings> lenses)
 	return true;
 }
 
-void Camera::GetCameraSettingsAfterUndistortion(Mat& CameraMatrix, Mat& DistanceCoefficients) const
+void Camera::GetCameraSettingsAfterUndistortion(std::vector<LensSettings> &lenses) const
 {
-	assert(Settings->IsMono());
-	CameraMatrix = Settings->Lenses[0].CameraMatrix;
-	//DistanceCoefficients = Settings.distanceCoeffs; //FIXME
-	DistanceCoefficients = Mat::zeros(4,1, CV_64F);
+	lenses.resize(Settings->Lenses.size());
+	for (size_t i = 0; i < Settings->Lenses.size(); i++)
+	{
+		lenses[i].CameraMatrix = Settings->Lenses[i].CameraMatrix;
+		lenses[i].ROI = Settings->Lenses[i].ROI;
+		lenses[i].distanceCoeffs = Mat::zeros(4,1, CV_64F);
+	}
 }
 
 bool Camera::StartFeed()
@@ -134,7 +127,8 @@ void Camera::Undistort()
 	
 	if (!HasUndistortionMaps)
 	{
-		assert(Settings->IsMono());
+		//assert(Settings->IsMono());
+		Mat map1(Settings->Resolution, CV_32F), map2(Settings->Resolution, CV_32F);
 		Size cammatsz = Settings->Lenses[0].CameraMatrix.size();
 		if (cammatsz.height != 3 || cammatsz.width != 3)
 		{
@@ -144,10 +138,12 @@ void Camera::Undistort()
 		}
 		//cout << "Creating undistort map using Camera Matrix " << endl << setcopy.CameraMatrix << endl 
 		//<< " and Distance coeffs " << endl << setcopy.distanceCoeffs << endl;
-		Mat map1, map2;
-
-		initUndistortRectifyMap(Settings->Lenses[0].CameraMatrix, Settings->Lenses[0].distanceCoeffs, Mat::eye(3,3, CV_64F), 
-		Settings->Lenses[0].CameraMatrix, Settings->Resolution, CV_32FC1, map1, map2);
+		for (size_t i = 0; i < Settings->Lenses.size(); i++)
+		{
+			auto &lens = Settings->Lenses[i];
+			initUndistortRectifyMap(lens.CameraMatrix, lens.distanceCoeffs, Mat::eye(3,3, CV_64F), 
+			lens.CameraMatrix, lens.ROI.size(), CV_32FC1, map1(lens.ROI), map2(lens.ROI));
+		}
 		map1.copyTo(UndistMap1);
 		map2.copyTo(UndistMap2);
 		HasUndistortionMaps = true;
@@ -165,20 +161,18 @@ void Camera::Undistort()
 
 CameraImageData Camera::GetFrame(bool Distorted) const
 {
-	assert(Settings->IsMono());
+	//assert(Settings->IsMono() || Distorted);
 	CameraImageData frame;
 	frame.Distorted = Distorted;
 	frame.CameraName = Name;
 	if (Distorted)
 	{
-
-		frame.CameraMatrix = Settings->Lenses[0].CameraMatrix;
-		frame.DistanceCoefficients = Settings->Lenses[0].distanceCoeffs;
+		frame.lenses = Settings->Lenses;
 		frame.Image = LastFrameDistorted;
 	}
 	else
 	{
-		GetCameraSettingsAfterUndistortion(frame.CameraMatrix, frame.DistanceCoefficients);
+		GetCameraSettingsAfterUndistortion(frame.lenses);
 		frame.Image = LastFrameUndistorted;
 	}
 	frame.GrabTime = captureTime;

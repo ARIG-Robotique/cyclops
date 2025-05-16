@@ -90,11 +90,9 @@ public:
 	//Set the settings to used for this camera
 	virtual bool SetCameraSetting(std::shared_ptr<CameraSettings> InSettings);
 
-	virtual bool SetCalibrationSetting(cv::Mat CameraMatrix, cv::Mat DistanceCoefficients);
-
 	virtual bool SetLensSetting(std::vector<LensSettings> lenses);
 
-	virtual void GetCameraSettingsAfterUndistortion(cv::Mat& CameraMatrix, cv::Mat& DistanceCoefficients) const;
+	virtual void GetCameraSettingsAfterUndistortion(std::vector<LensSettings> &lenses) const;
 
 	//Start the camera
 	virtual bool StartFeed();

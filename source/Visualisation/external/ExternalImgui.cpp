@@ -131,7 +131,7 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 		{
 			auto POIs = Parent->UnknownTracker.GetPointsOfInterest();
 			auto POIRects = GetPOIRects(POIs, Resolution, FeatData.CameraTransform, 
-				ImData.CameraMatrix, ImData.DistanceCoefficients);
+				ImData.lenses[0].CameraMatrix, ImData.lenses[0].distanceCoeffs); //TODO : Support stereo
 			auto POI = POIRects[POIs.size()/2];
 			thisTile.height = ImageSize.height;
 			thisTile.width = ImageSize.width;

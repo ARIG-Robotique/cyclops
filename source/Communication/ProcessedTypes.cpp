@@ -12,10 +12,10 @@ void CameraFeatureData::Clear()
 	YoloDetections.clear();
 }
 
-void CameraFeatureData::CopyEssentials(const CameraImageData &source)
+void CameraFeatureData::CopyEssentials(const CameraImageData &source, int lens)
 {
 	CameraName = source.CameraName;
-	CameraMatrix = source.CameraMatrix;
-	DistanceCoefficients = source.DistanceCoefficients;
-	FrameSize = source.Image.size();
+	CameraMatrix = source.lenses[lens].CameraMatrix;
+	DistanceCoefficients = source.lenses[lens].distanceCoeffs;
+	FrameSize = source.lenses[lens].ROI.size();
 }

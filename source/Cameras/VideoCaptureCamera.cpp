@@ -89,7 +89,7 @@ bool VideoCaptureCamera::StartFeed()
 		feed->set(CAP_PROP_FPS, Settings->Framerate/Settings->FramerateDivider);
 		//feed->set(CAP_PROP_AUTO_EXPOSURE, 3) ;
 		//feed->set(CAP_PROP_EXPOSURE, 300) ;
-		feed->set(CAP_PROP_BUFFERSIZE, 1);
+		feed->set(CAP_PROP_BUFFERSIZE, 2);
 
 		Settingscast->Resolution.width = feed->get(CAP_PROP_FRAME_WIDTH);
 		Settingscast->Resolution.height = feed->get(CAP_PROP_FRAME_HEIGHT);

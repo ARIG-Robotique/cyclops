@@ -4,7 +4,7 @@
 #include <string>
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
-
+#include <opencv2/core/affine.hpp>
 #include <thirdparty/list-devices.hpp>
 
 struct LensSettings
@@ -14,6 +14,8 @@ struct LensSettings
 	cv::Mat CameraMatrix;
 	//Distortion
 	cv::Mat distanceCoeffs;
+
+	cv::Affine3d LensPosition;
 
 	bool IsValid();
 };
@@ -82,8 +84,8 @@ struct CameraImageData
 {
 	std::string CameraName;
 	cv::UMat Image;
-	cv::Mat CameraMatrix;
-	cv::Mat DistanceCoefficients;
+
+	std::vector<LensSettings> lenses;
 	std::chrono::steady_clock::time_point GrabTime;
 	bool Distorted;
 	bool Valid = false;

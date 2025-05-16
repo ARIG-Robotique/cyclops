@@ -30,5 +30,5 @@ struct CameraFeatureData
 	std::vector<YoloDetection> YoloDetections; 	//Filled by YoloDetect
 
 	void Clear();
-	void CopyEssentials(const struct CameraImageData &source);
+	void CopyEssentials(const struct CameraImageData &source, int lens = 0);
 };

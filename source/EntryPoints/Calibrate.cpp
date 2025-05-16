@@ -99,7 +99,7 @@ CameraCalibrationOutputData ExploreCalibrationWith(const CameraCalibrationSource
 
 	calibrateCamera(WorldSpacePoints, ImageSpacePoints, SourceData.FrameSize, 
 		OutputData.CameraMatrix, OutputData.DistanceCoefficients, rVectors, tVectors, 
-		CALIB_RATIONAL_MODEL, TermCriteria(TermCriteria::COUNT, 50, DBL_EPSILON));
+		CALIB_ZERO_TANGENT_DIST, TermCriteria(TermCriteria::COUNT, 50, DBL_EPSILON));
 	vector<float> reprojectionErrors;
 	float reprojectionErrorTotal = 0;
 	reprojectionErrors.resize(numimages);
@@ -228,7 +228,7 @@ int GetCalibrationImagesLastIndex(vector<String> Pathes)
 	return next;
 }
 
-Size ReadAndCalibrate(LensSettings &Lens)
+Size ReadAndCalibrateLens(LensSettings &Lens)
 {
 	auto calconf = GetCalibrationConfig();
 	Size CheckerSize = calconf.NumIntersections;
@@ -330,6 +330,92 @@ Size ReadAndCalibrate(LensSettings &Lens)
 	return Size(0,0);
 }
 
+void ReadAndCalibrateStereo(std::vector<LensSettings> &Lenses)
+{
+	auto calconf = GetCalibrationConfig();
+	Size CheckerSize = calconf.NumIntersections;
+	vector<String> pathes = GetPathsToCalibrationImages();
+	size_t numpathes = pathes.size();
+	size_t numlenses = Lenses.size();
+	assert(numlenses > 0);
+
+	vector<CameraCalibrationSourceData> SourceData;
+	SourceData.resize(numlenses);
+	for (size_t i = 0; i < numlenses; i++)
+	{
+		SourceData[i].Images.resize(numpathes);
+	}
+	
+	
+
+	parallel_for_(Range(0, numpathes*numlenses), [&](const Range InRange)
+	{
+	//Range InRange(0, numpathes);
+		for (int i = InRange.start; i < InRange.end; i++)
+		{
+			int lensidx = i%numlenses;
+			int imageidx = i/numlenses;
+			auto &ThisImageData = SourceData[lensidx].Images[imageidx];
+			ThisImageData.ImagePath = pathes[imageidx];
+			Mat frame = imread(ThisImageData.ImagePath, IMREAD_GRAYSCALE);
+			vector<Point2f> foundPoints;
+			Mat frame_cropped = frame(Lenses[lensidx].ROI);
+			bool found = findChessboardCorners(frame_cropped, CheckerSize, foundPoints, CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE);
+			if (found)
+			{
+				TermCriteria criteria(TermCriteria::COUNT | TermCriteria::EPS, 100, 0.001);
+				cornerSubPix(frame_cropped, foundPoints, Size(4,4), Size(-1,-1), criteria);
+				//Scalar sharpness = estimateChessboardSharpness(frame, CheckerSize, foundPoints);
+				ThisImageData.CheckerboardImageSpacePoints = foundPoints;
+				CreateKnownBoardPos(CheckerSize, calconf.SquareSideLength/1000.f, ThisImageData.CheckerboardWorldSpacePoints);
+				ThisImageData.Use = true;
+			}
+			else
+			{
+				ThisImageData.Use = false;
+				cout << "Failed to find chessboard in image " << ThisImageData.ImagePath << " index " << i << endl;
+			}
+			
+		}
+	});
+
+	vector<vector<vector<Point2f>>> ImageSpacePoints;
+	ImageSpacePoints.resize(numlenses);
+	vector<vector<Point3f>> WorldSpacePoints;
+
+	for (size_t imageidx = 0; imageidx < numpathes; imageidx++)
+	{
+		bool keep = true;
+		for (size_t lensidx = 0; lensidx < numlenses; lensidx++)
+		{
+			if (SourceData[lensidx].Images[imageidx].Use == false)
+			{
+				keep = false;
+				break;
+			}
+			
+		}
+		if (!keep)
+		{
+			cout << "Could not keep image " << SourceData[0].Images[imageidx].ImagePath << " for stereo calibration" << endl;
+			continue;
+		}
+		WorldSpacePoints.push_back(SourceData[0].Images[imageidx].CheckerboardWorldSpacePoints);
+
+		for (size_t lensidx = 0; lensidx < numlenses; lensidx++)
+		{
+			ImageSpacePoints[lensidx].push_back(SourceData[lensidx].Images[imageidx].CheckerboardImageSpacePoints);
+		}
+	}
+	
+	assert(numlenses == 2);
+	Mat R, T, E, F;
+	double reprojectionError = stereoCalibrate(WorldSpacePoints, ImageSpacePoints[0], ImageSpacePoints[1], Lenses[0].CameraMatrix, Lenses[0].distanceCoeffs, Lenses[1].CameraMatrix, Lenses[1].distanceCoeffs, Lenses[0].ROI.size(), R, T, E, F, CALIB_FIX_INTRINSIC);
+	cout << "Stereo calibration done with " << WorldSpacePoints.size() << " images, R=" << R << " T=" << T << " E=" << E << " F=" << F << endl;
+	
+	Lenses[1].LensPosition = Affine3d(R,T);
+}
+
 Camera* CamToCalib;
 std::vector<Rect> ROIs;
 
@@ -349,10 +435,10 @@ void CalibrationWorker()
 			lens.ROI = ROIs[i];
 		}
 		
-		Size resolution = ReadAndCalibrate(lens);
+		Size resolution = ReadAndCalibrateLens(lens);
 		if (CamToCalib->connected)
 		{
-			CamToCalib->SetCalibrationSetting(lens.CameraMatrix, lens.distanceCoeffs);
+			//CamToCalib->SetCalibrationSetting(lens.CameraMatrix, lens.distanceCoeffs);
 			if (resolution != CamToCalib->GetCameraSettings()->Resolution)
 			{
 				cerr << "WARNING : Resolution of the stored images isn't the same as the resolution of the live camera!" <<endl;
@@ -374,7 +460,7 @@ void CalibrationWorker()
 		auto calconf = GetCalibrationConfig();
 		double apertureWidth = calconf.SensorSize.width, apertureHeight = calconf.SensorSize.height, fovx, fovy, focalLength, aspectRatio;
 		Point2d principalPoint;
-		calibrationMatrixValues(lens.CameraMatrix, CamToCalib->GetCameraSettings()->Resolution, apertureWidth, apertureHeight, fovx, fovy, focalLength, principalPoint, aspectRatio);
+		calibrationMatrixValues(lens.CameraMatrix, resolution, apertureWidth, apertureHeight, fovx, fovy, focalLength, principalPoint, aspectRatio);
 		cout << "Computed camera parameters for sensor of size " << apertureWidth << "x" << apertureHeight <<"mm :" << endl
 		<< " fov:" << fovx << "x" << fovy << "°, focal length=" << focalLength << ", aspect ratio=" << aspectRatio << endl
 		<< "Principal point @ " << principalPoint << endl;
@@ -382,6 +468,12 @@ void CalibrationWorker()
 		lenses.push_back(lens);
 
 	}
+	if (lenses.size() == 2)
+	{
+		ReadAndCalibrateStereo(lenses);
+	}
+	CamToCalib->SetLensSetting(lenses);
+	
 	const CameraSettings* CamSett = CamToCalib->GetCameraSettings();
 	
 	string filename = "noname";
@@ -398,6 +490,20 @@ void CalibrationWorker()
 	//distanceCoefficients = Mat::zeros(8, 1, CV_64F);
 	ShowUndistorted = true;
 	Calibrating = false;
+}
+
+void UpdateROIs(bool Stereo, Size resolution)
+{
+	ROIs.resize(1+Stereo);
+	if (Stereo)
+	{
+		ROIs[0] = Rect(0,0,resolution.width/2, resolution.height);
+		ROIs[1] = Rect(resolution.width/2,0,resolution.width/2, resolution.height);
+	}
+	else
+	{
+		ROIs[0] = Rect(cv::Point2i(), resolution);
+	}
 }
 
 bool docalibration(VideoCaptureCameraSettings CamSett)
@@ -421,6 +527,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 	float AutoCaptureFramerate = 2;
 	double AutoCaptureStart;
 	int LastAutoCapture;
+	bool Stereo = false;
 
 	
 	fs::create_directory(TempImgPath);
@@ -448,7 +555,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 		return true;
 	}
 	CamToCalib->StartFeed();
-
+	UpdateROIs(Stereo, CamSett.Resolution);
 	ImguiWindow imguiinst;
 	imguiinst.Init();
 
@@ -468,7 +575,7 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 
 	FrameCounter fps;
 	int failed = 0;
-	bool mirrored = false;
+	bool mirroredX = false, mirroredY = false;
 	while (true)
 	{
 		prof.EnterSection("StartFrame");
@@ -492,7 +599,8 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 		if (ImGui::Begin("Controls"))
 		{
 			ImGui::Text("FPS : %f", 1/fps.GetDeltaTime());
-			ImGui::Checkbox("Mirror", &mirrored);
+			ImGui::Checkbox("Mirror X", &mirroredX);
+			ImGui::Checkbox("Mirror Y", &mirroredY);
 		}
 		if (ShowUndistorted)
 		{
@@ -505,6 +613,13 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 
 		if (!ShowUndistorted)
 		{
+			auto stereo_before = Stereo;
+			ImGui::Checkbox("Stereo Camera", &Stereo);
+			if (Stereo != stereo_before)
+			{
+				UpdateROIs(Stereo, CamSett.Resolution);
+			}
+			
 			if(ImGui::Checkbox("Auto capture", &AutoCapture))
 			{
 				//AutoCapture = !AutoCapture;
@@ -579,10 +694,17 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 			cv::Rect impos = ScaleToFit(frame.size(), Backgroundsize);
 			Size2f uv_min(0,0), uv_max(1,1);
 
-			if (mirrored)
+			if (mirroredX)
 			{
-				uv_min = Size2f(1,0);
-				uv_max = Size2f(0,1);
+				float temp = uv_min.width;
+				uv_min.width = uv_max.width;
+				uv_max.width = temp;
+			}
+			if (mirroredY)
+			{
+				float temp = uv_min.height;
+				uv_min.height = uv_max.height;
+				uv_max.height = temp;
 			}
 			
 			imguiinst.AddImageToBackground(0, frame, impos, uv_min, uv_max);

@@ -185,7 +185,8 @@ vector<ObjectData> YoloDetect::Project(const CameraImageData &ImageData, const C
 		auto &Detection = FeatureData.YoloDetections[i];
 		DistortedImagePoints[i] = (Detection.Corners.tl() + Detection.Corners.br())/2.0;
 	}
-	undistortPoints(DistortedImagePoints, UndistortedImagePoints, ImageData.CameraMatrix, ImageData.DistanceCoefficients);
+	//TODO : Support stereo
+	undistortPoints(DistortedImagePoints, UndistortedImagePoints, ImageData.lenses[0].CameraMatrix, ImageData.lenses[0].distanceCoeffs);
 	for (size_t i = 0; i < NumDetections; i++)
 	{
 		auto &Detection = FeatureData.YoloDetections[i];
