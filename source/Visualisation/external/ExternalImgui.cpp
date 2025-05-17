@@ -159,37 +159,40 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 		//draw aruco
 		if (ShowAruco && !FocusPeeking)
 		{
-			for (size_t arucoidx = 0; arucoidx < FeatData.ArucoIndices.size(); arucoidx++)
+			for (size_t lensidx = 0; lensidx < FeatData.Lenses.size(); lensidx++)
 			{
-				auto corners = FeatData.ArucoCorners[arucoidx];
-				uint32_t color = IM_COL32(255, 128, 255, 128);
-				if (FeatData.ArucoCornersReprojected[arucoidx].size() != 0)
+				for (size_t arucoidx = 0; arucoidx < FeatData.Lenses[lensidx].ArucoIndices.size(); arucoidx++)
 				{
-					//cout << arucoidx << " is reprojected" << endl;
-					corners = FeatData.ArucoCornersReprojected[arucoidx];
-					color = IM_COL32(128, 255, 255, 128);
-				}
-				
-				Point2d textpos(0,0);
-				for (auto cornerit = corners.cbegin(); cornerit != corners.cend(); cornerit++)
-				{
-					auto vizpos = ImageRemap<double>(SourceRemap, DestRemap, *cornerit);
-					textpos.x = max<double>(textpos.x, vizpos.x);
-					textpos.y = max<double>(textpos.y, vizpos.y);
-					if (cornerit == corners.begin())
+					auto corners = FeatData.Lenses[lensidx].ArucoCorners[arucoidx];
+					uint32_t color = IM_COL32(255, 128, 255, 128);
+					if (FeatData.Lenses[lensidx].ArucoCornersReprojected[arucoidx].size() != 0)
 					{
-						//corner0 square
-						Point2d size = Point2d(2,2);
-						DrawList->AddRect(vizpos-size, vizpos+size, color);
+						//cout << arucoidx << " is reprojected" << endl;
+						corners = FeatData.Lenses[lensidx].ArucoCornersReprojected[arucoidx];
+						color = IM_COL32(128, 255, 255, 128);
 					}
-					//start aruco contour
-					DrawList->PathLineTo(vizpos);
+					
+					Point2d textpos(0,0);
+					for (auto cornerit = corners.cbegin(); cornerit != corners.cend(); cornerit++)
+					{
+						auto vizpos = ImageRemap<double>(SourceRemap, DestRemap, *cornerit + Point2f(FeatData.Lenses[lensidx].ROI.tl()));
+						textpos.x = max<double>(textpos.x, vizpos.x);
+						textpos.y = max<double>(textpos.y, vizpos.y);
+						if (cornerit == corners.begin())
+						{
+							//corner0 square
+							Point2d size = Point2d(2,2);
+							DrawList->AddRect(vizpos-size, vizpos+size, color);
+						}
+						//start aruco contour
+						DrawList->PathLineTo(vizpos);
+					}
+					//finish aruco contour
+					DrawList->PathStroke(color, ImDrawFlags_Closed, 2);
+					//text with aruco number
+					string text = to_string(FeatData.Lenses[lensidx].ArucoIndices[arucoidx]);
+					DrawList->AddText(nullptr, 16, textpos, color, text.c_str());
 				}
-				//finish aruco contour
-				DrawList->PathStroke(color, ImDrawFlags_Closed, 2);
-				//text with aruco number
-				string text = to_string(FeatData.ArucoIndices[arucoidx]);
-				DrawList->AddText(nullptr, 16, textpos, color, text.c_str());
 			}
 			//display segments of segmented detection
 			for (size_t segmentidx = 0; segmentidx < FeatData.ArucoSegments.size(); segmentidx++)
@@ -202,20 +205,23 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 		}
 		if (ShowYolo && !FocusPeeking)
 		{
-			for (size_t detidx = 0; detidx < FeatData.YoloDetections.size(); detidx++)
+			for (size_t lensidx = 0; lensidx < FeatData.Lenses.size(); lensidx++)
 			{
-				auto det = FeatData.YoloDetections[detidx];
-				uint8_t r,g,b;
-				HsvConverter::getRgbFromHSV(1530*det.Class/Parent->YoloDetector->GetNumClasses(), 255, 255, r, g, b);
-				uint32_t color = IM_COL32(r,g,b,det.Confidence*255);
-				
-				Point2d textpos(0,0);
-				auto tl = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.tl());
-				auto br = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.br());
-				DrawList->AddRect(tl, br, color);
-				//text with class and confidence
-				string text = Parent->YoloDetector->GetClassName(det.Class) + string("\n") + to_string(int(det.Confidence*100));
-				DrawList->AddText(nullptr, 16, tl, color, text.c_str());
+				for (size_t detidx = 0; detidx < FeatData.Lenses[lensidx].YoloDetections.size(); detidx++)
+				{
+					auto det = FeatData.Lenses[lensidx].YoloDetections[detidx];
+					uint8_t r,g,b;
+					HsvConverter::getRgbFromHSV(1530*det.Class/Parent->YoloDetector->GetNumClasses(), 255, 255, r, g, b);
+					uint32_t color = IM_COL32(r,g,b,det.Confidence*255);
+					
+					Point2d textpos(0,0);
+					auto tl = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.tl());
+					auto br = ImageRemap<double>(SourceRemap, DestRemap, det.Corners.br());
+					DrawList->AddRect(tl, br, color);
+					//text with class and confidence
+					string text = Parent->YoloDetector->GetClassName(det.Class) + string("\n") + to_string(int(det.Confidence*100));
+					DrawList->AddText(nullptr, 16, tl, color, text.c_str());
+				}
 			}
 		}
 		

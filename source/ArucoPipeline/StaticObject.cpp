@@ -15,7 +15,7 @@ StaticObject::StaticObject(bool InRelative, String InName)
 	CoplanarTags = true;
 	Relative = InRelative;
 	Name = InName;
-	const double yamp = 0.5, xamp = 0.75;
+	const double yamp = 0.4, xamp = 0.9;
 	double size = 0.1;
 	//vector<int> numbers = {20, 22, 21, 23};
 	vector<int> numbers = {22, 23, 20, 21};

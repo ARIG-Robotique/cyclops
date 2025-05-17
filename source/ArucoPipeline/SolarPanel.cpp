@@ -27,11 +27,18 @@ SolarPanel::SolarPanel()
 }
 
 Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
-	map<int, ArucoCornerArray> &ReprojectedCorners)
+	map<std::pair<int, int>, ArucoCornerArray> &ReprojectedCorners)
 {
+	#if 1
 
+	(void)CameraData;
+	(void)Surface;
+	(void)ReprojectionError;
+	(void)ReprojectedCorners;
+	assert(0);
+	#else
 	std::vector<ArucoViewCameraLocal> SeenMarkers;
-	Surface = GetSeenMarkers(CameraData, SeenMarkers);
+	Surface = GetSeenMarkers2D(CameraData, SeenMarkers);
 	const auto& markerobj = markers[0];
 	auto &flatobj = markerobj.GetObjectPointsNoOffset();
 	ReprojectionError = 0;
@@ -104,6 +111,7 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 			ReprojectedCornersStorage[i] = ReprojectedCornersDouble[i];
 		}
 	}
+	#endif
 	return Affine3d::Identity();
 }
 

@@ -134,6 +134,13 @@ int YoloDetect::GetNumClasses() const
 
 int YoloDetect::Detect(CameraImageData InData, CameraFeatureData *OutData)
 {
+	#if 1
+	(void)InData;
+	(void)OutData;
+	assert(0);
+	return 0;
+	//TODO : Fix stereo
+	#else
 	Preprocess(InData.Image, modelSize, 1.0/255.0, 0, true);
 	auto start = chrono::steady_clock::now();
 	vector<Mat> outputBlobs;
@@ -164,11 +171,18 @@ int YoloDetect::Detect(CameraImageData InData, CameraFeatureData *OutData)
 	(void) start; (void) stop;
 	//cout << "Inference took " << chrono::duration<double>(stop-start).count() << "s and found " << numdetections << " objects" << endl;
 	return numdetections;
+	#endif
 }
 
 static_assert(sizeof(Matx31d) == sizeof(Vec3d));
 vector<ObjectData> YoloDetect::Project(const CameraImageData &ImageData, const CameraFeatureData& FeatureData)
 {
+	#if 1
+	(void)ImageData;
+	(void)FeatureData;
+	assert(0);
+	return {};
+	#else
 	vector<ObjectData> objects;
 	size_t NumDetections = FeatureData.YoloDetections.size();
 	if (NumDetections == 0)
@@ -208,4 +222,5 @@ vector<ObjectData> YoloDetect::Project(const CameraImageData &ImageData, const C
 		//waitKey(10);
 	}
 	return objects;
+	#endif
 }

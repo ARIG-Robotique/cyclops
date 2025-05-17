@@ -75,6 +75,10 @@ PostProcessJardinieres::PostProcessJardinieres(CDFRExternal* InOwner)
 void PostProcessJardinieres::Process(std::vector<CameraImageData> &ImageData, std::vector<CameraFeatureData> &FeatureData, std::vector<ObjectData> &Objects)
 {
 	(void) ImageData;
+	#if 1
+	(void) FeatureData;
+	(void) Objects;
+	#else
 	if (FeatureData.size() != 1)
 	{
 		return;
@@ -174,6 +178,6 @@ void PostProcessJardinieres::Process(std::vector<CameraImageData> &ImageData, st
 		Objects.push_back(obj);
 	}
 	//waitKey(2);
-
+	#endif
 
 }

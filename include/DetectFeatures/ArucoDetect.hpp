@@ -14,3 +14,5 @@ int DetectAruco(CameraImageData InData, CameraFeatureData *OutData);
 int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, int MaxArucoSize, cv::Size Segments);
 
 int DetectArucoPOI(CameraImageData InData, CameraFeatureData *OutData, const std::vector<std::vector<cv::Point3d>> &POIs);
+
+void PolyCameraArucoMerge(CameraFeatureData &InOutData);

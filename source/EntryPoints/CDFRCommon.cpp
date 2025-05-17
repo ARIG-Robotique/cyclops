@@ -19,7 +19,7 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 {
 	set<shared_ptr<TrackedObject>> GlobalObjects;
 	GlobalObjects.emplace(make_shared<StaticObject>(Internal, "Board"));
-	GlobalObjects.emplace(make_shared<SolarPanel>());
+	//GlobalObjects.emplace(make_shared<SolarPanel>());
 	for (int i = 1; i < 11; i++)
 	{
 		optional<double> height = 0.450;
@@ -60,7 +60,7 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 	YellowTracker.RegisterTrackedObject(yellow1);
 	YellowTracker.RegisterTrackedObject(yellow2);
 #endif
-	vector<string> PAMINames = {"Triangle", "Square", "Circle"};
+	vector<string> PAMINames = {"Triangle", "Square", "Circle", "Star"};
 	for (size_t i = 0; i < 2; i++)
 	{
 		auto &tracker = i==0 ? Trackers.at(CDFRTeam::Blue) : Trackers.at(CDFRTeam::Yellow);
@@ -104,7 +104,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		{
 			if (Settings.SegmentedDetection)
 			{
-				arucoThread = make_unique<thread>(DetectArucoSegmented, ImData, &FeatData, 200, Size(4,3));
+				arucoThread = make_unique<thread>(DetectArucoSegmented, ImData, &FeatData, 200, Size(2,2));
 			}
 			else
 			{
@@ -115,7 +115,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		{
 			if (Settings.SegmentedDetection)
 			{
-				DetectArucoSegmented(ImData, &FeatData, 200, Size(4,3));
+				DetectArucoSegmented(ImData, &FeatData, 200, Size(2,2));
 			}
 			else
 			{
@@ -175,6 +175,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		arucoThread.reset();
 	}
 	
+	PolyCameraArucoMerge(FeatData);
 	
 	return false;
 }

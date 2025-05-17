@@ -148,10 +148,10 @@ void CDFRExternal::ThreadEntryPoint()
 
 	YoloDetector = make_unique<YoloDetect>("cdfr", 4);
 
-	PostProcesses.emplace_back(make_unique<PostProcessYoloDeflicker>(this));
-	PostProcesses.emplace_back(make_unique<PostProcessStockPlants>(this));
-	PostProcesses.emplace_back(make_unique<PostProcessJardinieres>(this));
-	PostProcesses.emplace_back(make_unique<PostProcessSolarPanel>(this));
+	//PostProcesses.emplace_back(make_unique<PostProcessYoloDeflicker>(this));
+	//PostProcesses.emplace_back(make_unique<PostProcessStockPlants>(this));
+	//PostProcesses.emplace_back(make_unique<PostProcessJardinieres>(this));
+	//PostProcesses.emplace_back(make_unique<PostProcessSolarPanel>(this));
 
 	//display/debug section
 	FrameCounter fps;
@@ -378,7 +378,7 @@ void CDFRExternal::ThreadEntryPoint()
 		TrackerToUse->SolveLocationsPerObject(FeatureDataLocal, GrabTick);
 		vector<ObjectData> &ObjDataLocal = ObjData[BufferIndex]; 
 		ObjDataLocal = TrackerToUse->GetObjectDataVector(GrabTick);
-		for (size_t camidx = 0; camidx < Cameras.size(); camidx++)
+		for (size_t camidx = 0; camidx < Cameras.size() * CDFRCommon::ExternalSettings.YoloDetection; camidx++)
 		{
 			if (!ImageDataLocal[camidx].Valid)
 			{

@@ -9,6 +9,7 @@
 #include <Misc/math3d.hpp>
 #include <Misc/math2d.hpp>
 #include <Misc/GlobalConf.hpp>
+#include <Misc/MatToJSON.hpp>
 #include <Transport/thread-rename.hpp>
 
 #include <opencv2/imgcodecs.hpp>
@@ -115,13 +116,7 @@ optional<json> JsonListener::ObjectToJson(const ObjectData& Object)
 		break;
 
 	case TransformMode::Float3D:
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				objectified[string("r") + to_string(i)][string("c") + to_string(j)] = Object.location.matrix(i,j);
-			}
-		}
+		objectified["Transform"] = Affine3ToJson<double>(Object.location);
 		break;
 
 	default:
@@ -232,43 +227,45 @@ bool JsonListener::GetData(const json &Query, json &Response)
 		cameradata["name"] = JavaCapitalize(data.CameraName);
 		cameradata["width"] = data.FrameSize.width;
 		cameradata["height"] = data.FrameSize.height;
-		cv::Size2d fov = GetCameraFOV(data.FrameSize, data.CameraMatrix);
-		cameradata["xfov"] = round(fov.width * 180 / M_PI * 100) / 100;
-		cameradata["yfov"] = round(fov.height * 180 / M_PI * 100) / 100;
-		if (has2D || AllowedTypes.find(ObjectType::Aruco) != AllowedTypes.end())
+		for (size_t lensidx = 0; lensidx < data.Lenses.size(); lensidx++)
 		{
-			cameradata["arucoObjects"] = json::array();
-			for (size_t i = 0; i < data.ArucoIndices.size(); i++)
+			json lensdata;
+			auto &lensfeatures = data.Lenses[lensidx];
+			cv::Size2d fov = GetCameraFOV(lensfeatures.ROI.size(), lensfeatures.CameraMatrix);
+			lensdata["xfov"] = round(fov.width * 180 / M_PI * 100) / 100;
+			lensdata["yfov"] = round(fov.height * 180 / M_PI * 100) / 100;
+			if (has2D || AllowedTypes.find(ObjectType::Aruco) != AllowedTypes.end())
 			{
-				json aruco;
-				aruco["index"] = data.ArucoIndices[i];
-				aruco["corners"] = json::array();
-				for (size_t j = 0; j < data.ArucoCorners[i].size(); j++)
+				lensdata["arucoObjects"] = json::array();
+				for (size_t i = 0; i < lensfeatures.ArucoIndices.size(); i++)
 				{
-					aruco["corners"][j]["x"] = int(data.ArucoCorners[i][j].x);
-					aruco["corners"][j]["y"] = int(data.ArucoCorners[i][j].y);
+					json aruco;
+					aruco["index"] = lensfeatures.ArucoIndices[i];
+					aruco["corners"] = json::array();
+					for (size_t j = 0; j < lensfeatures.ArucoCorners[i].size(); j++)
+					{
+						aruco["corners"][j] = PointToJson<int>(lensfeatures.ArucoCorners[i][j]);
+					}
+					lensdata["arucoObjects"].push_back(aruco);
+					CameraDetected = true;
 				}
-				cameradata["arucoObjects"].push_back(aruco);
-				CameraDetected = true;
 			}
-		}
-		if (has2D || AllowedTypes.find(ObjectType::Yolo) != AllowedTypes.end())
-		{
-			cameradata["yoloObjects"] = json::array();
-			for (size_t i = 0; i < data.YoloDetections.size(); i++)
+			if (has2D || AllowedTypes.find(ObjectType::Yolo) != AllowedTypes.end())
 			{
-				json yolodet;
-				auto& det = data.YoloDetections[i];
-				yolodet["index"] = det.Class;
-				auto &Corner = det.Corners;
-				yolodet["tlx"] = int(Corner.tl().x);
-				yolodet["tly"] = int(Corner.tl().y);
-				yolodet["brx"] = int(Corner.br().x);
-				yolodet["bry"] = int(Corner.br().y);
-				yolodet["confidence"] = int(det.Confidence*100);
-				cameradata["yoloObjects"].push_back(yolodet);
-				CameraDetected = true;
+				lensdata["yoloObjects"] = json::array();
+				for (size_t i = 0; i < lensfeatures.YoloDetections.size(); i++)
+				{
+					json yolodet;
+					auto& det = lensfeatures.YoloDetections[i];
+					yolodet["index"] = det.Class;
+					auto &Corner = det.Corners;
+					yolodet["ROI"] = RectToJson<int>(Corner);
+					yolodet["confidence"] = int(det.Confidence*100);
+					lensdata["yoloObjects"].push_back(yolodet);
+					CameraDetected = true;
+				}
 			}
+			cameradata["lenses"].push_back(lensdata);
 		}
 		if (CameraDetected)
 		{

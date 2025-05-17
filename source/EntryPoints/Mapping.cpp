@@ -43,6 +43,11 @@ const string MappingFolderName = "SFM/";
 
 SolvableView GetUnseenSolvable(const CameraFeatureData& ImageIDs, const TrackedObject* SolvedTags)
 {
+	#if 1
+	(void) ImageIDs;
+	(void) SolvedTags;
+	return SolvableView();
+	#else
 	SolvableView view;
 	for (size_t i = 0; i < ImageIDs.ArucoIndices.size(); i++)
 	{
@@ -66,11 +71,15 @@ SolvableView GetUnseenSolvable(const CameraFeatureData& ImageIDs, const TrackedO
 		
 	}
 	return view;
+	#endif
 }
 
 
 void MappingSolve(void)
 {
+	#if 1
+	assert(0);
+	#else
 	Mat CameraMatrix, DistortionCoefficients;
 	Size CameraResolution;
 	if (!readCameraParameters(MappingFolderName + "calibration", CameraMatrix, DistortionCoefficients, CameraResolution))
@@ -361,4 +370,6 @@ void MappingSolve(void)
 	{
 		
 	}
+
+	#endif
 }

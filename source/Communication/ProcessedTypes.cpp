@@ -2,21 +2,39 @@
 
 #include <Cameras/ImageTypes.hpp>
 
-void CameraFeatureData::Clear()
+void LensFeatureData::Clear()
 {
 	ArucoIndices.clear();
 	ArucoCorners.clear();
 	ArucoCornersReprojected.clear();
-	ArucoSegments.clear();
-
+	StereoReprojected.clear();
 	YoloDetections.clear();
 }
 
-void CameraFeatureData::CopyEssentials(const CameraImageData &source, int lens)
+void CameraFeatureData::Clear()
+{
+	for (auto &&i : Lenses)
+	{
+		i.Clear();
+	}
+	ArucoSegments.clear();
+	ArucoCornersStereo.clear();
+	ArucoIndicesStereo.clear();
+	
+}
+
+void CameraFeatureData::CopyEssentials(const CameraImageData &source)
 {
 	CameraName = source.CameraName;
-	CameraMatrix = source.lenses[lens].CameraMatrix;
-	DistanceCoefficients = source.lenses[lens].distanceCoeffs;
-	FrameSize = source.lenses[lens].ROI.size();
-	CameraTransform = source.lenses[lens].LensPosition;
+	Lenses.resize(source.lenses.size());
+	for (size_t i = 0; i < source.lenses.size(); i++)
+	{
+		LensFeatureData &feat = Lenses[i];
+		auto &lens = source.lenses[i];
+		feat.CameraMatrix = lens.CameraMatrix;
+		feat.DistanceCoefficients = lens.distanceCoeffs;
+		feat.LensTransform = lens.LensPosition;
+		feat.ROI = lens.ROI;
+	}
+	FrameSize = source.Image.size();
 }

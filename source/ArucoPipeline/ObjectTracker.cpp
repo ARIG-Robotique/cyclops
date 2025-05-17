@@ -62,7 +62,7 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 {
 	CameraData.CameraTransform = Affine3d::Identity();
 	float score = 0;
-	map<int, ArucoCornerArray> ReprojectedCorners; //index in array, corners
+	map<std::pair<int, int>, ArucoCornerArray> ReprojectedCorners; //index in array, corners
 	for (auto object : objects)
 	{
 		auto *staticobj = dynamic_cast<StaticObject*>(object.get());
@@ -88,7 +88,8 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 
 	for (auto it = ReprojectedCorners.begin(); it != ReprojectedCorners.end(); it++)
 	{
-		CameraData.ArucoCornersReprojected[it->first] = it->second;
+		//TODO : fix reprojection
+		CameraData.Lenses[it->first.first].ArucoCornersReprojected[it->first.second] = it->second;
 	}
 	return score >0;
 }
@@ -97,7 +98,7 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 {
 	const int NumCameras = CameraData.size();
 	//const int NumObjects = objects.size();
-	vector<map<int, ArucoCornerArray>> ReprojectedCorners;
+	vector<map<std::pair<int, int>, ArucoCornerArray>> ReprojectedCorners;
 	ReprojectedCorners.resize(NumCameras);
 	
 	/*parallel_for_(Range(0, objects.size()), [&](const Range& range)
@@ -123,10 +124,10 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 			for (size_t CameraIdx = 0; CameraIdx < CameraData.size(); CameraIdx++)
 			{
 				CameraFeatureData& ThisCameraData = CameraData[CameraIdx];
-				if (ThisCameraData.ArucoCorners.size() == 0) //Not seen
+				/*if (ThisCameraData.ArucoCorners.size() == 0) //Not seen
 				{
 					continue;
-				}
+				}*/
 				float AreaThis, ReprojectionErrorThis;
 				Affine3d transformProposed = ThisCameraData.CameraTransform * 
 					objects[ObjIdx]->GetObjectTransform(ThisCameraData, AreaThis, ReprojectionErrorThis, ReprojectedCorners[CameraIdx]);
@@ -168,7 +169,8 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 	{
 		for (auto it = ReprojectedCorners[CamIdx].begin(); it != ReprojectedCorners[CamIdx].end(); it++)
 		{
-			CameraData[CamIdx].ArucoCornersReprojected[it->first] = it->second;
+			//TODO : fix reprojection
+			CameraData[CamIdx].Lenses[it->first.first].ArucoCornersReprojected[it->first.second] = it->second;
 		}
 	}
 }
