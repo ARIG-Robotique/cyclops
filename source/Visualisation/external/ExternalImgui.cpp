@@ -130,13 +130,25 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 		if (FocusPeeking)
 		{
 			auto POIs = Parent->UnknownTracker.GetPointsOfInterest();
-			auto POIRects = GetPOIRects(POIs, Resolution, FeatData.CameraTransform, 
-				ImData.lenses[0].CameraMatrix, ImData.lenses[0].distanceCoeffs); //TODO : Support stereo
-			auto POI = POIRects[POIs.size()/2];
-			thisTile.height = ImageSize.height;
-			thisTile.width = ImageSize.width;
-			thisTile.x = -POI.x+(WindowSize.width-POI.width)/2;
-			thisTile.y = -POI.y+(WindowSize.height-POI.height)/2;
+			if (POIs.size() > 0)
+			{
+				auto POIRects = GetPOIRects(POIs, Resolution, FeatData.CameraTransform, 
+					ImData.lenses[0].CameraMatrix, ImData.lenses[0].distanceCoeffs); //TODO : Support stereo
+				auto POI = POIRects[POIs.size()/2];
+				thisTile.height = ImageSize.height;
+				thisTile.width = ImageSize.width;
+				thisTile.x = -POI.x+(WindowSize.width-POI.width)/2;
+				thisTile.y = -POI.y+(WindowSize.height-POI.height)/2;
+			}
+			else
+			{
+				thisTile.height = ImageSize.height*2;
+				thisTile.width = ImageSize.width*2;
+				thisTile.x = (WindowSize.width-ImageSize.width*2)/2;
+				thisTile.y = (WindowSize.height-ImageSize.height*2)/2;
+			}
+			
+			
 		}
 		if (LastMatrices[camidx*DisplaysPerCam] != ImData.Image.u)
 		{
