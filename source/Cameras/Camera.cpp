@@ -193,10 +193,21 @@ void Camera::Record(filesystem::path rootPath, int RecordIdx)
 	filesystem::create_directories(rootPath/folderstr);
 	if (!RecordOutput)
 	{
-		RecordOutput = make_unique<VideoWriter>(rootPath/folderstr/"video.avi", 
-			cv::VideoWriter::fourcc('H', '2', '6', '4'), 
-			Settings->Framerate/(double)Settings->FramerateDivider,
-			Settings->Resolution);
+		RecordOutput = make_unique<VideoWriter>();
+		#if 0
+		cout << "VIDEOWRITER_PROP_QUALITY returned " << RecordOutput->set(VIDEOWRITER_PROP_QUALITY, 95) << endl;
+		RecordOutput->open(rootPath/folderstr/"video.avi", 
+		#else
+		ostringstream ss;
+		ss << "appsrc ! videoconvert ! x264enc bitrate=100000 speed-preset=faster " 
+		<< (Settings->Lenses.size() == 2 ? "frame-packing=side-by-side " : "") 
+		<< "! avimux ! filesink location=" << rootPath/folderstr/"video.avi";
+		RecordOutput->open(ss.str(), CAP_GSTREAMER, 
+		#endif
+			cv::VideoWriter::fourcc('M', 'P', 'E', 'G'), 
+			30,
+			Settings->Resolution,
+			GetFrame(true).Image.channels() > 1);
 		cout << "Opened recording :" << RecordOutput->isOpened() <<endl;
 	}
 	if (!TimestampsOutput)
