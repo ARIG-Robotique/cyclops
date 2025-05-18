@@ -104,7 +104,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		{
 			if (Settings.SegmentedDetection)
 			{
-				arucoThread = make_unique<thread>(DetectArucoSegmented, ImData, &FeatData, 200, Size(2,2));
+				arucoThread = make_unique<thread>(DetectArucoSegmented, ImData, &FeatData, 200, ImData.lenses[0].ROI.size()/800 + Size(1,1));
 			}
 			else
 			{
@@ -115,7 +115,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		{
 			if (Settings.SegmentedDetection)
 			{
-				DetectArucoSegmented(ImData, &FeatData, 200, Size(2,2));
+				DetectArucoSegmented(ImData, &FeatData, 200, ImData.lenses[0].ROI.size()/800 + Size(1,1));
 			}
 			else
 			{

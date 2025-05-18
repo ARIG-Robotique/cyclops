@@ -275,7 +275,7 @@ int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, con
 
 void PolyCameraArucoMerge(CameraFeatureData &InOutData)
 {
-	int numlenses = InOutData.Lenses.size();
+	size_t numlenses = InOutData.Lenses.size();
 	if (numlenses < 2)
 	{
 		return;
@@ -386,7 +386,7 @@ int DetectAruco(CameraImageData InData, CameraFeatureData *OutData)
 	MakeDetectors();
 
 	Size framesize = InData.Image.size();
-	Size rescaled = GetArucoReduction();
+	Size rescaled = Size2f(framesize)*GetReductionFactor();
 	UMat GrayFrame = PreprocessArucoImage(InData.Image);
 
 	UMat ResizedFrame;

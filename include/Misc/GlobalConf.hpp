@@ -13,7 +13,6 @@ enum class CameraStartType;
 struct CaptureConfig
 {
 	int StartType; //See CameraStartType in Misc/ImageTypes.hpp . Chooses method to use to start the camera
-	cv::Size FrameSize; //resolution
 	float ReductionFactor; //factor to downscale image before aruco detection
 	int CaptureFramerate;
 	int FramerateDivider;
@@ -29,8 +28,6 @@ std::string GetScenario();
 bool DoScreenCapture();
 
 const cv::aruco::ArucoDetector& GetArucoDetector();
-
-cv::Size GetFrameSize();
 
 int GetCaptureFramerate();
 
@@ -48,9 +45,6 @@ struct KeepAliveSettings
 };
 
 KeepAliveSettings GetKeepAliveSettings();
-
-//list of resolutions in the end
-cv::Size GetArucoReduction();
 
 cv::UMat& GetArucoImage(int id);
 

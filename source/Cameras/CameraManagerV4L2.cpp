@@ -28,7 +28,6 @@ VideoCaptureCameraSettings CameraManagerV4L2::DeviceToSettings(v4l2::devices::DE
 {
 	VideoCaptureCameraSettings settings;
 	CaptureConfig cfg = GetCaptureConfig();
-	settings.Resolution = cfg.FrameSize;
 	settings.Framerate = cfg.CaptureFramerate;
 	settings.FramerateDivider = cfg.FramerateDivider;
 	settings.DeviceInfo = device;

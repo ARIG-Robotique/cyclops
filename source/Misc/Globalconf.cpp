@@ -25,7 +25,7 @@ bool RecordVideo = false;
 KeepAliveSettings KeepAliveConfig = {30, 3*60}; //Delay between messages, Delay before kick when no response
 
 //Default values
-CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, Size(3840,3032), 1.f, 30, 1, ""};
+CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, 1.f, 30, 1, ""};
 vector<InternalCameraConfig> CamerasInternal;
 CalibrationConfig CamCalConf = {40, Size(6,4), 0.5, 1.5, Size2d(4.96, 3.72)};
 
@@ -77,8 +77,6 @@ void InitConfig()
 	nlohmann::json &Capture = CopyOrDefaultJson(configobj, "Capture");
 	{
 		nlohmann::json& Resolution = CopyOrDefaultJson(Capture, "Resolution");
-		CopyOrDefaultRef(Resolution, 	"Width", 			CaptureCfg.FrameSize.width);
-		CopyOrDefaultRef(Resolution, 	"Height", 			CaptureCfg.FrameSize.height);
 		CopyOrDefaultRef(Capture, 		"Framerate", 		CaptureCfg.CaptureFramerate);
 		CopyOrDefaultRef(Capture, 		"FramerateDivider", CaptureCfg.FramerateDivider);
 		CopyOrDefaultRef(Capture, 		"Method", 			CaptureCfg.StartType);
@@ -159,7 +157,7 @@ const aruco::ArucoDetector& GetArucoDetector(){
 	{
 		auto dict = aruco::getPredefinedDictionary(aruco::DICT_4X4_100);
 		auto params = aruco::DetectorParameters();
-		params.cornerRefinementMethod = GetArucoReduction() == GetFrameSize() ? aruco::CORNER_REFINE_CONTOUR : aruco::CORNER_REFINE_NONE;
+		params.cornerRefinementMethod = GetReductionFactor() >= 1.f ? aruco::CORNER_REFINE_CONTOUR : aruco::CORNER_REFINE_NONE;
 		params.useAruco3Detection = 0;
 		//params.adaptiveThreshConstant = 20;
 		double mulfac = 1.0/1.0;
@@ -171,12 +169,6 @@ const aruco::ArucoDetector& GetArucoDetector(){
 		ArucoDet = aruco::ArucoDetector(dict, params, refparams);
 	}
 	return ArucoDet;
-}
-
-Size GetFrameSize()
-{
-	InitConfig();
-	return CaptureCfg.FrameSize;
 }
 
 int GetCaptureFramerate()
@@ -207,15 +199,6 @@ KeepAliveSettings GetKeepAliveSettings()
 {
 	InitConfig();
 	return KeepAliveConfig;
-}
-
-Size GetArucoReduction()
-{
-	Size reduction;
-	Size basesize = GetFrameSize();
-	float reductionFactor = GetReductionFactor();
-	reduction = Size(basesize.width / reductionFactor, basesize.height / reductionFactor);
-	return reduction;
 }
 
 UMat& GetArucoImage(int id)
