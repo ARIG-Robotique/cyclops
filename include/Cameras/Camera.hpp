@@ -2,6 +2,7 @@
 
 
 #include <iostream>
+#include <fstream>
 #include <string>   // for strings
 #include <vector>
 #include <chrono>
@@ -49,6 +50,9 @@ protected:
 	
 	cv::UMat UndistMap1, UndistMap2;
 	cv::UMat LastFrameDistorted, LastFrameUndistorted;
+	std::optional<std::chrono::steady_clock::time_point> record_start;
+	std::unique_ptr<cv::VideoWriter> RecordOutput;
+	std::unique_ptr<std::ofstream> TimestampsOutput;
 public:
 	int errors;
 	//status

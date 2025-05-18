@@ -1,6 +1,7 @@
 #include "Cameras/Camera.hpp"
 
 #include <iostream> // for standard I/O
+#include <fstream>
 #include <math.h>
 #include <cassert>
 
@@ -189,9 +190,44 @@ vector<ObjectData> Camera::ToObjectData() const
 void Camera::Record(filesystem::path rootPath, int RecordIdx)
 {
 	string folderstr = Name.substr(0, std::min<size_t>(Name.find(' '), 10));
+	filesystem::create_directories(rootPath/folderstr);
+	if (!RecordOutput)
+	{
+		RecordOutput = make_unique<VideoWriter>(rootPath/folderstr/"video.avi", 
+			cv::VideoWriter::fourcc('H', '2', '6', '4'), 
+			Settings->Framerate/(double)Settings->FramerateDivider,
+			Settings->Resolution);
+		cout << "Opened recording :" << RecordOutput->isOpened() <<endl;
+	}
+	if (!TimestampsOutput)
+	{
+		TimestampsOutput = make_unique<ofstream>(rootPath/folderstr/"timestamps.txt");
+		writeCameraParameters(rootPath/folderstr/"calibration.json", *Settings.get());
+	}
+	
+	#if 1
+	if (RecordOutput)
+	{
+		auto image = GetFrame(true);
+		RecordOutput->write(image.Image);
+		if (TimestampsOutput)
+		{
+			if (!record_start.has_value())
+			{
+				record_start = image.GrabTime;
+			}
+			auto delta = (image.GrabTime - record_start.value());
+			*TimestampsOutput.get() << delta.count() << endl;
+		}
+		
+	}
+
+	
+	#else
 	char buffer[16]= {0};
 	snprintf(buffer, sizeof(buffer)-1, "%04d", RecordIdx);
 	auto writepath = rootPath/folderstr/(string(buffer) + string(".jpg"));
-	filesystem::create_directories(writepath.parent_path());
+	
 	imwrite(writepath.string(), GetFrame(true).Image);
+	#endif
 }

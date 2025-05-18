@@ -127,6 +127,11 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 		const auto &ImData = Cameras[camidx];
 		const auto &FeatData = Features[camidx];
 		Size Resolution = ImData.Image.size();
+		if (LastMatrices[camidx*DisplaysPerCam] != ImData.Image.u)
+		{
+			LastMatrices[camidx*DisplaysPerCam] = ImData.Image.u;
+			Textures[camidx*DisplaysPerCam].LoadFromUMat(ImData.Image);
+		}
 		if (FocusPeeking)
 		{
 			auto POIs = Parent->UnknownTracker.GetPointsOfInterest();
@@ -149,11 +154,6 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 			}
 			
 			
-		}
-		if (LastMatrices[camidx*DisplaysPerCam] != ImData.Image.u)
-		{
-			LastMatrices[camidx*DisplaysPerCam] = ImData.Image.u;
-			Textures[camidx*DisplaysPerCam].LoadFromUMat(ImData.Image);
 		}
 		
 		AddImageToBackground(Textures[camidx*DisplaysPerCam], thisTile);
