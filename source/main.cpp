@@ -161,9 +161,9 @@ int main(int argc, char** argv )
 	
 	if (parser.has("calibrate"))
 	{
-		cout << "Starting calibration of camera index" << parser.get<int>("calibrate") <<endl;
 		int camIndex = parser.get<int>("calibrate");
-		if (0<= camIndex && camIndex < (int)CamSett.size())
+		cout << "Starting calibration of camera index " << camIndex << " of " << CamSett.size() << endl;
+		if (camIndex >= 0 && camIndex < (int)CamSett.size())
 		{
 			docalibration(CamSett[camIndex]);
 			return EXIT_SUCCESS;

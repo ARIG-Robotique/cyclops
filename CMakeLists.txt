@@ -5,6 +5,8 @@ set(PROJECT_NAME cyclops)
 # Define project name
 project(${PROJECT_NAME})
 
+include(CTest)
+
 # OpenCV
 find_package(OpenCV 4.8 REQUIRED)
 message(STATUS "OpenCV library status:")
@@ -77,6 +79,8 @@ set(SOURCES ${SOURCES} ${imguisource})
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
+
+add_test(cyclotest ${PROJECT_NAME})
 
 #message(STATUS "Sources found : ${SOURCES}")
 

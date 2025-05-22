@@ -31,6 +31,7 @@ ExternalImgui::~ExternalImgui()
 bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 {
 	StartFrame();
+	//cout << "new frame" <<endl;
 	int DisplaysPerCam = 1;
 	auto Cameras = Parent->GetImage();
 	Cameras.erase(
@@ -129,6 +130,7 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 		Size Resolution = ImData.Image.size();
 		if (LastMatrices[camidx*DisplaysPerCam] != ImData.Image.u)
 		{
+			//cout << "Updating " << Textures[camidx*DisplaysPerCam].GetTextureID() << " to " << ImData.Image.u << endl;
 			LastMatrices[camidx*DisplaysPerCam] = ImData.Image.u;
 			Textures[camidx*DisplaysPerCam].LoadFromUMat(ImData.Image);
 		}
@@ -152,8 +154,6 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 				thisTile.x = (WindowSize.width-ImageSize.width*2)/2;
 				thisTile.y = (WindowSize.height-ImageSize.height*2)/2;
 			}
-			
-			
 		}
 		
 		AddImageToBackground(Textures[camidx*DisplaysPerCam], thisTile);

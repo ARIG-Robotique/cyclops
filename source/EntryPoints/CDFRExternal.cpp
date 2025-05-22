@@ -274,7 +274,7 @@ void CDFRExternal::ThreadEntryPoint()
 		default:
 			if (!LowPower)
 			{
-				cout << "Warning : Using unknown tracker" << endl;
+				//cout << "Warning : Using unknown tracker" << endl;
 			}
 			TrackerToUse = &UnknownTracker;
 			break;

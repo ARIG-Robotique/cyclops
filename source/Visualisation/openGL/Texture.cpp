@@ -60,7 +60,7 @@ void Texture::Bind()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	
-	//cout << "Created texture " << TextureID << endl;
+	cout << "Created texture " << TextureID << endl;
 }
 
 void Texture::Refresh()
@@ -78,10 +78,12 @@ void Texture::Refresh()
 	
 	if (NewSize != LastSize)
 	{
+		assert(LastSize == cv::Size());
 		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, NewSize.width, NewSize.height, 0, format, GL_UNSIGNED_BYTE, SourceImage.data);
 	}
 	else
 	{
+
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, NewSize.width, NewSize.height, format, GL_UNSIGNED_BYTE, SourceImage.data);
 	}
 	LastSize = NewSize;

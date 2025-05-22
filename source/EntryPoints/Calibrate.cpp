@@ -510,6 +510,17 @@ bool docalibration(VideoCaptureCameraSettings CamSett)
 {
 	unique_ptr<thread> CalibrationThread;
 	ManualProfiler<false> prof;
+	if (CamSett.Resolution.width <= 0)
+	{
+		cout << "Enter calibration width :" <<endl;
+		cin >> CamSett.Resolution.width;
+	}
+	if (CamSett.Resolution.height <= 0)
+	{
+		cout << "Enter calibration height :" <<endl;
+		cin >> CamSett.Resolution.height;
+	}
+	
 	bool HasCamera = CamSett.IsValid();
 	
 	if (HasCamera)
