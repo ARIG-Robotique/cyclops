@@ -62,8 +62,8 @@ CDFRTeam CDFRExternal::GetTeamFromCameraPosition(vector<Camera*> Cameras)
 	const static double xdist = 1.594;
 	const static map<CDFRTeam, vector<Vec2d>> CameraPos = 
 	{
-		{CDFRTeam::Blue, {{0, -ydist}, {-xdist, ydist}, {-xdist, -ydist}, {-0.225, 1.122}}},
-		{CDFRTeam::Yellow, {{0, ydist}, {xdist, ydist}, {xdist, -ydist}, {0.225, 1.122}}}
+		{CDFRTeam::Yellow, {{0, -ydist}, {-xdist, ydist}, {-xdist, -ydist}, {-0.225, 1.122}}},
+		{CDFRTeam::Blue, {{0, ydist}, {xdist, ydist}, {xdist, -ydist}, {0.225, 1.122}}}
 	};
 	map<CDFRTeam, int> TeamScores;
 	for (Camera* cam : Cameras)

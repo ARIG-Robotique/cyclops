@@ -68,7 +68,7 @@ cv::Affine3d TrackedObject::ArucoViewCameraLocal::FitPlane()
 	Point3d yaxis = (StereoMarkerCorners[3] - StereoMarkerCorners[0]) + (StereoMarkerCorners[2] - StereoMarkerCorners[1]);
 	xaxis = NormaliseVector(xaxis);
 	yaxis = NormaliseVector(yaxis);
-	auto rot = MakeRotationFromXY(xaxis, yaxis);
+	auto rot = MakeRotationFromXY(xaxis, -yaxis);
 	Point3d mean;
 	for (size_t i = 0; i < StereoMarkerCorners.size(); i++)
 	{

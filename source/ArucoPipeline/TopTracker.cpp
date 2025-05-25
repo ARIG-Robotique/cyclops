@@ -83,7 +83,8 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 	{
 		SeenMarker = Markers3D[0];
 		CameraToMarker = SeenMarker.FitPlane();
-		Surface = Volume;
+		Surface = Volume * CameraData.FrameSize.area(); //does not work for multiple cameras with different resolutions, but it kinda works
+		assert(markers.size() == 1);
 		//TODO : Handle multiple markers
 	}
 	

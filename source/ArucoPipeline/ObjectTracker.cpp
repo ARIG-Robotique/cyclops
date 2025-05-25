@@ -88,7 +88,6 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 
 	for (auto it = ReprojectedCorners.begin(); it != ReprojectedCorners.end(); it++)
 	{
-		//TODO : fix reprojection
 		CameraData.Lenses[it->first.first].ArucoCornersReprojected[it->first.second] = it->second;
 	}
 	return score >0;
@@ -169,7 +168,6 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 	{
 		for (auto it = ReprojectedCorners[CamIdx].begin(); it != ReprojectedCorners[CamIdx].end(); it++)
 		{
-			//TODO : fix reprojection
 			CameraData[CamIdx].Lenses[it->first.first].ArucoCornersReprojected[it->first.second] = it->second;
 		}
 	}
