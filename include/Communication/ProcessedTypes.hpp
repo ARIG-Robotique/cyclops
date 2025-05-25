@@ -22,15 +22,15 @@ struct ArucoFeatureData
 
 struct LensFeatureData
 {
-	cv::Affine3d LensTransform;     //Camera to lens transform
-	cv::Mat CameraMatrix; 			//Filled by CopyEssentials from CameraImageData
-	cv::Mat DistanceCoefficients; 	//Filled by CopyEssentials from CameraImageData
-	cv::Rect ROI;
+	cv::Affine3d CameraToLens;				//Camera to lens transform
+	cv::Mat CameraMatrix; 					//Filled by CopyEssentials from CameraImageData
+	cv::Mat DistanceCoefficients; 			//Filled by CopyEssentials from CameraImageData
+	cv::Rect ROI;							//Region of interest in the source image
 
-	std::vector<ArucoCornerArray> ArucoCorners, 		//Filled by ArucoDetect
-		ArucoCornersReprojected; 						//Cleared by ArucoDetect, Filled by ObjectTracker
-	std::vector<int> ArucoIndices; 						//Filled by ArucoDetect
-	std::vector<bool> StereoReprojected;				//True if the aruco tags was projected to 3D using multilens
+	std::vector<ArucoCornerArray> ArucoCorners; 						//Filled by ArucoDetect
+	mutable std::vector<ArucoCornerArray> ArucoCornersReprojected; 		//Cleared by ArucoDetect, Filled by ObjectTracker
+	std::vector<int> ArucoIndices; 										//Filled by ArucoDetect
+	std::vector<bool> StereoReprojected;								//True if the aruco tags was projected to 3D using multilens
 
 	std::vector<YoloDetection> YoloDetections; 	//Filled by YoloDetect
 
@@ -42,7 +42,7 @@ struct CameraFeatureData
 	std::string CameraName; 		//Filled by CopyEssentials from CameraImageData
 	std::vector<cv::Rect> ArucoSegments;				//Filled by ArucoDetect
 
-	cv::Affine3d CameraTransform; 	//Filled by CopyEssentials from CameraImageData, World to camera
+	cv::Affine3d WorldToCamera; 	//Filled by CopyEssentials from CameraImageData, World to camera
 	cv::Size FrameSize; 			//Filled by CopyEssentials from CameraImageData
 
 	std::vector<LensFeatureData> Lenses;

@@ -44,24 +44,29 @@ enum class ObjectType
 	Aruco,
 	Yolo,
 
-	Tag,
+	Tag = 10,
 	ReferenceAbsolute,
 	ReferenceRelative,
+	Axis,
 	Camera,
+	Lens,
 	Object,
 	Robot,
 	Pami,
 
-	SolarPanel,
+	SolarPanel2024,
 
-	Fragile,
-	Resistant,
-	Pot,
-	PottedPlant,
+	Fragile2024,
+	Resistant2024,
+	Pot2024,
+	PottedPlant2024,
 
-	PlantStock,
-	Hangar,
-	Jardiniere,
+	PlantStock2024,
+	Hangar2024,
+	Jardiniere2024,
+
+	DropZone2025,
+	Stock2025,
 
 	Team
 };
@@ -91,14 +96,19 @@ const std::map<ObjectType, ObjectTypeConfig> ObjectTypeNames =
 	{ObjectType::Object, 			{"Object",				"OBJET"					,1	,1	,1}},
 	{ObjectType::Robot, 			{"Robot",				"ROBOT"					,1	,1	,1}},
 	{ObjectType::Pami, 				{"PAMI",				"PAMI"					,1	,1	,1}},
-	{ObjectType::SolarPanel, 		{"Solar panel",			"PANNEAU_SOLAIRE"		,0	,1	,1}},
-	{ObjectType::Fragile, 			{"Fragile",				"YOLO3D"				,1	,0	,1}},
-	{ObjectType::Resistant, 		{"Resistant",			"YOLO3D"				,1	,0	,1}},
-	{ObjectType::Pot, 				{"Pot",					"YOLO3D"				,1	,0	,1}},
-	{ObjectType::PottedPlant, 		{"Potted plant",		"YOLO3D"				,1	,0	,1}},
-	{ObjectType::PlantStock,		{"PlantStock",			"STOCK_PLANTES"			,0	,0	,1}},
-	{ObjectType::Hangar,			{"Hangar",				"HANGAR"				,0	,0	,1}},
-	{ObjectType::Jardiniere,		{"Jardiniere",			"JARDINIERE"			,0	,0	,1}},
+	{ObjectType::Lens, 				{"Lens",				"LENTILLE"				,1	,1	,0}},
+	
+	{ObjectType::SolarPanel2024, 	{"Solar panel",			"PANNEAU_SOLAIRE"		,0	,1	,1}},
+	{ObjectType::Fragile2024, 		{"Fragile",				"YOLO3D"				,1	,0	,1}},
+	{ObjectType::Resistant2024, 	{"Resistant",			"YOLO3D"				,1	,0	,1}},
+	{ObjectType::Pot2024, 			{"Pot",					"YOLO3D"				,1	,0	,1}},
+	{ObjectType::PottedPlant2024, 	{"Potted plant",		"YOLO3D"				,1	,0	,1}},
+	{ObjectType::PlantStock2024,	{"PlantStock",			"STOCK_PLANTES"			,0	,0	,1}},
+	{ObjectType::Hangar2024,		{"Hangar",				"HANGAR"				,0	,0	,1}},
+	{ObjectType::Jardiniere2024,	{"Jardiniere",			"JARDINIERE"			,0	,0	,1}},
+
+	{ObjectType::DropZone2025, 		{"Drop Zone",			"ZONE_DEPOSE"			,1	,0	,1}},
+	{ObjectType::Stock2025,		 	{"Stock",				"STOCK"					,1	,0	,1}},
 	{ObjectType::Team, 				{"Team",				"EQUIPE"				,0	,0	,0}}
 };
 

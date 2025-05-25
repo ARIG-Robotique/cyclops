@@ -133,11 +133,13 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 				arucoThread->join();
 				arucoThread.reset();
 			}
+	
+			PolyCameraArucoMerge(FeatData);
 			
 			bool HasPosition = Tracker.SolveCameraLocation(FeatData);
 			if (HasPosition)
 			{
-				cam->SetLocation(FeatData.CameraTransform, GrabTick);
+				cam->SetLocation(FeatData.WorldToCamera, GrabTick);
 				//cout << "Camera has location" << endl;
 			}
 		}
@@ -147,7 +149,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		}
 		
 		
-		FeatData.CameraTransform = cam->GetLocation();
+		FeatData.WorldToCamera = cam->GetLocation();
 		
 		if (Settings.POIDetection)
 		{
@@ -162,7 +164,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 	}
 	else
 	{
-		FeatData.CameraTransform = Affine3d::Identity();
+		FeatData.WorldToCamera = Affine3d::Identity();
 	}
 	if (yoloThread)
 	{
@@ -174,8 +176,12 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		arucoThread->join();
 		arucoThread.reset();
 	}
+
+	if (!Settings.SolveCameraLocation || cam->PositionLocked)
+	{
+		PolyCameraArucoMerge(FeatData);
+	}
 	
-	PolyCameraArucoMerge(FeatData);
 	
 	return false;
 }

@@ -11,7 +11,7 @@ void PostProcessSolarPanel::Process(std::vector<CameraImageData> &ImageData, std
 	static const array<string, 4> teams = {"AUCUNE", "JAUNE", "BLEU", "JAUNE_ET_BLEU"};
 	for (auto &obj : Objects)
 	{
-		if (obj.type == ObjectType::SolarPanel)
+		if (obj.type == ObjectType::SolarPanel2024)
 		{
 			
 			double rotZ = GetRotZ(obj.location.rotation());

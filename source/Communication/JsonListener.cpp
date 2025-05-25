@@ -300,10 +300,10 @@ bool JsonListener::GetZone(const json &Query, json &Response)
 	}
 	if (!QueryData.contains("classes"))
 	{
-		AllowedTypes.insert(ObjectType::Fragile);
-		AllowedTypes.insert(ObjectType::Resistant);
-		AllowedTypes.insert(ObjectType::Pot);
-		AllowedTypes.insert(ObjectType::PottedPlant);
+		AllowedTypes.insert(ObjectType::Fragile2024);
+		AllowedTypes.insert(ObjectType::Resistant2024);
+		AllowedTypes.insert(ObjectType::Pot2024);
+		AllowedTypes.insert(ObjectType::PottedPlant2024);
 	}
 	else if (!QueryData.at("classes").is_array())
 	{

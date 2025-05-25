@@ -283,11 +283,11 @@ void PolyCameraArucoMerge(CameraFeatureData &InOutData)
 	for (size_t lens1idx = 0; lens1idx < numlenses; lens1idx++)
 	{
 		auto& lens1data = InOutData.Lenses[lens1idx];
-		Vec3d l1p = lens1data.LensTransform.translation(), l1d;
+		Vec3d l1p = lens1data.CameraToLens.translation(), l1d;
 		for (size_t lens2idx = lens1idx+1; lens2idx < numlenses; lens2idx++)
 		{
 			auto& lens2data = InOutData.Lenses[lens2idx];
-			Vec3d l2p = lens2data.LensTransform.translation(), l2d;
+			Vec3d l2p = lens2data.CameraToLens.translation(), l2d;
 			for (size_t aruco1idx = 0; aruco1idx < lens1data.ArucoIndices.size(); aruco1idx++)
 			{
 				for (size_t aruco2idx = 0; aruco2idx < lens2data.ArucoIndices.size(); aruco2idx++)
@@ -307,8 +307,8 @@ void PolyCameraArucoMerge(CameraFeatureData &InOutData)
 					for (size_t corneridx = 0; corneridx < aruco1corners.size(); corneridx++)
 					{
 						//warn : it may be the opposite
-						l1d = lens1data.LensTransform.rotation() * Vec3d(aruco1cornersundist[corneridx].x, aruco1cornersundist[corneridx].y, 1);
-						l2d = lens2data.LensTransform.rotation() * Vec3d(aruco2cornersundist[corneridx].x, aruco2cornersundist[corneridx].y, 1);
+						l1d = lens1data.CameraToLens.rotation() * Vec3d(aruco1cornersundist[corneridx].x, aruco1cornersundist[corneridx].y, 1);
+						l2d = lens2data.CameraToLens.rotation() * Vec3d(aruco2cornersundist[corneridx].x, aruco2cornersundist[corneridx].y, 1);
 						Vec3d p1, p2;
 						bool intersected = ClosestPointsOnTwoLine(l1p, l1d, l2p, l2d, p1, p2);
 						if (!intersected)
@@ -319,12 +319,18 @@ void PolyCameraArucoMerge(CameraFeatureData &InOutData)
 						error += sqrt(GetVectorLengthSquared(p1-p2));
 						intersections[corneridx] = (p1+p2)/2;
 					}
-					if (error/aruco1corners.size() < 0.01)
+					float score = error/aruco1corners.size();
+					if (score < 0.01)
 					{
 						InOutData.ArucoCornersStereo.push_back(intersections);
 						InOutData.ArucoIndicesStereo.push_back(lens1data.ArucoIndices[aruco1idx]);
 						lens1data.StereoReprojected[aruco1idx] = true;
 						lens2data.StereoReprojected[aruco2idx] = true;
+						//cout << "Error is small enough to merge : " << score << "(for aruco #" << lens1data.ArucoIndices[aruco1idx] << ")" << endl;
+					}
+					else
+					{
+						cerr << "Error is too big to merge : " << score << "(for aruco #" << lens1data.ArucoIndices[aruco1idx] << ")" << endl;
 					}
 				}
 			}
@@ -484,7 +490,7 @@ int DetectArucoPOI(CameraImageData InData, CameraFeatureData *OutData, const vec
 	assert(OutData != nullptr);
 	MakeDetectors();
 	Size framesize = InData.Image.size();
-	vector<Rect> poirects = GetPOIRects(POIs, framesize, OutData->CameraTransform, InData.lenses[0].CameraMatrix, InData.lenses[0].distanceCoeffs); //TODO : Support stereo
+	vector<Rect> poirects = GetPOIRects(POIs, framesize, OutData->WorldToCamera, InData.lenses[0].CameraMatrix, InData.lenses[0].distanceCoeffs); //TODO : Support stereo
 
 	return DetectArucoSegmented(InData, OutData, poirects, POIDetector.get());
 }

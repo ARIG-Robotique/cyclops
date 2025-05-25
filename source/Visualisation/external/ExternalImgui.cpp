@@ -139,7 +139,7 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 			auto POIs = Parent->UnknownTracker.GetPointsOfInterest();
 			if (POIs.size() > 0)
 			{
-				auto POIRects = GetPOIRects(POIs, Resolution, FeatData.CameraTransform, 
+				auto POIRects = GetPOIRects(POIs, Resolution, FeatData.WorldToCamera, 
 					ImData.lenses[0].CameraMatrix, ImData.lenses[0].distanceCoeffs); //TODO : Support stereo
 				auto POI = POIRects[POIs.size()/2];
 				thisTile.height = ImageSize.height;
@@ -161,7 +161,7 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 		auto DrawList = ImGui::GetForegroundDrawList();
 		{
 			ostringstream CameraTextStream;
-			CameraTextStream << FeatData.CameraTransform.translation() <<endl;
+			CameraTextStream << FeatData.WorldToCamera.translation() <<endl;
 			CameraTextStream << Parent->GetTeam() << endl;
 			string CameraText = CameraTextStream.str();
 			DrawList->AddText(NULL, 12, ImVec2(thisTile.x, thisTile.y), IM_COL32(255,255,255,255), CameraText.c_str());

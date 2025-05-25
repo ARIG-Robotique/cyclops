@@ -60,7 +60,7 @@ struct ResolvedLocation
 
 bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 {
-	CameraData.CameraTransform = Affine3d::Identity();
+	CameraData.WorldToCamera = Affine3d::Identity();
 	float score = 0;
 	map<std::pair<int, int>, ArucoCornerArray> ReprojectedCorners; //index in array, corners
 	for (auto object : objects)
@@ -82,7 +82,7 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 		{
 			continue;
 		}
-		CameraData.CameraTransform = NewTransform.inv();
+		CameraData.WorldToCamera = NewTransform.inv();
 		score = newscore;
 	}
 
@@ -129,14 +129,14 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 					continue;
 				}*/
 				float AreaThis, ReprojectionErrorThis;
-				Affine3d transformProposed = ThisCameraData.CameraTransform * 
+				Affine3d transformProposed = ThisCameraData.WorldToCamera * 
 					objects[ObjIdx]->GetObjectTransform(ThisCameraData, AreaThis, ReprojectionErrorThis, ReprojectedCorners[CameraIdx]);
 				float ScoreThis = AreaThis/(ReprojectionErrorThis + 0.1);
 				if (ScoreThis < 1 || ReprojectionErrorThis == INFINITY) //Bad solve or not seen
 				{
 					continue;
 				}
-				locations.emplace_back(ScoreThis, transformProposed, ThisCameraData.CameraTransform);
+				locations.emplace_back(ScoreThis, transformProposed, ThisCameraData.WorldToCamera);
 			}
 			if (locations.size() == 0)
 			{

@@ -221,12 +221,12 @@ void BoardGL::LoadModels()
 		{MeshNames::trackercube,	"tracker"},
 		{MeshNames::toptracker,		"top tracker"},
 
-		{MeshNames::solarpanel,		"solar panel"},
+		{MeshNames::solarpanel,		"2024/solar panel"},
 
-		{MeshNames::fragile,		"fragile"},
-		{MeshNames::resistant,		"resistant"},
-		{MeshNames::pot,			"pot"},
-		{MeshNames::potted_plant,	"potted_plant"}
+		{MeshNames::fragile,		"2024/fragile"},
+		{MeshNames::resistant,		"2024/resistant"},
+		{MeshNames::pot,			"2024/pot"},
+		{MeshNames::potted_plant,	"2024/potted plant"}
 
 	};
 	//cout << "Loading meshes" << endl;

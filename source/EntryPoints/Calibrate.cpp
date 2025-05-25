@@ -413,7 +413,7 @@ void ReadAndCalibrateStereo(std::vector<LensSettings> &Lenses)
 	double reprojectionError = stereoCalibrate(WorldSpacePoints, ImageSpacePoints[0], ImageSpacePoints[1], Lenses[0].CameraMatrix, Lenses[0].distanceCoeffs, Lenses[1].CameraMatrix, Lenses[1].distanceCoeffs, Lenses[0].ROI.size(), R, T, E, F, CALIB_FIX_INTRINSIC);
 	cout << "Stereo calibration done with " << WorldSpacePoints.size() << ", reprojection error " << reprojectionError << " images, R=" << R << " T=" << T << " E=" << E << " F=" << F << endl;
 	
-	Lenses[1].LensPosition = Affine3d(R,T);
+	Lenses[1].LensPosition = Affine3d(R,T).inv();
 }
 
 Camera* CamToCalib;

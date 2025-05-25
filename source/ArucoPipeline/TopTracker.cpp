@@ -40,7 +40,7 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 		}
 		
 		ReprojectionError = 0;
-		Affine3d WorldToCam = CameraData.CameraTransform.inv();
+		Affine3d WorldToCam = CameraData.WorldToCamera.inv();
 		auto UpVector = GetAxis(WorldToCam.rotation(), 2);
 		auto marker = Markers2D[0];
 		auto& flatimg = marker.CameraCornerPositions;
@@ -76,17 +76,17 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 
 		Matx33d rotationMatrix; //Matrice de rotation Camera -> Tag
 		Rodrigues(rvec, rotationMatrix);
-		Affine3d localTransform(rotationMatrix, tvec), WorldTransform = CameraData.CameraTransform * localTransform;
+		Affine3d localTransform(rotationMatrix, tvec), WorldTransform = CameraData.WorldToCamera * localTransform;
 		if (ExpectedHeight.has_value() ) //2cm tolerance
 		{
 			//bool withinDeltaHeight = abs(WorldTransform.translation()[2] - ExpectedHeight.value()) < 0.02;
 			if (!Robot)
 			{
-				Vec3d LocationOnPlane = LinePlaneIntersection(CameraData.CameraTransform.translation(), 
-					WorldTransform.translation() - CameraData.CameraTransform.translation(), 
+				Vec3d LocationOnPlane = LinePlaneIntersection(CameraData.WorldToCamera.translation(), 
+					WorldTransform.translation() - CameraData.WorldToCamera.translation(), 
 					Vec3d(0,0, ExpectedHeight.value()), Vec3d(0,0,1));
 				WorldTransform.translation(LocationOnPlane);
-				localTransform = CameraData.CameraTransform.inv() * WorldTransform; //Camera, to world, to tag
+				localTransform = CameraData.WorldToCamera.inv() * WorldTransform; //Camera, to world, to tag
 			}
 		}
 		
@@ -105,8 +105,14 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 	}
 	else
 	{
-		assert(0);
-		return Affine3d();
+		auto &marker = Markers3D[0];
+		Affine3d CameraToMarker = marker.FitPlane();
+		Affine3d MarkerToObject = marker.AccumulatedTransform * marker.Marker->Pose;
+		Affine3d CameraToObject = CameraToMarker * MarkerToObject;
+		cout << "Top tracker " << Name << " is at " << CameraToMarker.translation() << " in camera (" 
+			<< (CameraData.WorldToCamera * CameraToObject).translation() << " in world)" << endl;
+		return CameraToObject;
+		//TODO : Handle multiple markers
 	}
 	
 	

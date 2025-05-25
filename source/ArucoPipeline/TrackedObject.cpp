@@ -227,7 +227,7 @@ float TrackedObject::GetSeenMarkers3D(const CameraFeatureData& CameraData, vecto
 	return surface;
 }
 
-float TrackedObject::GetSeenMarkers2D(const CameraFeatureData& CameraData, vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform)
+float TrackedObject::GetSeenMarkers2D(const CameraFeatureData& CameraData, vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform, bool Skip3D)
 {
 	float surface = 0;
 	MarkersSeen.reserve(markers.size());
@@ -241,7 +241,7 @@ float TrackedObject::GetSeenMarkers2D(const CameraFeatureData& CameraData, vecto
 				if (markers[i].number == lensdata.ArucoIndices[lensarucoidx])
 				{
 					//gotcha!
-					if (lensdata.StereoReprojected[lensarucoidx])
+					if (lensdata.StereoReprojected[lensarucoidx] && Skip3D)
 					{
 						continue;
 					}
@@ -272,7 +272,7 @@ float TrackedObject::GetSeenMarkers2D(const CameraFeatureData& CameraData, vecto
 	return surface;
 }
 
-float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const Mat &rvec, const Mat &tvec, 
+float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const Affine3d &CameraToMarker, 
 	const CameraFeatureData &CameraData, map<std::pair<int, int>, ArucoCornerArray> &ReprojectedCorners)
 {
 	float ReprojectionError = 0;
@@ -284,15 +284,16 @@ float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal
 		{
 			continue;
 		}
-		
-		projectPoints(MarkersSeen[i].LocalMarkerCorners, rvec, tvec, CameraData.Lenses[seen.LensIndex].CameraMatrix, CameraData.Lenses[seen.LensIndex].DistanceCoefficients, cornersreproj);
-		//cout << "reprojecting " << MarkersSeen[i].IndexInCameraData << endl;
-		auto &reprojectedThisStorage = ReprojectedCorners[{MarkersSeen[i].LensIndex, MarkersSeen[i].IndexInCameraData}];
+		const auto& lens = CameraData.Lenses[seen.LensIndex];
+		Affine3d LensToMarker = lens.CameraToLens.inv() * CameraToMarker;
+		projectPoints(seen.LocalMarkerCorners, LensToMarker.rotation(), LensToMarker.translation(), lens.CameraMatrix, lens.DistanceCoefficients, cornersreproj);
+		//cout << "reprojecting " << seen.IndexInCameraData << endl;
+		auto &reprojectedThisStorage = ReprojectedCorners[{seen.LensIndex, seen.IndexInCameraData}];
 		reprojectedThisStorage.resize(cornersreproj.size());
 		for (size_t j = 0; j < cornersreproj.size(); j++)
 		{
 			reprojectedThisStorage[j] = cornersreproj[j];
-			Point2f diff = MarkersSeen[i].CameraCornerPositions[j] - Point2f(cornersreproj[j]);
+			Point2f diff = seen.CameraCornerPositions[j] - Point2f(cornersreproj[j]);
 			ReprojectionError += sqrt(diff.ddot(diff));
 		}
 	}
@@ -305,10 +306,10 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 	vector<ArucoViewCameraLocal> SeenStereo, SeenMono;
 
 	float Volume = GetSeenMarkers3D(CameraData, SeenStereo, Affine3d::Identity());
-	Surface = GetSeenMarkers2D(CameraData, SeenMono, Affine3d::Identity());
+	Surface = GetSeenMarkers2D(CameraData, SeenMono, Affine3d::Identity(), markers.size() == 1);
 	ReprojectionError = INFINITY;
 	
-	if (SeenStereo.size() == 0 || SeenMono.size() > SeenStereo.size()+1) //More than one aruco tag seen by both cameras
+	if (SeenStereo.size() == 0 || SeenMono.size() > SeenStereo.size()+1 || true) //More than one aruco tag seen by both cameras
 	{
 		int nummarkersseen = SeenMono.size();
 		if (nummarkersseen == 0)
@@ -338,7 +339,7 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 			}
 		}
 		
-		Affine3d localTransform;
+		Affine3d CameraToObject;
 		vector<Point3d> flatobj;
 		vector<Point2f> flatimg;
 		//vector<Point2d> flatreproj;
@@ -388,18 +389,27 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 		}
 		
 		solvePnPRefineLM(flatobj, flatimg, CameraData.Lenses[bestlens].CameraMatrix, distCoeffs, rvec, tvec);
-		ReprojectionError = ReprojectSeenMarkers(SeenMono, rvec, tvec, CameraData, ReprojectedCorners);
+		Affine3d LensToMarker = Affine3d(rvec, tvec);
+		Affine3d CameraToMarker = CameraData.Lenses[bestlens].CameraToLens * LensToMarker;
+		CameraToObject = CameraToMarker * objectToMarker.inv();
+
+		ReprojectionError = ReprojectSeenMarkers(SeenMono, CameraToMarker, CameraData, ReprojectedCorners);
 		
 		ReprojectionError /= nummarkersseen;
 		//cout << "Reprojection error : " << ReprojectionError << endl;
-		Matx33d rotationMatrix; //Matrice de rotation Camera -> Tag
-		Rodrigues(rvec, rotationMatrix);
-		localTransform = Affine3d(rotationMatrix, tvec) * objectToMarker.inv();
 
-		return localTransform;
+		return CameraToObject;
 	}
 	else
 	{
+		if (SeenStereo.size() == 1 || true)
+		{
+			auto &marker = SeenStereo[0];
+			Affine3d LensToMarker = marker.FitPlane();
+			Affine3d ObjectToMarker = marker.AccumulatedTransform * marker.Marker->Pose;
+			return LensToMarker * ObjectToMarker.inv();
+		}
+		
 		assert(0);
 		//TODO
 		return Affine3d();

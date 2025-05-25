@@ -93,7 +93,7 @@ void PostProcessJardinieres::Process(std::vector<CameraImageData> &ImageData, st
 		return;
 	}
 	const auto &ThisFeatureData = FeatureData[0];
-	const auto InvCameraMatrix = ThisFeatureData.CameraTransform.inv();
+	const auto InvCameraMatrix = ThisFeatureData.WorldToCamera.inv();
 	Size WantedImageSize(65,30);
 	vector<Vec2f> AffineTarget{{0,0}, {0, (float)WantedImageSize.height}, Vec2f(WantedImageSize.width, WantedImageSize.height)};
 	int adaptive_threshold_size = 5;
@@ -162,7 +162,7 @@ void PostProcessJardinieres::Process(std::vector<CameraImageData> &ImageData, st
 		}
 		zone.Contacting = zone.ContactThisTick;
 
-		ObjectData obj(ObjectType::Jardiniere, zone.name, Affine3d::Identity(), ThisImageData.GrabTime);
+		ObjectData obj(ObjectType::Jardiniere2024, zone.name, Affine3d::Identity(), ThisImageData.GrabTime);
 		obj.metadata["numPlantes"] = zone.NumPlants;
 		obj.metadata["whitePixels"] = NumWhitePixels;
 		if (zone.LastContactStart != ObjectData::TimePoint())

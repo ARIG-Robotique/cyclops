@@ -27,7 +27,7 @@ class PostProcessYoloDeflicker : public PostProcess
 			
 			if (other.type != type)
 			{
-				if ((type == ObjectType::Fragile && other.type == ObjectType::Resistant) || (other.type == ObjectType::Fragile && type == ObjectType::Resistant))
+				if ((type == ObjectType::Fragile2024 && other.type == ObjectType::Resistant2024) || (other.type == ObjectType::Fragile2024 && type == ObjectType::Resistant2024))
 				{
 				}
 				else

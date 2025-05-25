@@ -134,7 +134,7 @@ void MappingSolve(void)
 			CameraFeatureData &ThisData = ImageData[i];
 			ThisData.CameraMatrix = CameraMatrix;
 			ThisData.DistanceCoefficients = Mat::zeros(4,1, CV_64F);
-			ThisData.CameraTransform = Affine3d::Identity();
+			ThisData.WorldToCamera = Affine3d::Identity();
 			detector.detectMarkers(imageundist, ThisData.ArucoCorners, ThisData.ArucoIndices);
 			cout << "Image " << imagenames[i] << " has " << ThisData.ArucoIndices.size() << " detected tags" << endl;
 		}
@@ -250,7 +250,7 @@ void MappingSolve(void)
 				data.DistanceCoefficients = Mat::zeros(4,1, CV_64F);
 				data.ArucoCorners = observed.Observations;
 				data.ArucoIndices = {observed.ID};
-				data.CameraTransform = observed.CameraPositions[0];
+				data.WorldToCamera = observed.CameraPositions[0];
 				float surface, error;
 				map<int, ArucoCornerArray> ReprojectedCorners;
 				//roundabout way of getting a solvepnp, but at least i'm using stuff that's already made

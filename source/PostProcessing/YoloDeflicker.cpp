@@ -6,7 +6,7 @@ using namespace std;
 
 bool PostProcessYoloDeflicker::IsYolo(const ObjectData& obj)
 {
-	return obj.type >= ObjectType::Fragile && obj.type <= ObjectType::PottedPlant;
+	return obj.type >= ObjectType::Fragile2024 && obj.type <= ObjectType::PottedPlant2024;
 }
 
 void PostProcessYoloDeflicker::Process(vector<CameraImageData> &ImageData, vector<CameraFeatureData> &FeatureData, vector<ObjectData> &Objects)

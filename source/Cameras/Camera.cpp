@@ -184,7 +184,13 @@ CameraImageData Camera::GetFrame(bool Distorted) const
 vector<ObjectData> Camera::ToObjectData() const
 {
 	ObjectData camera(ObjectType::Camera, Name, Location, LastSeenTick);
-	return {camera};
+	std::vector<ObjectData> datas = {camera};
+	for (size_t lensidx = 0; lensidx < Settings->Lenses.size(); lensidx++)
+	{
+		datas.emplace_back(ObjectType::Lens, "Lens " + to_string(lensidx), Location * Settings->Lenses[lensidx].LensPosition, LastSeenTick);
+	}
+	
+	return datas;
 }
 
 void Camera::Record(filesystem::path rootPath, int RecordIdx)

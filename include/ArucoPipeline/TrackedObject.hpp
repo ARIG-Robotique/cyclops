@@ -111,12 +111,12 @@ public:
 
 	//Returns the surface area, markers that are seen by the camera that belong to this object or it's childs are stored in MarkersSeen
 	virtual float GetSeenMarkers2D(const CameraFeatureData& CameraData, std::vector<ArucoViewCameraLocal> &MarkersSeen, 
-		cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity());
+		cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity(), bool Skip3D = true);
 
 	virtual float GetSeenMarkers3D(const CameraFeatureData& CameraData, std::vector<ArucoViewCameraLocal> &MarkersSeen, 
 		cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity());
 
-	float ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const cv::Mat &rvec, const cv::Mat &tvec, 
+	float ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const cv::Affine3d &CameraToMarker, 
 		const CameraFeatureData &CameraData, std::map<std::pair<int, int>, ArucoCornerArray> &ReprojectedCorners);
 
 	//Given corners, solve this object's location using multiple tags at once

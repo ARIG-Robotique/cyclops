@@ -33,7 +33,7 @@ void CameraFeatureData::CopyEssentials(const CameraImageData &source)
 		auto &lens = source.lenses[i];
 		feat.CameraMatrix = lens.CameraMatrix;
 		feat.DistanceCoefficients = lens.distanceCoeffs;
-		feat.LensTransform = lens.LensPosition;
+		feat.CameraToLens = lens.LensPosition;
 		feat.ROI = lens.ROI;
 	}
 	FrameSize = source.Image.size();

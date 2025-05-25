@@ -49,7 +49,7 @@ void PostProcessStockPlants::Process(std::vector<CameraImageData> &ImageData, st
 	for (auto &obj : Objects)
 	{
 		Vec2d pos2d = obj.GetPos2D();
-		bool plant = obj.type == ObjectType::Fragile || obj.type == ObjectType::Resistant;
+		bool plant = obj.type == ObjectType::Fragile2024 || obj.type == ObjectType::Resistant2024;
 		bool robot = obj.type == ObjectType::Robot;
 		if (!robot && !plant)
 		{
@@ -76,7 +76,7 @@ void PostProcessStockPlants::Process(std::vector<CameraImageData> &ImageData, st
 	
 	for (auto &zone : Stocks)
 	{
-		ObjectData obj(ObjectType::PlantStock, zone.name, Affine3d(Vec3d::all(0), Vec3d(zone.position[0], zone.position[1], 0)));
+		ObjectData obj(ObjectType::PlantStock2024, zone.name, Affine3d(Vec3d::all(0), Vec3d(zone.position[0], zone.position[1], 0)));
 		obj.metadata["numPlantes"] = zone.NumPlants;
 		bool intact = zone.LastTouched == ObjectData::TimePoint();
 		obj.metadata["intact"] = intact;

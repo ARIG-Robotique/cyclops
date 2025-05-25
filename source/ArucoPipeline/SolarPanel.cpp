@@ -42,7 +42,7 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 	const auto& markerobj = markers[0];
 	auto &flatobj = markerobj.GetObjectPointsNoOffset();
 	ReprojectionError = 0;
-	Affine3d WorldToCam = CameraData.CameraTransform.inv();
+	Affine3d WorldToCam = CameraData.WorldToCamera.inv();
 	vector<Point2d> ImageSolarPanels;
 	cv::projectPoints(PanelPositions, WorldToCam.rvec(), WorldToCam.translation(), CameraData.CameraMatrix, CameraData.DistanceCoefficients, ImageSolarPanels);
 	auto UpVector = GetAxis(WorldToCam.rotation(), 2);
@@ -96,12 +96,12 @@ Affine3d SolarPanel::GetObjectTransform(const CameraFeatureData& CameraData, flo
 
 		Matx33d rotationMatrix; //Matrice de rotation Camera -> Tag
 		Rodrigues(rvec, rotationMatrix);
-		Matx33d RefinedRotation = CameraData.CameraTransform.rotation() * rotationMatrix;
+		Matx33d RefinedRotation = CameraData.WorldToCamera.rotation() * rotationMatrix;
 		PanelSeenLastTick[closest] = true;
 		auto & rot = PanelRotations[closest];
 		rot = GetRotZ(RefinedRotation);
 		//cout << "Panel " << closest << " has a rotation of " << PanelRotations[closest]*180.0/M_PI << " deg" << endl;
-		Affine3d ExactTransform = CameraData.CameraTransform.inv() * Affine3d(MakeRotationFromZX(Vec3d(0,0,1), Vec3d(cos(rot),sin(rot),0)), PanelPositions[closest]) * markerobj.Pose; //camera to world to panel to marker
+		Affine3d ExactTransform = CameraData.WorldToCamera.inv() * Affine3d(MakeRotationFromZX(Vec3d(0,0,1), Vec3d(cos(rot),sin(rot),0)), PanelPositions[closest]) * markerobj.Pose; //camera to world to panel to marker
 		array<Point2d, ARUCO_CORNERS_PER_TAG> ReprojectedCornersDouble;
 		projectPoints(markerobj.GetObjectPointsNoOffset(), ExactTransform.rvec(), ExactTransform.translation(), CameraData.CameraMatrix, CameraData.DistanceCoefficients, ReprojectedCornersDouble);
 		auto &ReprojectedCornersStorage = ReprojectedCorners[marker.IndexInCameraData];
@@ -135,7 +135,7 @@ vector<ObjectData> SolarPanel::ToObjectData() const
 	{
 		double rot = PanelRotations[i];
 		Affine3d location(MakeRotationFromZX(Vec3d(0,0,1), Vec3d(cos(rot),sin(rot),0)), PanelPositions[i]);
-		objects.emplace_back(ObjectType::SolarPanel, "Solar Panel " + to_string(i), location, PanelLastSeenTime[i]);
+		objects.emplace_back(ObjectType::SolarPanel2024, "Solar Panel " + to_string(i), location, PanelLastSeenTime[i]);
 	}
 	return objects;
 }
