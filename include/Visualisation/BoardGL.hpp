@@ -22,16 +22,16 @@ enum class MeshNames
 	robot,
 	tag,
 	arena,
-	brio,
+	camera,
 	skybox,
 	axis,
 	trackercube,
 	toptracker,
-	solarpanel,
-	fragile,
-	resistant,
-	pot,
-	potted_plant
+	solarpanel2024,
+	fragile2024,
+	resistant2024,
+	pot2024,
+	potted_plant2024
 };
 
 struct GLObject

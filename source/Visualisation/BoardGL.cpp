@@ -215,18 +215,19 @@ void BoardGL::LoadModels()
 		{MeshNames::arena,			"board"},
 		{MeshNames::robot,			"robot"},
 		{MeshNames::axis,			"axis"},
-		{MeshNames::brio,			"brio"},
+		{MeshNames::camera,			"camera"},
 		{MeshNames::skybox,			"skybox"},
 		{MeshNames::tag, 			"tag"},
 		{MeshNames::trackercube,	"tracker"},
 		{MeshNames::toptracker,		"top tracker"},
 
-		{MeshNames::solarpanel,		"2024/solar panel"},
-
-		{MeshNames::fragile,		"2024/fragile"},
-		{MeshNames::resistant,		"2024/resistant"},
-		{MeshNames::pot,			"2024/pot"},
-		{MeshNames::potted_plant,	"2024/potted plant"}
+		#if 0
+		{MeshNames::solarpanel2024,		"2024/solar panel"},
+		{MeshNames::fragile2024,		"2024/fragile"},
+		{MeshNames::resistant2024,		"2024/resistant"},
+		{MeshNames::pot2024,			"2024/pot"},
+		{MeshNames::potted_plant2024,	"2024/potted plant"}
+		#endif
 
 	};
 	//cout << "Loading meshes" << endl;
@@ -421,8 +422,8 @@ bool BoardGL::Tick(std::vector<GLObject> data)
 				Meshes[MeshNames::tag].Draw(ParameterID, true);
 			}
 			break;
-		case MeshNames::brio : //Add an axis to the camera
-			Meshes[MeshNames::axis].Draw(ParameterID);
+		case MeshNames::camera : //Add an axis to the camera
+			//Meshes[MeshNames::axis].Draw(ParameterID);
 			[[fallthrough]];
 		default:
 			Meshes[odata.type].Draw(ParameterID);

@@ -11,6 +11,7 @@
 using namespace std;
 using namespace cv;
 
+bool IdleOnStart = true;
 bool ScreenCapture = false;
 string Scenario = "";
 aruco::ArucoDetector ArucoDet;
@@ -73,14 +74,14 @@ void InitConfig()
 
 	CopyOrDefaultRef(configobj, "Scenario", Scenario);
 	CopyOrDefaultRef(configobj, "ScreenCapture", ScreenCapture);
+	CopyOrDefaultRef(configobj, "IdleOnStart", IdleOnStart);
 
 	nlohmann::json &Capture = CopyOrDefaultJson(configobj, "Capture");
 	{
-		nlohmann::json& Resolution = CopyOrDefaultJson(Capture, "Resolution");
 		CopyOrDefaultRef(Capture, 		"Framerate", 		CaptureCfg.CaptureFramerate);
 		CopyOrDefaultRef(Capture, 		"FramerateDivider", CaptureCfg.FramerateDivider);
 		CopyOrDefaultRef(Capture, 		"Method", 			CaptureCfg.StartType);
-		CopyOrDefaultRef(Resolution, 	"Reduction", 		CaptureCfg.ReductionFactor);
+		CopyOrDefaultRef(Capture, 		"Reduction", 		CaptureCfg.ReductionFactor);
 		CopyOrDefaultRef(Capture, 		"CameraFilter", 	CaptureCfg.filter);
 		
 	}
@@ -144,6 +145,13 @@ string GetScenario()
 {
 	InitConfig();
 	return Scenario;
+}
+
+
+bool GetIdleOnStart()
+{
+	InitConfig();
+	return IdleOnStart;
 }
 
 bool DoScreenCapture()

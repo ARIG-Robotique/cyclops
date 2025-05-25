@@ -223,6 +223,7 @@ void Camera::Record(filesystem::path rootPath, int RecordIdx)
 	}
 	
 	#if 1
+	(void) RecordIdx;
 	if (RecordOutput)
 	{
 		auto image = GetFrame(true);

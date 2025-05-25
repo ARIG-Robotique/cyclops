@@ -25,6 +25,8 @@ std::filesystem::path GetAssetsPath();
 
 std::string GetScenario();
 
+bool GetIdleOnStart();
+
 bool DoScreenCapture();
 
 const cv::aruco::ArucoDetector& GetArucoDetector();

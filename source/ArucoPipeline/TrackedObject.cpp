@@ -306,6 +306,7 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 	vector<ArucoViewCameraLocal> SeenStereo, SeenMono;
 
 	float Volume = GetSeenMarkers3D(CameraData, SeenStereo, Affine3d::Identity());
+	
 	Surface = GetSeenMarkers2D(CameraData, SeenMono, Affine3d::Identity(), markers.size() == 1);
 	ReprojectionError = INFINITY;
 	

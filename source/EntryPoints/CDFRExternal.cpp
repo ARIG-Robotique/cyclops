@@ -143,7 +143,7 @@ void CDFRExternal::ThreadEntryPoint()
 	else
 	{
 		CameraMan = make_unique<CameraManagerV4L2>(GetCaptureMethod(), GetCaptureConfig().filter, false);
-		SetIdle(true);
+		SetIdle(GetIdleOnStart());
 	}
 
 	YoloDetector = make_unique<YoloDetect>("cdfr", 4);
