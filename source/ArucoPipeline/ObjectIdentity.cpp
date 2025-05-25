@@ -65,10 +65,10 @@ vector<GLObject> ObjectData::ToGLObjects(const vector<ObjectData>& data, Clock::
 	TimePoint OldCutoff = Clock::now() - maxAge;
 	for (size_t i = 0; i < data.size(); i++)
 	{
-		auto &object = data[i];
+		const ObjectData &object = data[i];
 		if (object.LastSeen < OldCutoff)
 		{
-			//cout << "Filtering " << object.name << " because it's " << chrono::duration<double>(Clock::now() - object.LastSeen).count() << "s old" << endl;
+			cout << "Filtering " << object.name << " because it's " << chrono::duration<double>(Clock::now() - object.LastSeen).count() << "s old" << endl;
 			continue;
 		}
 		auto obj = object.ToGLObject();

@@ -116,6 +116,7 @@ public:
 	virtual float GetSeenMarkers3D(const CameraFeatureData& CameraData, std::vector<ArucoViewCameraLocal> &MarkersSeen, 
 		cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity());
 
+	//Reprojects some seen markers, returns the reprojection error
 	float ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const cv::Affine3d &CameraToMarker, 
 		const CameraFeatureData &CameraData, std::map<std::pair<int, int>, ArucoCornerArray> &ReprojectedCorners);
 

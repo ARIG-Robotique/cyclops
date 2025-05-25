@@ -31,7 +31,10 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 	std::vector<ArucoViewCameraLocal> Markers2D, Markers3D;
 	float Volume = GetSeenMarkers3D(CameraData, Markers3D);
 	Surface = GetSeenMarkers2D(CameraData, Markers2D);
+	Affine3d CameraToMarker;
 
+	ArucoMarker markerobj;
+	ArucoViewCameraLocal SeenMarker;
 	if (Markers3D.size() == 0)
 	{
 		if (Markers2D.size() == 0)
@@ -42,9 +45,9 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 		ReprojectionError = 0;
 		Affine3d WorldToCam = CameraData.WorldToCamera.inv();
 		auto UpVector = GetAxis(WorldToCam.rotation(), 2);
-		auto marker = Markers2D[0];
-		auto& flatimg = marker.CameraCornerPositions;
-		const auto& markerobj = markers[0];
+		SeenMarker = Markers2D[0];
+		auto& flatimg = SeenMarker.CameraCornerPositions;
+		markerobj = markers[0];
 		auto &flatobj = markerobj.GetObjectPointsNoOffset();
 		
 		if (Markers2D.size() > 1)
@@ -57,7 +60,7 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 		try
 		{
 			solved = SolvePnPUpright(UpVector, 0.8, flatobj, flatimg, 
-				CameraData.Lenses[marker.LensIndex].CameraMatrix, CameraData.Lenses[marker.LensIndex].DistanceCoefficients, 
+				CameraData.Lenses[SeenMarker.LensIndex].CameraMatrix, CameraData.Lenses[SeenMarker.LensIndex].DistanceCoefficients, 
 				rvec, tvec, false, SOLVEPNP_IPPE_SQUARE);
 		}
 		catch(const std::exception& e)
@@ -71,50 +74,41 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 		}
 		
 		solvePnPRefineLM(flatobj, flatimg, 
-			CameraData.Lenses[marker.LensIndex].CameraMatrix, CameraData.Lenses[marker.LensIndex].DistanceCoefficients, 
+			CameraData.Lenses[SeenMarker.LensIndex].CameraMatrix, CameraData.Lenses[SeenMarker.LensIndex].DistanceCoefficients, 
 			rvec, tvec);
 
-		Matx33d rotationMatrix; //Matrice de rotation Camera -> Tag
-		Rodrigues(rvec, rotationMatrix);
-		Affine3d localTransform(rotationMatrix, tvec), WorldTransform = CameraData.WorldToCamera * localTransform;
-		if (ExpectedHeight.has_value() ) //2cm tolerance
-		{
-			//bool withinDeltaHeight = abs(WorldTransform.translation()[2] - ExpectedHeight.value()) < 0.02;
-			if (!Robot)
-			{
-				Vec3d LocationOnPlane = LinePlaneIntersection(CameraData.WorldToCamera.translation(), 
-					WorldTransform.translation() - CameraData.WorldToCamera.translation(), 
-					Vec3d(0,0, ExpectedHeight.value()), Vec3d(0,0,1));
-				WorldTransform.translation(LocationOnPlane);
-				localTransform = CameraData.WorldToCamera.inv() * WorldTransform; //Camera, to world, to tag
-			}
-		}
-		
-		//cout << "Panel " << closest << " has a rotation of " << PanelRotations[closest]*180.0/M_PI << " deg" << endl;
-		array<Point2d, ARUCO_CORNERS_PER_TAG> ReprojectedCornersDouble;
-		projectPoints(markerobj.GetObjectPointsNoOffset(), rvec, tvec, 
-			CameraData.Lenses[marker.LensIndex].CameraMatrix, CameraData.Lenses[marker.LensIndex].DistanceCoefficients, 
-			ReprojectedCornersDouble);
-		auto &ReprojectedCornersStorage = ReprojectedCorners[{marker.LensIndex, marker.IndexInCameraData}];
-		ReprojectedCornersStorage.resize(ReprojectedCornersDouble.size());
-		for (size_t i = 0; i < ReprojectedCornersDouble.size(); i++)
-		{
-			ReprojectedCornersStorage[i] = ReprojectedCornersDouble[i];
-		}
-		return localTransform;
+		CameraToMarker = Affine3d(rvec, tvec);
 	}
 	else
 	{
-		auto &marker = Markers3D[0];
-		Affine3d CameraToMarker = marker.FitPlane();
-		Affine3d MarkerToObject = marker.AccumulatedTransform * marker.Marker->Pose;
-		Affine3d CameraToObject = CameraToMarker * MarkerToObject;
-		cout << "Top tracker " << Name << " is at " << CameraToMarker.translation() << " in camera (" 
-			<< (CameraData.WorldToCamera * CameraToObject).translation() << " in world)" << endl;
-		return CameraToObject;
+		SeenMarker = Markers3D[0];
+		CameraToMarker = SeenMarker.FitPlane();
+		Surface = Volume;
 		//TODO : Handle multiple markers
 	}
 	
+	Affine3d WorldTransform = CameraData.WorldToCamera * CameraToMarker;
+	if (ExpectedHeight.has_value() ) //2cm tolerance
+	{
+		//bool withinDeltaHeight = abs(WorldTransform.translation()[2] - ExpectedHeight.value()) < 0.02;
+		if (!Robot)
+		{
+			Vec3d LocationOnPlane = LinePlaneIntersection(CameraData.WorldToCamera.translation(), 
+				WorldTransform.translation() - CameraData.WorldToCamera.translation(), 
+				Vec3d(0,0, ExpectedHeight.value()), Vec3d(0,0,1));
+			WorldTransform.translation(LocationOnPlane);
+			CameraToMarker = CameraData.WorldToCamera.inv() * WorldTransform; //Camera, to world, to tag
+		}
+	}
+	
+	Affine3d MarkerToObject = SeenMarker.AccumulatedTransform * SeenMarker.Marker->Pose;
+	Affine3d CameraToObject = CameraToMarker * MarkerToObject;
+	cout << "Top tracker " << Name << " is at " << CameraToMarker.translation() << " in camera (" 
+		<< (CameraData.WorldToCamera * CameraToObject).translation() << " in world)" << endl;
+	//cout << "Panel " << closest << " has a rotation of " << PanelRotations[closest]*180.0/M_PI << " deg" << endl;
+	ReprojectSeenMarkers({SeenMarker}, CameraToMarker, CameraData, ReprojectedCorners);
+	
+	return CameraToObject;
 	
 }
 
