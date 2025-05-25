@@ -27,11 +27,15 @@ enum class MeshNames
 	axis,
 	trackercube,
 	toptracker,
+	
 	solarpanel2024,
 	fragile2024,
 	resistant2024,
 	pot2024,
-	potted_plant2024
+	potted_plant2024,
+
+	can2025,
+	plank2025
 };
 
 struct GLObject

@@ -67,6 +67,8 @@ enum class ObjectType
 
 	DropZone2025,
 	Stock2025,
+	Can2025,
+	Plank2025,
 
 	Team
 };

@@ -226,7 +226,13 @@ void BoardGL::LoadModels()
 		{MeshNames::fragile2024,		"2024/fragile"},
 		{MeshNames::resistant2024,		"2024/resistant"},
 		{MeshNames::pot2024,			"2024/pot"},
-		{MeshNames::potted_plant2024,	"2024/potted plant"}
+		{MeshNames::potted_plant2024,	"2024/potted plant"},
+		#endif
+
+		#if 1
+		{MeshNames::plank2025,		"2025/plank"},
+		{MeshNames::can2025,		"2025/can"},
+
 		#endif
 
 	};
