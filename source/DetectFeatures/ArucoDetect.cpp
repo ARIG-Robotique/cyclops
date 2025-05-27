@@ -29,7 +29,7 @@ void MakeDetectors()
 	{
 		auto params = aruco::DetectorParameters();
 		//enable corner refine only if aruco runs at native resolution
-		params.cornerRefinementMethod = GetReductionFactor() >= 1.0 ? aruco::CORNER_REFINE_CONTOUR : aruco::CORNER_REFINE_NONE;
+		params.cornerRefinementMethod = GetReductionFactor() >= 1.0 ? aruco::CORNER_REFINE_SUBPIX : aruco::CORNER_REFINE_NONE;
 		params.useAruco3Detection = false;
 		params.adaptiveThreshConstant = adaptiveThreshConstant;
 
@@ -346,7 +346,7 @@ void PolyCameraArucoMerge(CameraFeatureData &InOutData)
 					}
 					else
 					{
-						cerr << "Error is too big to merge : " << score << "(for aruco #" << lens1data.ArucoIndices[aruco1idx] << ")" << endl;
+						//cerr << "Error is too big to merge : " << score << "(for aruco #" << lens1data.ArucoIndices[aruco1idx] << ")" << endl;
 					}
 				}
 			}

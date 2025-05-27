@@ -12,6 +12,7 @@
 
 #include <Misc/math2d.hpp>
 #include <Misc/math3d.hpp>
+#include <Misc/path.hpp>
 
 #include <Cameras/Calibfile.hpp>
 
@@ -127,7 +128,7 @@ bool Camera::Read()
 	return false;
 }
 
-vector<vector<Point2d>> AlignLensCenters(const CameraSettings &Settings)
+vector<pair<vector<Point2d>, Affine3d>> AlignLensCenters(const CameraSettings &Settings)
 {
 	size_t num_lenses = Settings.Lenses.size();
 	Point3d LensMeanCenter, LensMeanForward, LensMeanX;
@@ -135,9 +136,9 @@ vector<vector<Point2d>> AlignLensCenters(const CameraSettings &Settings)
 	for (size_t i = 0; i < num_lenses; i++)
 	{
 		auto &lens = Settings.Lenses[i];
-		LensMeanCenter = Vec3d(LensMeanCenter) + lens.LensPosition.translation();
-		LensMeanForward = Vec3d(LensMeanForward) + Vec3d(GetAxis(lens.LensPosition.rotation(), 2).val);
-		LensMeanX = Vec3d(LensMeanX) + Vec3d(GetAxis(lens.LensPosition.rotation(), 0).val);
+		LensMeanCenter = Vec3d(LensMeanCenter) + lens.CameraToLens.translation();
+		LensMeanForward = Vec3d(LensMeanForward) + Vec3d(GetAxis(lens.CameraToLens.rotation(), 2).val);
+		LensMeanX = Vec3d(LensMeanX) + Vec3d(GetAxis(lens.CameraToLens.rotation(), 0).val);
 		OpticalMeanCenter.x += lens.CameraMatrix.at<double>(0,2);
 		OpticalMeanCenter.y += lens.CameraMatrix.at<double>(1,2);
 	}
@@ -151,13 +152,17 @@ vector<vector<Point2d>> AlignLensCenters(const CameraSettings &Settings)
 	OptimalMatrix.at<double>(0,2) = OpticalMeanCenter.x;
 	OptimalMatrix.at<double>(1,2) = OpticalMeanCenter.y;
 	vector<Point3d> LensFocusPoints = {LensMeanCenter + LensMeanForward*5.0, LensMeanCenter + LensMeanForward*5.0+LensMeanX};
-	vector<vector<Point2d>> ConvergencePoints(num_lenses);
+	vector<pair<vector<Point2d>, Affine3d>> ConvergencePoints(num_lenses);
 	for (size_t i = 0; i < num_lenses; i++)
 	{
 		auto &lens = Settings.Lenses[i];
-		vector<Point2d> &LocalConvergencePoints = ConvergencePoints[i];
-		projectPoints(LensFocusPoints, lens.LensPosition.rotation(), lens.LensPosition.translation(), 
+		vector<Point2d> &LocalConvergencePoints = ConvergencePoints[i].first;
+		Affine3d &NewLensTransform = ConvergencePoints[i].second;
+		projectPoints(LensFocusPoints, lens.CameraToLens.rotation(), lens.CameraToLens.translation(), 
 			OptimalMatrix, Mat(), LocalConvergencePoints);
+		Vec3d forward = Vec3d(LensFocusPoints[0]) - lens.CameraToLens.translation();
+		Vec3d right(GetAxis(lens.CameraToLens.rotation(), 0).val);
+		NewLensTransform = Affine3d(MakeRotationFromZX(forward, right), lens.CameraToLens.translation());
 	}
 	return ConvergencePoints;
 }
@@ -168,10 +173,12 @@ void Camera::Undistort()
 	if (!HasUndistortionMaps)
 	{
 		//assert(Settings->IsMono());
+		#if 0
 		double resolution_multiplier = Settings->UndistortFocalLengthMuliply;
-		//double resolution_multiplier = 1;
-		cv::Size rescaled_resolution = Size2d(Settings->Resolution)*resolution_multiplier;
-		Mat map1(rescaled_resolution, CV_32F), map2(rescaled_resolution, CV_32F);
+		#else
+		double resolution_multiplier = 1;
+		#endif
+		Size rescaled_resolution = Size2d(Settings->Resolution)*resolution_multiplier;
 		Size cammatsz = Settings->Lenses[0].CameraMatrix.size();
 		if (cammatsz.height != 3 || cammatsz.width != 3)
 		{
@@ -181,32 +188,80 @@ void Camera::Undistort()
 		}
 		//cout << "Creating undistort map using Camera Matrix " << endl << setcopy.CameraMatrix << endl 
 		//<< " and Distance coeffs " << endl << setcopy.distanceCoeffs << endl;
-		auto lens_centers = AlignLensCenters(*Settings);
 		LensesUndistorted.resize(Settings->Lenses.size());
-		
+		std::vector<Matx33d> R(Settings->Lenses.size());
 		for (size_t i = 0; i < Settings->Lenses.size(); i++)
 		{
 			auto &lens = Settings->Lenses[i];
 			auto &lens_undist = LensesUndistorted[i];
 			lens_undist = lens;
-			lens_undist.CameraMatrix = Settings->Lenses[0].CameraMatrix.clone();
-			lens_undist.CameraMatrix.at<double>(0,0) /= Settings->UndistortFocalLengthMuliply/resolution_multiplier;
-			lens_undist.CameraMatrix.at<double>(1,1) /= Settings->UndistortFocalLengthMuliply/resolution_multiplier;
-			lens_undist.CameraMatrix.at<double>(0,2) = lens_centers[i][0].x*resolution_multiplier;
-			lens_undist.CameraMatrix.at<double>(1,2) = lens_centers[i][0].y*resolution_multiplier;
+
+			lens_undist.CameraMatrix = Settings->Lenses[i].CameraMatrix.clone();
+			
+			float focal_length_multiplier = Settings->UndistortFocalLengthMuliply;
+			
+			lens_undist.CameraMatrix.at<double>(0,0) *= resolution_multiplier/focal_length_multiplier;
+			lens_undist.CameraMatrix.at<double>(1,1) *= resolution_multiplier/focal_length_multiplier;
+			lens_undist.CameraMatrix.at<double>(0,2) *= resolution_multiplier;
+			lens_undist.CameraMatrix.at<double>(1,2) *= resolution_multiplier;
+
 			lens_undist.distanceCoeffs = Mat::zeros(4,1, CV_64F);
+
 			lens_undist.ROI = Rect2i(lens.ROI.tl()*resolution_multiplier, lens.ROI.br()*resolution_multiplier);
-			auto submap1 = map1(lens_undist.ROI), submap2 = map2(lens_undist.ROI);
-			initUndistortRectifyMap(lens.CameraMatrix, lens.distanceCoeffs, Mat::eye(3,3, CV_64F), 
-			lens_undist.CameraMatrix, lens_undist.ROI.size(), CV_32FC1, submap1, submap2);
+			R[i] = Matx33d::eye();
 		}
-		map1.copyTo(UndistMap1);
-		map2.copyTo(UndistMap2);
+		#if 1
+		if (Settings->IsStereo())
+		{
+			auto &lens1 = Settings->Lenses[0], &lens2 = Settings->Lenses[1];
+			Affine3d Lens1ToLens2 = lens1.CameraToLens.inv() * lens2.CameraToLens;
+			Affine3d Lens2ToLens1 = Lens1ToLens2.inv();
+			#if 1
+			Matx33d &R1 = R[0], &R2 = R[1];
+			#else
+			Matx33d R1, R2;
+			#endif
+			Affine3d &AffineToUse = Lens2ToLens1;
+			auto R = AffineToUse.rotation();
+			auto T = AffineToUse.translation();
+			Mat &P1 = LensesUndistorted[0].CameraMatrix, &P2 = LensesUndistorted[1].CameraMatrix;
+			Mat Q;
+			stereoRectify(P1, lens1.distanceCoeffs, P2, lens2.distanceCoeffs,
+				lens1.ROI.size(), R, T, R1, R2, P1, P2, Q, 
+				CALIB_ZERO_DISPARITY, -1, lens1.ROI.size());
+			
+			auto R_new = R2*R*R1.t();
+			auto T_new = R2*T;
+			Affine3d Lens2ToLens1_new(R_new, T_new);
+			LensesUndistorted[1].CameraToLens = lens1.CameraToLens*Lens2ToLens1_new.inv();
+
+			cout << " R = " << R << " R_new = " << R_new << " T = " << T << " T_new = " << T_new << endl;
+		}
+		#endif
+
+		UndistMaps.first = UMat(rescaled_resolution, CV_32FC1); UndistMaps.second = UMat(rescaled_resolution, CV_32FC1);
+		
+		for (size_t i = 0; i < Settings->Lenses.size(); i++)
+		{
+
+			auto &lens = Settings->Lenses[i];
+			auto &lens_undist = LensesUndistorted[i];
+			Mat map1(lens_undist.ROI.size(), CV_32FC1), map2(lens_undist.ROI.size(), CV_32FC1);
+
+			initUndistortRectifyMap(lens.CameraMatrix, lens.distanceCoeffs, R[i], 
+			lens_undist.CameraMatrix, lens_undist.ROI.size(), map1.type(), map1, map2);
+			map1 += lens.ROI.x;
+			map2 += lens.ROI.y;
+			map1.copyTo(UndistMaps.first(lens_undist.ROI));
+			map2.copyTo(UndistMaps.second(lens_undist.ROI));
+			//lens_undist.CameraToLens = lens_undist.CameraToLens * Affine3d(R[i]).inv();
+		}
 		HasUndistortionMaps = true;
 	}
 	try
 	{
-		remap(LastFrameDistorted, LastFrameUndistorted, UndistMap1, UndistMap2, INTER_LINEAR);
+		remap(LastFrameDistorted, LastFrameUndistorted, 
+			UndistMaps.first, UndistMaps.second, INTER_LINEAR);
 	}
 	catch(const std::exception& e)
 	{
@@ -242,7 +297,7 @@ vector<ObjectData> Camera::ToObjectData() const
 	std::vector<ObjectData> datas = {camera};
 	for (size_t lensidx = 0; lensidx < Settings->Lenses.size(); lensidx++)
 	{
-		datas.emplace_back(ObjectType::Lens, "Lens " + to_string(lensidx), Location * Settings->Lenses[lensidx].LensPosition, LastSeenTick);
+		datas.emplace_back(ObjectType::Lens, "Lens " + to_string(lensidx), Location * Settings->Lenses[lensidx].CameraToLens, LastSeenTick);
 	}
 	
 	return datas;

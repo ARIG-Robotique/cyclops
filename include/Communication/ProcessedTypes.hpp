@@ -24,6 +24,7 @@ struct LensFeatureData
 {
 	cv::Affine3d CameraToLens;				//Camera to lens transform
 	cv::Mat CameraMatrix; 					//Filled by CopyEssentials from CameraImageData
+	cv::Mat ProjectionMatrix;				//Filled on undistortion, a 4x3 camera matrix if needed
 	cv::Mat DistanceCoefficients; 			//Filled by CopyEssentials from CameraImageData
 	cv::Rect ROI;							//Region of interest in the source image
 

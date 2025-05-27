@@ -15,9 +15,9 @@ struct LensSettings
 	//Distortion
 	cv::Mat distanceCoeffs;
 
-	cv::Affine3d LensPosition;
+	cv::Affine3d CameraToLens;
 
-	bool IsValid();
+	bool IsValid() const;
 };
 
 //All the settings needed to start a camera, in the palm of your hand...
@@ -48,15 +48,15 @@ struct CameraSettings
 
 	virtual ~CameraSettings(){};
 
-	bool IsValidCalibration();
-	bool IsValid();
+	bool IsValidCalibration() const;
+	bool IsValid() const;
 
-	bool IsMono()
+	bool IsMono() const
 	{
 		return Lenses.size() == 1;
 	}
 
-	bool IsStereo()
+	bool IsStereo() const
 	{
 		return Lenses.size() == 2;
 	}

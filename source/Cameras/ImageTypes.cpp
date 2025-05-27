@@ -3,7 +3,7 @@
 using namespace cv;
 using namespace std;
 
-bool LensSettings::IsValid()
+bool LensSettings::IsValid() const
 {
 	if (CameraMatrix.size() != Size(3,3))
 	{
@@ -20,7 +20,7 @@ bool LensSettings::IsValid()
 	return true;
 }
 
-bool CameraSettings::IsValidCalibration()
+bool CameraSettings::IsValidCalibration() const
 {
 	if (Lenses.size() == 0)
 	{
@@ -36,7 +36,7 @@ bool CameraSettings::IsValidCalibration()
 	return true;
 }
 
-bool CameraSettings::IsValid()
+bool CameraSettings::IsValid() const
 {
 	return Framerate >0 && Resolution.width >0 && Resolution.height >0 && FramerateDivider > 0;
 }

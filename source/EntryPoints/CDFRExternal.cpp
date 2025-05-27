@@ -8,6 +8,7 @@
 #include <Cameras/Calibfile.hpp>
 #include <DetectFeatures/ArucoDetect.hpp>
 #include <DetectFeatures/YoloDetect.hpp>
+#include <DetectFeatures/StereoDetect.hpp>
 
 #include <Visualisation/external/ExternalBoardGL.hpp>
 #include <Visualisation/external/ExternalImgui.hpp>
@@ -329,6 +330,7 @@ void CDFRExternal::ThreadEntryPoint()
 			{
 				auto &thisprof = ParallelProfilers[i];
 				Camera* cam = Cameras[i];
+				auto cam_settings = cam->GetCameraSettings();
 				CameraFeatureData &FeatData = FeatureDataLocal[i];
 				thisprof.EnterSection("CameraRead");
 				if(!cam->Read())
@@ -336,7 +338,7 @@ void CDFRExternal::ThreadEntryPoint()
 					FeatData.Clear();
 					continue;
 				}
-				if (cam->GetCameraSettings()->WantUndistortion)
+				if (cam_settings->WantUndistortion || cam_settings->IsStereo())
 				{
 					thisprof.EnterSection("CameraUndistort");
 					cam->Undistort();
@@ -345,19 +347,14 @@ void CDFRExternal::ThreadEntryPoint()
 				CameraImageData &ImData = ImageDataLocal[i];
 				ImData = cam->GetFrame(!cam->GetCameraSettings()->WantUndistortion);
 				//cout << "Frame " << BufferIndex << " at " << ImData.Image.u << endl;
-				if (GetScenario().size() && false)
-				{
-					thisprof.EnterSection("Add simulation noise");
-					cv::UMat noise(ImData.Image.size(),ImData.Image.type());
-					float m = 0;
-					float sigma = 20;
-					cv::randn(noise, m, sigma);
-					add(ImData.Image, noise, ImData.Image);
-					//imwrite("noised.jpg", ImData.Image);
-					break;
-				}
 				CDFRCommon::ImageToFeatureData(CDFRCommon::ExternalSettings, cam, ImData, FeatData, *TrackerToUse, GrabTick, YoloDetector.get());
 
+				if (cam_settings->IsStereo())
+				{
+					CameraImageData StereoData = cam->GetFrame(false);
+					DetectStereo(StereoData, FeatData);
+				}
+				
 				if (RecordThisTick)
 				{
 					cout << "\aRecording image " << TimeToStr() << endl;
