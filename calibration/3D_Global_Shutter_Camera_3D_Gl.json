@@ -1,6 +1,8 @@
 {
 	"Calibrations": [
 		{
+			"Want Undistortion" : true,
+			"Undistortion Focal Length Multiplier" : 1.5,
 			"Lenses": [
 				{
 					"Camera Matrix": {
@@ -124,5 +126,6 @@
 	"Current Resolution": {
 		"height": 800,
 		"width": 2560
-	}
+	},
+	"Monochrome" : true
 }

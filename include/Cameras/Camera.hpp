@@ -45,6 +45,7 @@ class Camera : public ImageSource, public TrackedObject
 protected:
 	//config
 	std::shared_ptr<CameraSettings> Settings;
+	std::vector<LensSettings> LensesUndistorted;
 	std::string Name;
 	bool HasUndistortionMaps;
 	

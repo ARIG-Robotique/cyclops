@@ -143,6 +143,9 @@ bool readCameraParameters(std::filesystem::path path, CameraSettings &Settings)
 				Settings.Lenses.push_back(lens_struct);
 			}
 			Settings.Resolution = current_resolution;
+			Settings.WantUndistortion = calibration.at("Want Undistortion");
+			Settings.UndistortFocalLengthMuliply = calibration.at("Undistortion Focal Length Multiplier");
+			Settings.IsMonochrome = object.at("Monochrome");
 			return true;
 		}
 		return false;
@@ -173,7 +176,10 @@ void writeCameraParameters(std::filesystem::path path, const CameraSettings &Set
 #else
 	nlohmann::json object, calibration;
 	object["Current Resolution"] = SizeToJson<int>(Settings.Resolution);
+	object["Monochrome"] = Settings.IsMonochrome;
 	calibration["Resolution"] = SizeToJson<int>(Settings.Resolution);
+	calibration["Want Undistortion"] = Settings.WantUndistortion;
+	calibration["Undistortion Focal Length Multiplier"] = Settings.UndistortFocalLengthMuliply;
 	nlohmann::json &lenses = calibration["Lenses"];
 	for (size_t i = 0; i < Settings.Lenses.size(); i++)	
 	{

@@ -8,3 +8,4 @@ config.*
 .idea/**
 Recordings/**
 ScreenCapture/**
+bug/**

@@ -14,6 +14,7 @@
 #include <DetectFeatures/ArucoDetect.hpp>
 #include <DetectFeatures/YoloDetect.hpp>
 #include <DetectFeatures/ColorDetect.hpp>
+#include <DetectFeatures/StereoDetect.hpp>
 
 #include <Misc/FrameCounter.hpp>
 #include <Misc/ManualProfiler.hpp>

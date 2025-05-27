@@ -67,6 +67,18 @@ void Texture::Bind()
 	gl_check_err();
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	gl_check_err();
+	if (SourceImage.channels() == 1)
+	{
+		GLint swizzle[4] = {
+			GL_RED,		// Shader Red   channel source = Texture Red
+			GL_RED,		// Shader Green channel source = Texture Red
+			GL_RED,		// Shader Blue  channel source = Texture Red
+			GL_ONE,		// Shader Alpha channel source = One
+		};
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+	}
+	
+	
 	
 }
 
@@ -76,8 +88,8 @@ void Texture::Refresh()
 	gl_check_err();
 	cv::Size NewSize = SourceImage.size();
 	int numchannels = SourceImage.channels();
-	GLenum format = numchannels == 3 ? GL_BGR : GL_R;
-	GLint internal_format = numchannels == 3 ? GL_RGB : GL_R;
+	GLenum format = numchannels == 3 ? GL_BGR : GL_RED;
+	GLint internal_format = numchannels == 3 ? GL_RGB : GL_R8;
 	//cout << "Bound to " << TextureID << " @ " << this << ", resolution " << NewSize << endl;
 	if ((NewSize.width*numchannels) % 4)
 	{

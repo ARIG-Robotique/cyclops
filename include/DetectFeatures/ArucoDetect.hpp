@@ -3,6 +3,7 @@
 #include <Cameras/ImageTypes.hpp>
 #include <Communication/ProcessedTypes.hpp>
 #include <opencv2/core.hpp>
+#include <filesystem>
 
 cv::UMat PreprocessArucoImage(cv::UMat Source);
 
@@ -16,3 +17,5 @@ int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, int
 int DetectArucoPOI(CameraImageData InData, CameraFeatureData *OutData, const std::vector<std::vector<cv::Point3d>> &POIs);
 
 void PolyCameraArucoMerge(CameraFeatureData &InOutData);
+
+void TestArucoCornerRefineBug(std::filesystem::path filepath);

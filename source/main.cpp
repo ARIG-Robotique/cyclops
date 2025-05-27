@@ -4,6 +4,7 @@
 
 #include <thread>
 #include <filesystem>
+#include <random>
 
 #include <opencv2/core.hpp>	 // Basic OpenCV structures (Mat, Scalar)
 #include <opencv2/core/ocl.hpp> //opencl
@@ -104,6 +105,7 @@ void setup_signal_handler()
 int main(int argc, char** argv )
 {
 	setup_signal_handler();
+	std::srand(std::time({}));
 	SetExecutablePath(argv[0]);
 
 	const string keys = 
@@ -181,6 +183,8 @@ int main(int argc, char** argv )
 	CDFRCommon::ExternalSettings.direct = parser.has("direct") ? parser.get<bool>("direct") : true;
 	CDFRCommon::ExternalSettings.v3d = parser.has("opengl") ? parser.get<bool>("opengl") : false;
 	CDFRCommon::ExternalSettings.record = parser.has("record");
+
+	TestArucoCornerRefineBug(GetCyclopsPath()/"bug"/"DetectArucoSegmented"/"330585942.jpeg");
 
 	
 	if (parser.has("map"))

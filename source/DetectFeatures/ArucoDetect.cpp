@@ -7,11 +7,14 @@
 #include <opencv2/calib3d.hpp>
 
 #include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp> //for debug
+#include <random>
 
 #include <Misc/math2d.hpp>
 #include <Misc/math3d.hpp>
 
 #include <Misc/GlobalConf.hpp>
+#include <Misc/path.hpp>
 
 using namespace cv;
 using namespace std;
@@ -91,7 +94,7 @@ Point2f ComputeMean(const ArucoCornerArray &Points)
 	return mean;
 }
 
-int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, const vector<vector<Rect>> &Segments, aruco::ArucoDetector* Detector)
+int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, const vector<vector<Rect>> &Segments, const aruco::ArucoDetector* Detector)
 {
 	size_t num_lenses = InData.lenses.size();
 
@@ -134,7 +137,20 @@ int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, con
 			auto &idslocal = ids[lensidx][poiidx];
 			Point2f offset = thispoirect.tl();
 
-			Detector->detectMarkers(InData.Image(InData.lenses[lensidx].ROI)(thispoirect), cornerslocal, idslocal);
+			try
+			{
+				Detector->detectMarkers(InData.Image(InData.lenses[lensidx].ROI)(thispoirect), cornerslocal, idslocal);
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << e.what() << '\n';
+				auto folderpath = GetCyclopsPath()/"bug"/"DetectArucoSegmented";
+				std::filesystem::create_directories(folderpath);
+				auto index = std::rand();
+				imwrite(folderpath/(to_string(index)+".jpeg"), InData.Image(InData.lenses[lensidx].ROI)(thispoirect));
+				continue;
+			}
+			
 			for (auto &rect : cornerslocal)
 			{
 				for (Point2f &point : rect)
@@ -237,7 +253,7 @@ int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, con
 	return NumDetectionsTotal;
 }
 
-int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, const vector<Rect> &Segments, aruco::ArucoDetector* Detector)
+int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, const vector<Rect> &Segments, const aruco::ArucoDetector* Detector)
 {
 	size_t NumSegments = Segments.size();
 	if (NumSegments == 0)
@@ -493,4 +509,21 @@ int DetectArucoPOI(CameraImageData InData, CameraFeatureData *OutData, const vec
 	vector<Rect> poirects = GetPOIRects(POIs, framesize, OutData->WorldToCamera, InData.lenses[0].CameraMatrix, InData.lenses[0].distanceCoeffs); //TODO : Support stereo
 
 	return DetectArucoSegmented(InData, OutData, poirects, POIDetector.get());
+}
+
+void TestArucoCornerRefineBug(std::filesystem::path filepath)
+{
+	UMat image; 
+	imread(filepath).copyTo(image);
+	auto params = aruco::DetectorParameters();
+	params.cornerRefinementMethod = aruco::CORNER_REFINE_CONTOUR;
+	params.useAruco3Detection = false;
+	params.adaptiveThreshConstant = 20;
+
+	auto refparams = aruco::RefineParameters();
+	auto detector = make_unique<aruco::ArucoDetector>(dict, params, refparams);
+
+	vector<vector<Point2f>> corners;
+	vector<int> ids;
+	detector->detectMarkers(image, corners, ids);
 }

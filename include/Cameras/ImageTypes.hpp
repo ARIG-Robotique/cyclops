@@ -31,6 +31,10 @@ struct CameraSettings
 	//Framerate divider : you can set 60fps but only sample 1 of 2 frames to have less latency and less computation
 	uint8_t FramerateDivider;
 
+	bool WantUndistortion;
+	double UndistortFocalLengthMuliply;
+	bool IsMonochrome;
+
 	//single lens settings, for side-by-side cams
 	std::vector<LensSettings> Lenses;
 
@@ -39,7 +43,7 @@ struct CameraSettings
 	std::vector<unsigned int> CameraLockToggles;
 
 	CameraSettings()
-	:Resolution(-1,-1), Framerate(0), FramerateDivider(1)
+	:Resolution(-1,-1), Framerate(0), FramerateDivider(1), WantUndistortion(false), UndistortFocalLengthMuliply(1.0), IsMonochrome(false)
 	{}
 
 	virtual ~CameraSettings(){};

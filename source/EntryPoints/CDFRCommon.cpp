@@ -60,7 +60,7 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 	YellowTracker.RegisterTrackedObject(yellow1);
 	YellowTracker.RegisterTrackedObject(yellow2);
 #endif
-	vector<string> PAMINames = {"Triangle", "Square", "Circle", "Star"};
+	vector<string> PAMINames = {"Triangle", "Carre", "Rond", "Star"};
 	for (size_t i = 0; i < 2; i++)
 	{
 		auto &tracker = i==0 ? Trackers.at(CDFRTeam::Blue) : Trackers.at(CDFRTeam::Yellow);
@@ -182,7 +182,8 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		PolyCameraArucoMerge(FeatData);
 	}
 	
-	
+	//DetectStereo(ImData, FeatData);
+
 	return false;
 }
 

@@ -90,6 +90,10 @@ bool VideoCaptureCamera::StartFeed()
 		//feed->set(CAP_PROP_AUTO_EXPOSURE, 3) ;
 		//feed->set(CAP_PROP_EXPOSURE, 300) ;
 		feed->set(CAP_PROP_BUFFERSIZE, 2);
+		if (Settings->IsMonochrome)
+		{
+			feed->set(CAP_PROP_CONVERT_RGB, 0);
+		}
 
 		Settingscast->Resolution.width = feed->get(CAP_PROP_FRAME_WIDTH);
 		Settingscast->Resolution.height = feed->get(CAP_PROP_FRAME_HEIGHT);
@@ -146,6 +150,11 @@ bool VideoCaptureCamera::Read()
 	{
 		RegisterNoError();
 		Camera::Read();
+		if (Settings->IsMonochrome)
+		{
+			Mat temp = imdecode(LastFrameDistorted, IMREAD_GRAYSCALE);
+			temp.copyTo(LastFrameDistorted);
+		}
 	}
 	else
 	{

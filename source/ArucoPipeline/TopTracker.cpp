@@ -104,8 +104,8 @@ Affine3d TopTracker::GetObjectTransform(const CameraFeatureData& CameraData, flo
 	
 	Affine3d MarkerToObject = SeenMarker.AccumulatedTransform * SeenMarker.Marker->Pose;
 	Affine3d CameraToObject = CameraToMarker * MarkerToObject;
-	cout << "Top tracker " << Name << " is at " << CameraToMarker.translation() << " in camera (" 
-		<< (CameraData.WorldToCamera * CameraToObject).translation() << " in world)" << endl;
+	//cout << "Top tracker " << Name << " is at " << CameraToMarker.translation() << " in camera (" 
+	//	<< (CameraData.WorldToCamera * CameraToObject).translation() << " in world)" << endl;
 	//cout << "Panel " << closest << " has a rotation of " << PanelRotations[closest]*180.0/M_PI << " deg" << endl;
 	ReprojectSeenMarkers({SeenMarker}, CameraToMarker, CameraData, ReprojectedCorners);
 	

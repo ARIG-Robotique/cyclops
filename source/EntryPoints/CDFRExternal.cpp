@@ -336,14 +336,14 @@ void CDFRExternal::ThreadEntryPoint()
 					FeatData.Clear();
 					continue;
 				}
-				if (!CDFRCommon::ExternalSettings.DistortedDetection)
+				if (cam->GetCameraSettings()->WantUndistortion)
 				{
 					thisprof.EnterSection("CameraUndistort");
 					cam->Undistort();
 				}
 				thisprof.EnterSection("CameraGetFrame");
 				CameraImageData &ImData = ImageDataLocal[i];
-				ImData = cam->GetFrame(CDFRCommon::ExternalSettings.DistortedDetection);
+				ImData = cam->GetFrame(!cam->GetCameraSettings()->WantUndistortion);
 				//cout << "Frame " << BufferIndex << " at " << ImData.Image.u << endl;
 				if (GetScenario().size() && false)
 				{
