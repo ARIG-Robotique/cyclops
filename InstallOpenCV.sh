@@ -95,6 +95,7 @@ cmake -G Ninja \
 -D BUILD_EXAMPLES=OFF \
 \
 -D BUILD_wechat_qrcode=OFF \
+-D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules/ximgproc \
 $EXTRA_MODULES \
 ../
 

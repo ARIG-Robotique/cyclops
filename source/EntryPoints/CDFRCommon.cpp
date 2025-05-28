@@ -69,7 +69,7 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 		auto &tracker = i==0 ? Trackers.at(CDFRTeam::Blue) : Trackers.at(CDFRTeam::Yellow);
 		for (size_t j = 0; j < PAMINames.size(); j++)
 		{
-			auto pamitracker = make_shared<TopTracker>(51+i*20+j, 0.0695, PAMINames[j], nullopt, false);
+			auto pamitracker = make_shared<TopTracker>(51+i*20+j, 0.0695, PAMINames[j], i == 0 ? nullopt : std::optional<float>(.148), false);
 			tracker.RegisterTrackedObject(pamitracker);
 		}
 	}

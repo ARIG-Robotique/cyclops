@@ -5,6 +5,8 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/cvconfig.h>
+#include <opencv2/ximgproc.hpp>
 
 #include <Misc/math3d.hpp>
 
@@ -23,6 +25,7 @@ void DetectStereo(const CameraImageData &InData, CameraFeatureData& OutData)
 	//Matcher->setPreFilterType(StereoBM::PREFILTER_XSOBEL);
 	//Matcher->setUniquenessRatio(2);
 	#endif
+	cv::ximgproc::createDisparityWLSFilter(Matcher);
 	size_t num_lenses = InData.lenses.size();
 	if (num_lenses != 2)
 	{

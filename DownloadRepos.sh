@@ -24,14 +24,14 @@ cd ..
 
 OPENCV_VERSION=4.11.0
 
-#git clone https://github.com/opencv/opencv_contrib.git || echo "Failed to clone opencv_contrib : already exists"
-#cd opencv_contrib/
-#git reset --hard
-#git fetch
-#git checkout $OPENCV_VERSION
+git clone --depth 1 --branch $OPENCV_VERSION https://github.com/opencv/opencv_contrib.git || echo "Failed to clone opencv_contrib : already exists"
+cd opencv_contrib/
+git reset --hard
+git fetch
+git checkout $OPENCV_VERSION
 #sudo -v
-#cd ..
-git clone https://github.com/opencv/opencv.git || echo "Failed to clone opencv : already exists"
+cd ..
+git clone --depth 1 --branch $OPENCV_VERSION https://github.com/opencv/opencv.git || echo "Failed to clone opencv : already exists"
 cd opencv/
 git reset --hard
 git fetch
