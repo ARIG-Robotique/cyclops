@@ -30,6 +30,11 @@ ExternalImgui::~ExternalImgui()
 
 bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 {
+	if (!HasWindow())
+	{
+		return true;
+	}
+	
 	StartFrame();
 	//cout << "new frame" <<endl;
 	int DisplaysPerCam = 1;

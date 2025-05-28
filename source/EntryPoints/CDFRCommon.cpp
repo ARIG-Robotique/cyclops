@@ -89,6 +89,16 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 	bool doAruco = Settings.ArucoDetection;
 	unique_ptr<thread> yoloThread;
 	unique_ptr<thread> arucoThread;
+	Size basesize = ImData.lenses[0].ROI.size();
+	Size NumArucoSegments = basesize/800 + Size(1,1);
+	const auto processor_count = std::thread::hardware_concurrency();
+	if (NumArucoSegments.area() > processor_count && processor_count > 0)
+	{
+		double aspect_ratio = basesize.aspectRatio();
+		int area = ImData.lenses[0].ROI.area();
+		NumArucoSegments.width = ceil(sqrt(processor_count) * aspect_ratio);
+		NumArucoSegments.height = ceil(sqrt(processor_count) / aspect_ratio);
+	}
 	if (doYolo)
 	{
 		if (use_threads)
@@ -107,7 +117,7 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		{
 			if (Settings.SegmentedDetection)
 			{
-				arucoThread = make_unique<thread>(DetectArucoSegmented, ImData, &FeatData, 200, ImData.lenses[0].ROI.size()/800 + Size(1,1));
+				arucoThread = make_unique<thread>(DetectArucoSegmented, ImData, &FeatData, 200, NumArucoSegments);
 			}
 			else
 			{
@@ -118,18 +128,9 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		{
 			if (Settings.SegmentedDetection)
 			{
-				Size basesize = ImData.lenses[0].ROI.size();
-				Size NumSegments = basesize/800 + Size(1,1);
-				const auto processor_count = std::thread::hardware_concurrency();
-				if (NumSegments.area() > processor_count)
-				{
-					double aspect_ratio = basesize.aspectRatio();
-					int area = ImData.lenses[0].ROI.area();
-					NumSegments.width = ceil(sqrt(processor_count) * aspect_ratio);
-					NumSegments.height = ceil(sqrt(processor_count) / aspect_ratio);
-				}
 				
-				DetectArucoSegmented(ImData, &FeatData, 200, NumSegments);
+				
+				DetectArucoSegmented(ImData, &FeatData, 200, NumArucoSegments);
 			}
 			else
 			{
