@@ -183,9 +183,6 @@ int main(int argc, char** argv )
 	CDFRCommon::ExternalSettings.direct = parser.has("direct") ? parser.get<bool>("direct") : true;
 	CDFRCommon::ExternalSettings.v3d = parser.has("opengl") ? parser.get<bool>("opengl") : false;
 	CDFRCommon::ExternalSettings.record = parser.has("record");
-
-	TestArucoCornerRefineBug(GetCyclopsPath()/"bug"/"DetectArucoSegmented"/"330585942.jpeg");
-
 	
 	if (parser.has("map"))
 	{
