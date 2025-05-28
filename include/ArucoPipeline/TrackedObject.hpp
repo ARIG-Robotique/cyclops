@@ -61,7 +61,7 @@ public:
 		ArucoMarker* Marker; //pointer to source marker
 		ArucoCornerArray CameraCornerPositions; //corner positions, in space relative to the calling object's coordinates
 		std::vector<cv::Point3d> StereoMarkerCorners; 
-		std::vector<cv::Point3d> LocalMarkerCorners; //corner positions in camera image space
+		std::vector<cv::Point3d> LocalMarkerCorners; //corner positions in space relative to camera
 		int IndexInCameraData; //index where this marker was found in the camera
 		int LensIndex;
 
@@ -109,20 +109,33 @@ public:
 	virtual void GetObjectPoints(std::vector<std::vector<cv::Point3d>>& MarkerCorners, std::vector<int>& MarkerIDs, 
 		cv::Affine3d rootTransform = cv::Affine3d::Identity(), std::vector<int> filter = {});
 
-	//Returns the surface area, markers that are seen by the camera that belong to this object or it's childs are stored in MarkersSeen
-	virtual float GetSeenMarkers2D(const CameraFeatureData& CameraData, std::vector<ArucoViewCameraLocal> &MarkersSeen, 
-		cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity(), bool Skip3D = true);
+	//Per-lens functions
 
-	virtual float GetSeenMarkers3D(const CameraFeatureData& CameraData, std::vector<ArucoViewCameraLocal> &MarkersSeen, 
+	//Returns the surface area, markers that are seen by the lens that belong to this object or it's childs are stored in MarkersSeen
+	float GetSeenMarkers2D(const LensFeatureData& LensData, std::vector<ArucoViewCameraLocal> &MarkersSeen, 
+		cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity(), bool Skip3D = false, int LensIndex = -1);
+	//Reprojects some seen markers, returns the reprojection error
+	float ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const cv::Affine3d &LensToMarker, 
+		const LensFeatureData &LensData, std::map<std::pair<int, int>, ArucoCornerArray> &ReprojectedCorners, int LensIndex = -1);
+	//Given corners, solve this object location using multiple tags at once
+	//Output transform is given relative to the lens
+	//Does not do any reprojection
+	virtual cv::Affine3d GetObjectTransform(const LensFeatureData& LensData, float& Surface, int LensIndex = -1);
+	
+	//Per camera functions
+
+	//Calls GetSeenMarkers2D on all lenses
+	float GetSeenMarkers2D(const CameraFeatureData& CameraData, std::vector<ArucoViewCameraLocal> &MarkersSeen, 
+		cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity(), bool Skip3D = false);
+
+	float GetSeenMarkers3D(const CameraFeatureData& CameraData, std::vector<ArucoViewCameraLocal> &MarkersSeen, 
 		cv::Affine3d AccumulatedTransform = cv::Affine3d::Identity());
 
-	//Reprojects some seen markers, returns the reprojection error
+	//Calls ReprojectSeenMarkers on all lenses
 	float ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const cv::Affine3d &CameraToMarker, 
 		const CameraFeatureData &CameraData, std::map<std::pair<int, int>, ArucoCornerArray> &ReprojectedCorners);
 
-	//Given corners, solve this object's location using multiple tags at once
-	//Output transform is given relative to the camera
-	//Does not touch the reprojection data in CameraData
+	//Calls GetObjectTransform on all lenses, then merges the data and then reprojects
 	virtual cv::Affine3d GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
 		std::map<std::pair<int, int>, ArucoCornerArray> &ReprojectedCorners);
 

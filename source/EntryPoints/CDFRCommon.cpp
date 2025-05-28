@@ -20,6 +20,7 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 	set<shared_ptr<TrackedObject>> GlobalObjects;
 	GlobalObjects.emplace(make_shared<StaticObject>(Internal, "Board"));
 	//GlobalObjects.emplace(make_shared<SolarPanel>());
+	#if 1
 	for (int i = 1; i < 11; i++)
 	{
 		optional<double> height = 0.450;
@@ -36,6 +37,7 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 
 		GlobalObjects.emplace(make_shared<TopTracker>(i, 0.07, TeamNames.at(team).JavaName + String(" ") + to_string(i), height, true));
 	}
+	#endif
 	for (auto &Tracker : Trackers)
 	{
 		for (auto &Object : GlobalObjects)
@@ -60,17 +62,18 @@ void CDFRCommon::MakeTrackedObjects(bool Internal, map<CDFRTeam, ObjectTracker&>
 	YellowTracker.RegisterTrackedObject(yellow1);
 	YellowTracker.RegisterTrackedObject(yellow2);
 #endif
+#if 1
 	vector<string> PAMINames = {"Triangle", "Carre", "Rond", "Star"};
 	for (size_t i = 0; i < 2; i++)
 	{
 		auto &tracker = i==0 ? Trackers.at(CDFRTeam::Blue) : Trackers.at(CDFRTeam::Yellow);
 		for (size_t j = 0; j < PAMINames.size(); j++)
 		{
-			auto pamitracker = make_shared<TopTracker>(51+i*20+j, 0.0695, PAMINames[j], 0.112, false);
+			auto pamitracker = make_shared<TopTracker>(51+i*20+j, 0.0695, PAMINames[j], nullopt, false);
 			tracker.RegisterTrackedObject(pamitracker);
 		}
 	}
-	
+#endif
 
 }
 
@@ -115,7 +118,18 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		{
 			if (Settings.SegmentedDetection)
 			{
-				DetectArucoSegmented(ImData, &FeatData, 200, ImData.lenses[0].ROI.size()/800 + Size(1,1));
+				Size basesize = ImData.lenses[0].ROI.size();
+				Size NumSegments = basesize/800 + Size(1,1);
+				const auto processor_count = std::thread::hardware_concurrency();
+				if (NumSegments.area() > processor_count)
+				{
+					double aspect_ratio = basesize.aspectRatio();
+					int area = ImData.lenses[0].ROI.area();
+					NumSegments.width = ceil(sqrt(processor_count) * aspect_ratio);
+					NumSegments.height = ceil(sqrt(processor_count) / aspect_ratio);
+				}
+				
+				DetectArucoSegmented(ImData, &FeatData, 200, NumSegments);
 			}
 			else
 			{

@@ -190,6 +190,157 @@ void TrackedObject::GetObjectPoints(vector<vector<Point3d>>& MarkerCorners, vect
 	}
 }
 
+float TrackedObject::GetSeenMarkers2D(const LensFeatureData& LensData, vector<ArucoViewCameraLocal> &MarkersSeen, 
+		Affine3d AccumulatedTransform, bool Skip3D, int LensIndex)
+{
+	assert(LensIndex != -1);
+	float surface = 0;
+	for (size_t i = 0; i < markers.size(); i++)
+	{
+		auto &lensdata = LensData;
+		for (size_t lensarucoidx = 0; lensarucoidx < lensdata.ArucoIndices.size(); lensarucoidx++)
+		{
+			if (markers[i].number == lensdata.ArucoIndices[lensarucoidx])
+			{
+				//gotcha!
+				if (lensdata.StereoReprojected[lensarucoidx] && Skip3D)
+				{
+					continue;
+				}
+				ArucoViewCameraLocal seen;
+				seen.Marker = &markers[i];
+				seen.LensIndex = LensIndex;
+				seen.IndexInCameraData = lensarucoidx;
+				seen.CameraCornerPositions = lensdata.ArucoCorners[lensarucoidx];
+				seen.AccumulatedTransform = AccumulatedTransform;
+				auto &cornersLocal = markers[i].GetObjectPointsNoOffset();
+				Affine3d TransformToObject = AccumulatedTransform * markers[i].Pose;
+				seen.LocalMarkerCorners.reserve(cornersLocal.size());
+				for (size_t k = 0; k < cornersLocal.size(); k++)
+				{
+					seen.LocalMarkerCorners.push_back(TransformToObject * cornersLocal[k]);
+				}
+				MarkersSeen.push_back(seen);
+				surface += seen.GetSurface();
+			}
+		}
+	}
+	for (size_t i = 0; i < childs.size(); i++)
+	{
+		auto child = childs[i];
+		surface += child->GetSeenMarkers2D(LensData, MarkersSeen, AccumulatedTransform * child->Location, Skip3D, LensIndex);
+	}
+	return surface;
+}
+
+float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const Affine3d &LensToObject, 
+	const LensFeatureData &LensData, map<std::pair<int, int>, ArucoCornerArray> &ReprojectedCorners, int LensIndex)
+{
+	assert(LensIndex != -1);
+	float ReprojectionError = 0;
+	for (size_t i = 0; i < MarkersSeen.size(); i++)
+	{
+		vector<Point2d> cornersreproj;
+		auto &seen = MarkersSeen[i];
+		if (seen.CameraCornerPositions.size() == 0 || seen.LensIndex == -1)
+		{
+			continue;
+		}
+		if (seen.LensIndex != LensIndex)
+		{
+			continue;
+		}
+		projectPoints(seen.LocalMarkerCorners, LensToObject.rotation(), LensToObject.translation(), LensData.CameraMatrix, LensData.DistanceCoefficients, cornersreproj);
+		//cout << "reprojecting " << seen.IndexInCameraData << endl;
+		auto &reprojectedThisStorage = ReprojectedCorners[{seen.LensIndex, seen.IndexInCameraData}];
+		reprojectedThisStorage.resize(cornersreproj.size());
+		for (size_t j = 0; j < cornersreproj.size(); j++)
+		{
+			reprojectedThisStorage[j] = cornersreproj[j];
+			Point2f diff = seen.CameraCornerPositions[j] - Point2f(cornersreproj[j]);
+			ReprojectionError += sqrt(diff.ddot(diff));
+		}
+	}
+	return ReprojectionError;
+}
+
+Affine3d TrackedObject::GetObjectTransform(const LensFeatureData& LensData, float& Surface, int LensIndex)
+{
+	assert(LensIndex != -1);
+	vector<ArucoViewCameraLocal> SeenMono;
+	Surface = GetSeenMarkers2D(LensData, SeenMono, Affine3d::Identity(), false, LensIndex);
+	int nummarkersseen = SeenMono.size();
+	if (nummarkersseen == 0)
+	{
+		return Affine3d();
+	}
+
+	Affine3d LensToObject;
+	vector<Point3d> flatobj;
+	vector<Point2f> flatimg;
+	//vector<Point2d> flatreproj;
+	flatobj.reserve(nummarkersseen * ARUCO_CORNERS_PER_TAG);
+	flatimg.reserve(nummarkersseen * ARUCO_CORNERS_PER_TAG);
+	Mat rvec = Mat::zeros(3, 1, CV_64F), tvec = Mat::zeros(3, 1, CV_64F);
+	Affine3d objectToMarker;
+	int flags = 0;
+	if (nummarkersseen == 1)
+	{
+		auto& objpts = SeenMono[0].Marker->GetObjectPointsNoOffset();
+		flatobj = vector<Point3d>(objpts.begin(), objpts.end());
+		SeenMono[0].LocalMarkerCorners = flatobj; //hack to have ReprojectSeenMarkers work wih a single marker too
+		flatimg = vector<Point2f>(SeenMono[0].CameraCornerPositions.begin(), SeenMono[0].CameraCornerPositions.end());
+		objectToMarker = SeenMono[0].AccumulatedTransform * SeenMono[0].Marker->Pose;
+		flags |= SOLVEPNP_IPPE_SQUARE;
+	}
+	else
+	{
+		flatobj.reserve(nummarkersseen*ARUCO_CORNERS_PER_TAG);
+		flatimg.reserve(nummarkersseen*ARUCO_CORNERS_PER_TAG);
+		for (int i = 0; i < nummarkersseen; i++)
+		{
+			for (int j = 0; j < ARUCO_CORNERS_PER_TAG; j++)
+			{
+				flatobj.push_back(SeenMono[i].LocalMarkerCorners[j]);
+				flatimg.push_back(SeenMono[i].CameraCornerPositions[j]);
+			}
+		}
+		objectToMarker = Affine3d::Identity();
+		flags |= CoplanarTags ? SOLVEPNP_IPPE : SOLVEPNP_SQPNP;
+	}
+	const Mat &distCoeffs = LensData.DistanceCoefficients;
+	try
+	{
+		solvePnP(flatobj, flatimg, LensData.CameraMatrix, distCoeffs, rvec, tvec, false, flags);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		return Affine3d::Identity();
+	}
+	
+	solvePnPRefineLM(flatobj, flatimg, LensData.CameraMatrix, distCoeffs, rvec, tvec);
+	Affine3d LensToMarker = Affine3d(rvec, tvec);
+	LensToObject = LensToMarker * objectToMarker.inv();
+
+	return LensToObject;
+}
+
+
+
+float TrackedObject::GetSeenMarkers2D(const CameraFeatureData& CameraData, vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform, bool Skip3D)
+{
+	float surface = 0;
+	MarkersSeen.reserve(markers.size());
+	for (size_t lensidx = 0; lensidx < CameraData.Lenses.size(); lensidx++)
+	{
+		auto &lensdata = CameraData.Lenses[lensidx];
+		surface += GetSeenMarkers2D(lensdata, MarkersSeen, AccumulatedTransform, Skip3D, lensidx);
+	}
+	
+	return surface;
+}
+
 float TrackedObject::GetSeenMarkers3D(const CameraFeatureData& CameraData, vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform)
 {
 	float surface = 0;
@@ -227,76 +378,19 @@ float TrackedObject::GetSeenMarkers3D(const CameraFeatureData& CameraData, vecto
 	return surface;
 }
 
-float TrackedObject::GetSeenMarkers2D(const CameraFeatureData& CameraData, vector<ArucoViewCameraLocal> &MarkersSeen, cv::Affine3d AccumulatedTransform, bool Skip3D)
-{
-	float surface = 0;
-	MarkersSeen.reserve(markers.size());
-	for (size_t i = 0; i < markers.size(); i++)
-	{
-		for (size_t lensidx = 0; lensidx < CameraData.Lenses.size(); lensidx++)
-		{
-			auto &lensdata = CameraData.Lenses[lensidx];
-			for (size_t lensarucoidx = 0; lensarucoidx < lensdata.ArucoIndices.size(); lensarucoidx++)
-			{
-				if (markers[i].number == lensdata.ArucoIndices[lensarucoidx])
-				{
-					//gotcha!
-					if (lensdata.StereoReprojected[lensarucoidx] && Skip3D)
-					{
-						continue;
-					}
-					ArucoViewCameraLocal seen;
-					seen.Marker = &markers[i];
-					seen.LensIndex = lensidx;
-					seen.IndexInCameraData = lensarucoidx;
-					seen.CameraCornerPositions = lensdata.ArucoCorners[lensarucoidx];
-					seen.AccumulatedTransform = AccumulatedTransform;
-					auto &cornersLocal = markers[i].GetObjectPointsNoOffset();
-					Affine3d TransformToObject = AccumulatedTransform * markers[i].Pose;
-					seen.LocalMarkerCorners.reserve(cornersLocal.size());
-					for (size_t k = 0; k < cornersLocal.size(); k++)
-					{
-						seen.LocalMarkerCorners.push_back(TransformToObject * cornersLocal[k]);
-					}
-					MarkersSeen.push_back(seen);
-					surface += seen.GetSurface();
-				}
-			}
-		}
-	}
-	for (size_t i = 0; i < childs.size(); i++)
-	{
-		auto child = childs[i];
-		surface += child->GetSeenMarkers2D(CameraData, MarkersSeen, AccumulatedTransform * child->Location);
-	}
-	return surface;
-}
-
-float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const Affine3d &CameraToMarker, 
+float TrackedObject::ReprojectSeenMarkers(const std::vector<ArucoViewCameraLocal> &MarkersSeen, const Affine3d &CameraToObject, 
 	const CameraFeatureData &CameraData, map<std::pair<int, int>, ArucoCornerArray> &ReprojectedCorners)
 {
 	float ReprojectionError = 0;
-	for (size_t i = 0; i < MarkersSeen.size(); i++)
+	for (size_t i = 0; i < CameraData.Lenses.size(); i++)
 	{
-		vector<Point2d> cornersreproj;
-		auto &seen = MarkersSeen[i];
-		if (seen.CameraCornerPositions.size() == 0 || seen.LensIndex == -1)
-		{
-			continue;
-		}
-		const auto& lens = CameraData.Lenses[seen.LensIndex];
-		Affine3d LensToMarker = lens.CameraToLens.inv() * CameraToMarker;
-		projectPoints(seen.LocalMarkerCorners, LensToMarker.rotation(), LensToMarker.translation(), lens.CameraMatrix, lens.DistanceCoefficients, cornersreproj);
-		//cout << "reprojecting " << seen.IndexInCameraData << endl;
-		auto &reprojectedThisStorage = ReprojectedCorners[{seen.LensIndex, seen.IndexInCameraData}];
-		reprojectedThisStorage.resize(cornersreproj.size());
-		for (size_t j = 0; j < cornersreproj.size(); j++)
-		{
-			reprojectedThisStorage[j] = cornersreproj[j];
-			Point2f diff = seen.CameraCornerPositions[j] - Point2f(cornersreproj[j]);
-			ReprojectionError += sqrt(diff.ddot(diff));
-		}
+		const auto& lens = CameraData.Lenses[i];
+		Affine3d LensToObject = lens.CameraToLens.inv() * CameraToObject;
+		float localReprojectionError = 0;
+		ReprojectSeenMarkers(MarkersSeen, LensToObject, lens, ReprojectedCorners, i);
+		ReprojectionError += localReprojectionError;
 	}
+	ReprojectionError /= CameraData.Lenses.size();
 	return ReprojectionError;
 }
 
@@ -305,98 +399,49 @@ Affine3d TrackedObject::GetObjectTransform(const CameraFeatureData& CameraData, 
 {
 	vector<ArucoViewCameraLocal> SeenStereo, SeenMono;
 
-	float Volume = GetSeenMarkers3D(CameraData, SeenStereo, Affine3d::Identity());
-	
-	Surface = GetSeenMarkers2D(CameraData, SeenMono, Affine3d::Identity(), markers.size() == 1);
+	float SurfaceThis = GetSeenMarkers2D(CameraData, SeenMono, Affine3d(), false);
+
+	//float Volume = GetSeenMarkers3D(CameraData, SeenStereo, Affine3d::Identity());
+	Surface = 0;
 	ReprojectionError = INFINITY;
 	
-	if (SeenStereo.size() == 0 || SeenMono.size() > SeenStereo.size()+1 || true) //More than one aruco tag seen by both cameras
+	if (true) //More than one aruco tag seen by both cameras
 	{
-		int nummarkersseen = SeenMono.size();
-		if (nummarkersseen == 0)
+		if (SeenMono.size() == 0)
 		{
 			return Affine3d();
 		}
 		
-		int bestlens = 0;
-		if (nummarkersseen == 1 || CameraData.Lenses.size() == 1)
-		{
-			bestlens = SeenMono[0].LensIndex;
-		}
-		else //find the lens with the most aruco tags detected
-		{
-			map<int, int> lensViews;
-			for (size_t markeridx = 0; markeridx < SeenMono.size(); markeridx++)
-			{
-				lensViews[SeenMono[markeridx].LensIndex]++;
-			}
-			int bestlens = lensViews.begin()->first;
-			for (auto &&i : lensViews)
-			{
-				if (i.second > lensViews[bestlens])
-				{
-					bestlens = i.first;
-				}
-			}
-		}
-		
-		Affine3d CameraToObject;
-		vector<Point3d> flatobj;
-		vector<Point2f> flatimg;
-		//vector<Point2d> flatreproj;
-		flatobj.reserve(nummarkersseen * ARUCO_CORNERS_PER_TAG);
-		flatimg.reserve(nummarkersseen * ARUCO_CORNERS_PER_TAG);
-		Mat rvec = Mat::zeros(3, 1, CV_64F), tvec = Mat::zeros(3, 1, CV_64F);
-		Affine3d objectToMarker;
-		int flags = 0;
-		if (nummarkersseen == 1)
-		{
-			auto& objpts = SeenMono[0].Marker->GetObjectPointsNoOffset();
-			flatobj = vector<Point3d>(objpts.begin(), objpts.end());
-			SeenMono[0].LocalMarkerCorners = flatobj; //hack to have ReprojectSeenMarkers work wih a single marker too
-			flatimg = vector<Point2f>(SeenMono[0].CameraCornerPositions.begin(), SeenMono[0].CameraCornerPositions.end());
-			objectToMarker = SeenMono[0].AccumulatedTransform * SeenMono[0].Marker->Pose;
-			flags |= SOLVEPNP_IPPE_SQUARE;
-		}
-		else
-		{
-			flatobj.reserve(nummarkersseen*ARUCO_CORNERS_PER_TAG);
-			flatimg.reserve(nummarkersseen*ARUCO_CORNERS_PER_TAG);
-			for (int i = 0; i < nummarkersseen; i++)
-			{
-				if (SeenMono[i].LensIndex != bestlens)
-				{
-					continue;
-				}
-				
-				for (int j = 0; j < ARUCO_CORNERS_PER_TAG; j++)
-				{
-					flatobj.push_back(SeenMono[i].LocalMarkerCorners[j]);
-					flatimg.push_back(SeenMono[i].CameraCornerPositions[j]);
-				}
-			}
-			objectToMarker = Affine3d::Identity();
-			flags |= CoplanarTags ? SOLVEPNP_IPPE : SOLVEPNP_SQPNP;
-		}
-		const Mat &distCoeffs = CameraData.Lenses[bestlens].DistanceCoefficients;
-		try
-		{
-			solvePnP(flatobj, flatimg, CameraData.Lenses[bestlens].CameraMatrix, distCoeffs, rvec, tvec, false, flags);
-		}
-		catch(const std::exception& e)
-		{
-			std::cerr << e.what() << '\n';
-			return Affine3d::Identity();
-		}
-		
-		solvePnPRefineLM(flatobj, flatimg, CameraData.Lenses[bestlens].CameraMatrix, distCoeffs, rvec, tvec);
-		Affine3d LensToMarker = Affine3d(rvec, tvec);
-		Affine3d CameraToMarker = CameraData.Lenses[bestlens].CameraToLens * LensToMarker;
-		CameraToObject = CameraToMarker * objectToMarker.inv();
+		std::vector<std::tuple<Affine3d, float, float>> LensesObjectTransforms(CameraData.Lenses.size());
 
-		ReprojectionError = ReprojectSeenMarkers(SeenMono, CameraToMarker, CameraData, ReprojectedCorners);
+		Vec3d meanPos, meanX, meanY;
+		int numValid = 0;
+
+		for (size_t i = 0; i < CameraData.Lenses.size(); i++)
+		{
+			auto &lens = CameraData.Lenses[i];
+			float &localSurface = get<1>(LensesObjectTransforms[i]);
+			Affine3d &LensToObject = get<0>(LensesObjectTransforms[i]);
+			LensToObject = GetObjectTransform(lens, localSurface, i);
+			Affine3d CameraToObject = lens.CameraToLens * LensToObject;
+			if (localSurface <= 0)
+			{
+				continue;
+			}
+			meanPos += CameraToObject.translation()*localSurface;
+			meanX += Vec3d(GetAxis(CameraToObject.rotation(), 0).val)*localSurface;
+			meanY += Vec3d(GetAxis(CameraToObject.rotation(), 1).val)*localSurface;
+			Surface += localSurface;
+			numValid++;
+		}
+		meanX /= Surface;
+		meanY /= Surface;
+		meanPos /= Surface;
+		Affine3d CameraToObject = Affine3d(MakeRotationFromXY(meanX, meanY), meanPos);
+
+		ReprojectionError = ReprojectSeenMarkers(SeenMono, CameraToObject, CameraData, ReprojectedCorners);
 		
-		ReprojectionError /= nummarkersseen;
+		ReprojectionError /= SeenMono.size();
 		//cout << "Reprojection error : " << ReprojectionError << endl;
 
 		return CameraToObject;

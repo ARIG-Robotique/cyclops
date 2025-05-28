@@ -76,13 +76,18 @@ bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 			assert(0);
 		}
 		float surface, reprojectionError;
-		Affine3d NewTransform = staticobj->GetObjectTransform(CameraData, surface, reprojectionError, ReprojectedCorners);
+		Affine3d CameraToStatic = staticobj->GetObjectTransform(CameraData, surface, reprojectionError, ReprojectedCorners);
 		float newscore = surface;
 		if (newscore <= score)
 		{
 			continue;
 		}
-		CameraData.WorldToCamera = NewTransform.inv();
+		CameraData.WorldToCamera = CameraToStatic.inv();
+		for (size_t i = 0; i < CameraData.Lenses.size(); i++)
+		{
+			CameraData.Lenses[i].WorldToLens = CameraData.WorldToCamera * CameraData.Lenses[i].CameraToLens;
+		}
+		
 		score = newscore;
 	}
 

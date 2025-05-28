@@ -176,12 +176,12 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 				for (size_t arucoidx = 0; arucoidx < FeatData.Lenses[lensidx].ArucoIndices.size(); arucoidx++)
 				{
 					auto corners = FeatData.Lenses[lensidx].ArucoCorners[arucoidx];
-					uint32_t color = IM_COL32(255, 128, 255, 128);
+					uint32_t color = IM_COL32(255, 128, 0, 128);
 					if (FeatData.Lenses[lensidx].ArucoCornersReprojected[arucoidx].size() != 0)
 					{
 						//cout << arucoidx << " is reprojected" << endl;
 						corners = FeatData.Lenses[lensidx].ArucoCornersReprojected[arucoidx];
-						color = IM_COL32(128, 255, 255, 128);
+						color = IM_COL32(128, 255, 0, 128);
 					}
 					
 					Point2d textpos(0,0);
@@ -193,7 +193,7 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 						if (cornerit == corners.begin())
 						{
 							//corner0 square
-							Point2d size = Point2d(2,2);
+							Point2d size = Point2d(4,4);
 							DrawList->AddRect(vizpos-size, vizpos+size, color);
 						}
 						//start aruco contour

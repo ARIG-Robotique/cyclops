@@ -46,6 +46,7 @@ protected:
 	//config
 	std::shared_ptr<CameraSettings> Settings;
 	std::vector<LensSettings> LensesUndistorted;
+	cv::Mat DisparityToDepth;
 	std::string Name;
 	bool HasUndistortionMaps;
 	

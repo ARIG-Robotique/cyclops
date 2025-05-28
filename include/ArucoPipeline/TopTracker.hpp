@@ -13,8 +13,7 @@ public:
 	TopTracker(int MarkerIdx, double MarkerSize, std::string InName, std::optional<double> InExpectedHeight, bool InRobot);
 	~TopTracker();
 
-	virtual cv::Affine3d GetObjectTransform(const CameraFeatureData& CameraData, float& Surface, float& ReprojectionError, 
-		std::map<std::pair<int, int>, ArucoCornerArray> &ReprojectedCorners) override;
+	virtual cv::Affine3d GetObjectTransform(const LensFeatureData& LensData, float& Surface, int LensIndex = -1) override;
 		
 	virtual std::vector<ObjectData> ToObjectData() const override;
 };

@@ -128,45 +128,6 @@ bool Camera::Read()
 	return false;
 }
 
-vector<pair<vector<Point2d>, Affine3d>> AlignLensCenters(const CameraSettings &Settings)
-{
-	size_t num_lenses = Settings.Lenses.size();
-	Point3d LensMeanCenter, LensMeanForward, LensMeanX;
-	Point2d OpticalMeanCenter;
-	for (size_t i = 0; i < num_lenses; i++)
-	{
-		auto &lens = Settings.Lenses[i];
-		LensMeanCenter = Vec3d(LensMeanCenter) + lens.CameraToLens.translation();
-		LensMeanForward = Vec3d(LensMeanForward) + Vec3d(GetAxis(lens.CameraToLens.rotation(), 2).val);
-		LensMeanX = Vec3d(LensMeanX) + Vec3d(GetAxis(lens.CameraToLens.rotation(), 0).val);
-		OpticalMeanCenter.x += lens.CameraMatrix.at<double>(0,2);
-		OpticalMeanCenter.y += lens.CameraMatrix.at<double>(1,2);
-	}
-	LensMeanCenter /= (double)num_lenses;
-	LensMeanForward /= (double)num_lenses;
-	LensMeanX /= (double)num_lenses;
-	OpticalMeanCenter /= (double)num_lenses;
-	Mat OptimalMatrix = Settings.Lenses[0].CameraMatrix.clone();
-	OptimalMatrix.at<double>(0,0) /= Settings.UndistortFocalLengthMuliply;
-	OptimalMatrix.at<double>(1,1) /= Settings.UndistortFocalLengthMuliply;
-	OptimalMatrix.at<double>(0,2) = OpticalMeanCenter.x;
-	OptimalMatrix.at<double>(1,2) = OpticalMeanCenter.y;
-	vector<Point3d> LensFocusPoints = {LensMeanCenter + LensMeanForward*5.0, LensMeanCenter + LensMeanForward*5.0+LensMeanX};
-	vector<pair<vector<Point2d>, Affine3d>> ConvergencePoints(num_lenses);
-	for (size_t i = 0; i < num_lenses; i++)
-	{
-		auto &lens = Settings.Lenses[i];
-		vector<Point2d> &LocalConvergencePoints = ConvergencePoints[i].first;
-		Affine3d &NewLensTransform = ConvergencePoints[i].second;
-		projectPoints(LensFocusPoints, lens.CameraToLens.rotation(), lens.CameraToLens.translation(), 
-			OptimalMatrix, Mat(), LocalConvergencePoints);
-		Vec3d forward = Vec3d(LensFocusPoints[0]) - lens.CameraToLens.translation();
-		Vec3d right(GetAxis(lens.CameraToLens.rotation(), 0).val);
-		NewLensTransform = Affine3d(MakeRotationFromZX(forward, right), lens.CameraToLens.translation());
-	}
-	return ConvergencePoints;
-}
-
 void Camera::Undistort()
 {
 	
@@ -225,12 +186,12 @@ void Camera::Undistort()
 			auto R = AffineToUse.rotation();
 			auto T = AffineToUse.translation();
 			Mat &P1 = LensesUndistorted[0].CameraMatrix, &P2 = LensesUndistorted[1].CameraMatrix;
-			Mat Q;
+			Mat &Q = DisparityToDepth;
 			stereoRectify(P1, lens1.distanceCoeffs, P2, lens2.distanceCoeffs,
 				lens1.ROI.size(), R, T, R1, R2, P1, P2, Q, 
-				CALIB_ZERO_DISPARITY, -1, lens1.ROI.size());
+				CALIB_ZERO_DISPARITY, -1, lens1.ROI.size(), &LensesUndistorted[0].StereoROI, &LensesUndistorted[1].StereoROI);
 			
-			auto R_new = R2*R*R1.t();
+			auto R_new = R2*R*R1.inv();
 			auto T_new = R2*T;
 			Affine3d Lens2ToLens1_new(R_new, T_new);
 			LensesUndistorted[1].CameraToLens = lens1.CameraToLens*Lens2ToLens1_new.inv();
@@ -254,7 +215,7 @@ void Camera::Undistort()
 			map2 += lens.ROI.y;
 			map1.copyTo(UndistMaps.first(lens_undist.ROI));
 			map2.copyTo(UndistMaps.second(lens_undist.ROI));
-			//lens_undist.CameraToLens = lens_undist.CameraToLens * Affine3d(R[i]).inv();
+			//lens_undist.CameraToLens = Affine3d(lens_undist.CameraToLens.rotation() * R[i].inv(), lens_undist.CameraToLens.translation());
 		}
 		HasUndistortionMaps = true;
 	}
@@ -285,6 +246,11 @@ CameraImageData Camera::GetFrame(bool Distorted) const
 	{
 		GetCameraSettingsAfterUndistortion(frame.lenses);
 		frame.Image = LastFrameUndistorted;
+		if (Settings->IsStereo())
+		{
+			frame.DisparityToDepth = DisparityToDepth;
+		}
+		
 	}
 	frame.GrabTime = captureTime;
 	frame.Valid = true;

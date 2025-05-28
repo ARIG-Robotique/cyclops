@@ -9,12 +9,15 @@
 
 struct LensSettings
 {
-	cv::Rect2i ROI;
-	//FOV and center
+	//ROI of the parent image belonging to this lens
+	cv::Rect2i ROI, 
+	//ROI of the valid stereo area (only for stereo cameras)
+	StereoROI;
+	//FOV and center, may also be a projection matrix (4x3) in the case of a undistorted stereo camera
 	cv::Mat CameraMatrix;
 	//Distortion
 	cv::Mat distanceCoeffs;
-
+	//Transform camera location to lens location
 	cv::Affine3d CameraToLens;
 
 	bool IsValid() const;
@@ -88,6 +91,8 @@ struct CameraImageData
 {
 	std::string CameraName;
 	cv::UMat Image;
+	//Disparity to depth matrix, for stereo cameras
+	cv::Mat DisparityToDepth;
 
 	std::vector<LensSettings> lenses;
 	std::chrono::steady_clock::time_point GrabTime;
