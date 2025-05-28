@@ -5,6 +5,11 @@ using namespace std;
 
 Size ScaleToFit(Size original, Size target)
 {
+	if (original.area() == 0)
+	{
+		original = Size(1,1);
+	}
+	
 	Size &insize = target;
 	Size &bssize = original;
 	int wmax = bssize.width*insize.height/bssize.height;

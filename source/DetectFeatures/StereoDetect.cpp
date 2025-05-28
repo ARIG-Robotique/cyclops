@@ -25,7 +25,7 @@ void DetectStereo(const CameraImageData &InData, CameraFeatureData& OutData)
 	//Matcher->setPreFilterType(StereoBM::PREFILTER_XSOBEL);
 	//Matcher->setUniquenessRatio(2);
 	#endif
-	cv::ximgproc::createDisparityWLSFilter(Matcher);
+	//cv::ximgproc::createDisparityWLSFilter(Matcher);
 	size_t num_lenses = InData.lenses.size();
 	if (num_lenses != 2)
 	{

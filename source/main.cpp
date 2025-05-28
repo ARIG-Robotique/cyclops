@@ -125,7 +125,7 @@ int main(int argc, char** argv )
 		parser.printMessage();
 		return EXIT_SUCCESS;
 	}
-	ConfigureOpenCL(true);
+	ConfigureOpenCL(false);
 	if (parser.has("build"))
 	{
 		cout << getBuildInformation() << endl;

@@ -137,17 +137,15 @@ int DetectArucoSegmented(CameraImageData InData, CameraFeatureData *OutData, con
 			auto &idslocal = ids[lensidx][poiidx];
 			Point2f offset = thispoirect.tl();
 
+			thispoirect.x += InData.lenses[lensidx].ROI.x;
+			thispoirect.y += InData.lenses[lensidx].ROI.y;
 			try
 			{
-				Detector->detectMarkers(InData.Image(InData.lenses[lensidx].ROI)(thispoirect), cornerslocal, idslocal);
+				Detector->detectMarkers(InData.Image(thispoirect), cornerslocal, idslocal);
 			}
 			catch(const std::exception& e)
 			{
 				std::cerr << e.what() << '\n';
-				auto folderpath = GetCyclopsPath()/"bug"/"DetectArucoSegmented";
-				std::filesystem::create_directories(folderpath);
-				auto index = std::rand();
-				imwrite(folderpath/(to_string(index)+".jpeg"), InData.Image(InData.lenses[lensidx].ROI)(thispoirect));
 				continue;
 			}
 			

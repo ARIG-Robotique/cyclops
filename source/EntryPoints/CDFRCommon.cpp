@@ -82,6 +82,12 @@ bool CDFRCommon::ImageToFeatureData(const CDFRCommon::Settings &Settings,
 		Camera* cam, const CameraImageData& ImData, CameraFeatureData& FeatData, 
 		ObjectTracker& Tracker, std::chrono::steady_clock::time_point GrabTick, YoloDetect *YoloDetector)
 {
+	if (ImData.Image.size() != cam->GetCameraSettings()->Resolution)
+	{
+		cerr << "[CDFRCommon::ImageToFeatureData] Image given has the wrong resolution, aborting..." <<endl;
+		return false;
+	}
+	
 	constexpr bool use_threads = false;
 	FeatData.Clear();
 	FeatData.CopyEssentials(ImData);
