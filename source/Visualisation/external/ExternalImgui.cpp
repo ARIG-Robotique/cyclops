@@ -98,6 +98,7 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 			ImGui::Checkbox("Segmented detection", &entry.second.SegmentedDetection);
 			ImGui::Checkbox("POI Detection", &entry.second.POIDetection);
 			ImGui::Checkbox("Yolo detection", &entry.second.YoloDetection);
+			ImGui::Checkbox("Depth mapping", &entry.second.DepthMapping);
 			ImGui::Checkbox("Denoising", &entry.second.Denoising);
 			ImGui::Spacing();
 		}

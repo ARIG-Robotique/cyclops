@@ -338,7 +338,7 @@ void CDFRExternal::ThreadEntryPoint()
 					FeatData.Clear();
 					continue;
 				}
-				if (cam_settings->WantUndistortion || cam_settings->IsStereo())
+				if (cam_settings->WantUndistortion || (cam_settings->IsStereo() && CDFRCommon::ExternalSettings.DepthMapping))
 				{
 					thisprof.EnterSection("CameraUndistort");
 					cam->Undistort();
@@ -349,7 +349,7 @@ void CDFRExternal::ThreadEntryPoint()
 				//cout << "Frame " << BufferIndex << " at " << ImData.Image.u << endl;
 				CDFRCommon::ImageToFeatureData(CDFRCommon::ExternalSettings, cam, ImData, FeatData, *TrackerToUse, GrabTick, YoloDetector.get());
 
-				if (cam_settings->IsStereo())
+				if (cam_settings->IsStereo() && CDFRCommon::ExternalSettings.DepthMapping)
 				{
 					CameraImageData StereoData = cam->GetFrame(false);
 					DetectStereo(StereoData, FeatData);
