@@ -86,6 +86,8 @@ bool ExternalImgui::DisplayFrame(CDFRExternal *Parent)
 
 		map<const char *, CDFRCommon::Settings&> settingsmap({{"External", CDFRCommon::ExternalSettings}, {"Internal", CDFRCommon::InternalSettings}});
 		Parent->ForceRecordNext |= ImGui::Button("Capture next frame");
+		ImGui::SliderInt("Brightness", &GetBrightness(), -64, 64);
+		ImGui::SliderInt("Gain", &GetGain(), 0, 255);
 
 		for (auto &entry : settingsmap)
 		{

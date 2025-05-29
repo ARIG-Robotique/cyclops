@@ -19,6 +19,7 @@ private:
 	//capture using classic api
 	std::unique_ptr<cv::VideoCapture> feed;
 	bool RealCamera;
+	int LastBrightness, LastGain;
 
 public:
 

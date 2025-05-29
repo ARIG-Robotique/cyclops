@@ -91,6 +91,10 @@ bool VideoCaptureCamera::StartFeed()
 		//feed->set(CAP_PROP_AUTO_EXPOSURE, 3) ;
 		//feed->set(CAP_PROP_EXPOSURE, 300) ;
 		feed->set(CAP_PROP_BUFFERSIZE, 2);
+		LastBrightness = GetBrightness();
+		feed->set(CAP_PROP_BRIGHTNESS, LastBrightness);
+		LastGain = GetGain();
+		feed->set(CAP_PROP_GAIN, LastGain);
 		if (Settings->IsMonochrome && RealCamera)
 		{
 			feed->set(CAP_PROP_CONVERT_RGB, 0);
@@ -170,6 +174,17 @@ bool VideoCaptureCamera::Read()
 		grabbed = false;
 		RegisterError();
 		return false;
+	}
+
+	if (GetBrightness() != LastBrightness)
+	{
+		LastBrightness = GetBrightness();
+		feed->set(CAP_PROP_BRIGHTNESS, LastBrightness);
+	}
+	if (GetGain() != LastGain)
+	{
+		LastGain = GetGain();
+		feed->set(CAP_PROP_GAIN, LastGain);
 	}
 	
 	return ReadSuccess;

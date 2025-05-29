@@ -26,7 +26,7 @@ bool RecordVideo = false;
 KeepAliveSettings KeepAliveConfig = {30, 3*60}; //Delay between messages, Delay before kick when no response
 
 //Default values
-CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, 1.f, 30, 1, ""};
+CaptureConfig CaptureCfg = {(int)CameraStartType::ANY, 1.f, 30, 1, "", 0, 100};
 vector<InternalCameraConfig> CamerasInternal;
 CalibrationConfig CamCalConf = {40, Size(6,4), 0.5, 1.5, Size2d(4.96, 3.72)};
 
@@ -83,7 +83,8 @@ void InitConfig()
 		CopyOrDefaultRef(Capture, 		"Method", 			CaptureCfg.StartType);
 		CopyOrDefaultRef(Capture, 		"Reduction", 		CaptureCfg.ReductionFactor);
 		CopyOrDefaultRef(Capture, 		"CameraFilter", 	CaptureCfg.filter);
-		
+		CopyOrDefaultRef(Capture, 		"Brightness", 		CaptureCfg.Brightness);
+		CopyOrDefaultRef(Capture, 		"Gain", 			CaptureCfg.Gain);
 	}
 
 	nlohmann::json &CamerasSett = CopyOrDefaultJson(configobj, "InternalCameras");
@@ -201,6 +202,18 @@ float GetReductionFactor()
 {
 	InitConfig();
 	return CaptureCfg.ReductionFactor;
+}
+
+int& GetBrightness()
+{
+	InitConfig();
+	return CaptureCfg.Brightness;
+}
+
+int& GetGain()
+{
+	InitConfig();
+	return CaptureCfg.Gain;
 }
 
 KeepAliveSettings GetKeepAliveSettings()

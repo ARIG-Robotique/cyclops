@@ -17,6 +17,7 @@ struct CaptureConfig
 	int CaptureFramerate;
 	int FramerateDivider;
 	std::string filter; //filter to block or allow certain cameras. If camera name contains the filter string, it's allowed. If the filter string starts with a !, the filter is inverted
+	int Brightness, Gain;
 };
 
 extern bool RecordVideo;
@@ -39,6 +40,10 @@ CameraStartType GetCaptureMethod();
 
 //list of downscales to be done to the aruco detections
 float GetReductionFactor();
+
+int& GetBrightness();
+
+int& GetGain();
 
 struct KeepAliveSettings
 {
