@@ -80,6 +80,7 @@ bool VideoCaptureCamera::StartFeed()
 	feed = make_unique<VideoCapture>();
 	cout << "Opening device at \"" << Settingscast->StartPath << "\" with API id " << Settingscast->ApiID << endl;
 	feed->open(Settingscast->StartPath, Settingscast->ApiID);
+	RealCamera = Settingscast->StartPath.find("/dev/") != string::npos;
 	if (Settingscast->StartType == CameraStartType::ANY)
 	{
 		feed->set(CAP_PROP_FOURCC, VideoWriter::fourcc('M', 'J', 'P', 'G'));
@@ -90,7 +91,7 @@ bool VideoCaptureCamera::StartFeed()
 		//feed->set(CAP_PROP_AUTO_EXPOSURE, 3) ;
 		//feed->set(CAP_PROP_EXPOSURE, 300) ;
 		feed->set(CAP_PROP_BUFFERSIZE, 2);
-		if (Settings->IsMonochrome)
+		if (Settings->IsMonochrome && RealCamera)
 		{
 			feed->set(CAP_PROP_CONVERT_RGB, 0);
 		}
@@ -152,8 +153,15 @@ bool VideoCaptureCamera::Read()
 		Camera::Read();
 		if (Settings->IsMonochrome)
 		{
-			Mat temp = imdecode(LastFrameDistorted, IMREAD_GRAYSCALE);
-			temp.copyTo(LastFrameDistorted);
+			if (RealCamera)
+			{
+				Mat temp = imdecode(LastFrameDistorted, IMREAD_GRAYSCALE);
+				temp.copyTo(LastFrameDistorted);
+			}
+			else
+			{
+				cvtColor(LastFrameDistorted, LastFrameDistorted, COLOR_BGR2GRAY);
+			}
 		}
 	}
 	else

@@ -131,15 +131,15 @@ bool Camera::Read()
 void Camera::Undistort()
 {
 	
+	#if 0
+	double resolution_multiplier = Settings->UndistortFocalLengthMuliply;
+	#else
+	double resolution_multiplier = 1;
+	#endif
+	Size rescaled_resolution = Size2d(Settings->Resolution)*resolution_multiplier;
 	if (!HasUndistortionMaps)
 	{
 		//assert(Settings->IsMono());
-		#if 0
-		double resolution_multiplier = Settings->UndistortFocalLengthMuliply;
-		#else
-		double resolution_multiplier = 1;
-		#endif
-		Size rescaled_resolution = Size2d(Settings->Resolution)*resolution_multiplier;
 		Size cammatsz = Settings->Lenses[0].CameraMatrix.size();
 		if (cammatsz.height != 3 || cammatsz.width != 3)
 		{
@@ -200,29 +200,30 @@ void Camera::Undistort()
 		}
 		#endif
 
-		UndistMaps.first = UMat(rescaled_resolution, CV_32FC1); UndistMaps.second = UMat(rescaled_resolution, CV_32FC1);
+		UndistMaps.resize(LensesUndistorted.size());
 		
 		for (size_t i = 0; i < Settings->Lenses.size(); i++)
 		{
-
 			auto &lens = Settings->Lenses[i];
 			auto &lens_undist = LensesUndistorted[i];
+			//UndistMaps[i].first = UMat(lens_undist.ROI.size(), CV_32FC1); UndistMaps[i].second = UMat(lens_undist.ROI.size(), CV_32FC1);
 			Mat map1(lens_undist.ROI.size(), CV_32FC1), map2(lens_undist.ROI.size(), CV_32FC1);
-
 			initUndistortRectifyMap(lens.CameraMatrix, lens.distanceCoeffs, R[i], 
 			lens_undist.CameraMatrix, lens_undist.ROI.size(), map1.type(), map1, map2);
-			map1 += lens.ROI.x;
-			map2 += lens.ROI.y;
-			map1.copyTo(UndistMaps.first(lens_undist.ROI));
-			map2.copyTo(UndistMaps.second(lens_undist.ROI));
+			map1.copyTo(UndistMaps[i].first);
+			map2.copyTo(UndistMaps[i].second);
 			//lens_undist.CameraToLens = Affine3d(lens_undist.CameraToLens.rotation() * R[i].inv(), lens_undist.CameraToLens.translation());
 		}
 		HasUndistortionMaps = true;
 	}
 	try
 	{
-		remap(LastFrameDistorted, LastFrameUndistorted, 
-			UndistMaps.first, UndistMaps.second, INTER_LINEAR);
+		LastFrameUndistorted = UMat(rescaled_resolution, LastFrameDistorted.type());
+		for (size_t i = 0; i < LensesUndistorted.size(); i++)
+		{
+			remap(LastFrameDistorted(Settings->Lenses[i].ROI), LastFrameUndistorted(LensesUndistorted[i].ROI), 
+				UndistMaps[i].first, UndistMaps[i].second, INTER_LINEAR);
+		}
 	}
 	catch(const std::exception& e)
 	{

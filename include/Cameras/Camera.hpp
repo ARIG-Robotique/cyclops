@@ -50,7 +50,7 @@ protected:
 	std::string Name;
 	bool HasUndistortionMaps;
 	
-	std::pair<cv::UMat, cv::UMat> UndistMaps;
+	std::vector<std::pair<cv::UMat, cv::UMat>> UndistMaps;
 	cv::UMat LastFrameDistorted, LastFrameUndistorted;
 	std::optional<std::chrono::steady_clock::time_point> record_start;
 	std::unique_ptr<cv::VideoWriter> RecordOutput;
