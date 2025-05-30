@@ -6,9 +6,9 @@
 using namespace std;
 using namespace cv;
 
-Rect2d InkscapeToRect(double tlx, double tly, bool vertical)
+Rect2d InkscapeToRect(double tlx, double tly, bool vertical, Size2d extent)
 {
-	static double width = 0.375, height = 0.075;
+	double &width = extent.width, &height = extent.height;
 	double dx = (vertical ? height/2 : width/2);
 	double dy = (vertical ? width/2 : height/2);
 	double cx = tlx - 1.5 + dx;
@@ -25,29 +25,48 @@ PostProcessZone::PostProcessZone(CDFRExternal* InOwner)
 
 void PostProcessZone::Reset()
 {
+	Size2d StockExtent(0.375, 0.075), BigZone(0.450, 0.450), SmallZone(0.450, 0.150);
 	array<Rect2d, 5> PositionsStocks = {
-		InkscapeToRect(1.9875, 0.2375, false),	//Nord Est
-		InkscapeToRect(2.8875, 0.4875, true),	//Est Nord
-		InkscapeToRect(1.7125, 1.0125, false),	//Centre Est
-		InkscapeToRect(2.8875, 1.4215, true),	//Est Sud
-		InkscapeToRect(2.0375, 1.7125, false)	//Sud Est
-	};	
-	array<string, 10> names = {"Bleu reserve", "Bleu haut droite", "Bleu milieu centre", "Bleu bas droite", "Bleu bas centre", 
-		"Jaune reserve", "Jaune haut gauche", "Jaune milieu centre", "Jaune bas gauche", "Jaune bas centre"};
+		InkscapeToRect(1.9875, 0.2375, false, StockExtent),	//Nord Est
+		InkscapeToRect(2.8875, 0.4875, true, StockExtent),	//Est Nord
+		InkscapeToRect(1.7125, 1.0125, false, StockExtent),	//Centre Est
+		InkscapeToRect(2.8875, 1.4215, true, StockExtent),	//Est Sud
+		InkscapeToRect(2.0375, 1.7125, false, StockExtent)	//Sud Est
+	};
+	array<Rect2d, 4> PositionsBlueZones = {
+		InkscapeToRect(1.55, 1.55, false, BigZone),
+		InkscapeToRect(0, 0.9, false, BigZone),
+		InkscapeToRect(2, 1.85, false, SmallZone),
+		InkscapeToRect(0, 1.85, false, SmallZone)
+	};
+	array<string, 18> names = {"Bleu reserve", "Bleu haut droite", "Bleu milieu centre", "Bleu bas droite", "Bleu bas centre", 
+		"Jaune reserve", "Jaune haut gauche", "Jaune milieu centre", "Jaune bas gauche", "Jaune bas centre", 
+		"Gros bleu centre", "Gros bleu gauche", "Petit bleu droite", "Petit bleu gauche",
+		"Gros jaune centre", "Gros jaune droite", "Petit jaune gauche", "Petit jaune droite"
+	};
+	assert(names.size() == Zones.size());
 	for (size_t i = 0; i < Zones.size(); i++)
 	{
 		auto& stock = Zones[i];
 		auto &position = stock.position;
 		bool isstock = i<10;
-		bool west;
+		bool flip;
 		if (isstock)
 		{
-			west = i >= PositionsStocks.size();
+			flip = i >= PositionsStocks.size();
 			stock.position = PositionsStocks[i%PositionsStocks.size()];
 			stock.radius = 0.25;
 		}
+		else
+		{
+			size_t newidx = i-PositionsStocks.size()*2;
+			flip = newidx>=PositionsBlueZones.size();
+			stock.position = PositionsBlueZones[newidx%PositionsBlueZones.size()];
+			stock.radius = 0.2;
+		}
 		
-		if (west)
+		
+		if (flip)
 		{
 			position.x = -position.x-position.width;
 		}
@@ -117,7 +136,7 @@ void PostProcessZone::Process(std::vector<CameraImageData> &ImageData, std::vect
 			zone.Contacting = true;
 		}
 		
-		ObjectData obj(ObjectType::Stock2025, zone.name, 
+		ObjectData obj(zone.IsStock ? ObjectType::Stock2025 : ObjectType::DropZone2025, zone.name, 
 			Affine3d(Vec3d::all(0), Vec3d(zone.position.x+zone.position.width/2, zone.position.y+zone.position.height/2, 0)));
 		bool intact = zone.LastContactEnd == ObjectData::TimePoint();
 		obj.metadata["intact"] = intact;
@@ -129,6 +148,7 @@ void PostProcessZone::Process(std::vector<CameraImageData> &ImageData, std::vect
 		auto time_spent_near = zone.TimeSpentContacting + (zone.Contacting ? zone.LastContactEnd - zone.LastContactStart : chrono::seconds(0));
 		obj.metadata["timeSpentNear"] = chrono::duration_cast<chrono::milliseconds>(time_spent_near).count();
 		obj.metadata["contacting"] = zone.Contacting;
+		obj.metadata["somethingHigh"] = nlohmann::json();
 		
 		Objects.push_back(obj);
 	}

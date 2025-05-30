@@ -546,7 +546,7 @@ void JsonListener::HandleQuery(const json &Query)
 		}
 		goto send;
 	}
-	if (ActionStr == "START")
+	if (ActionStr == "START") //{"action":"START"}
 	{
 		CDFRCommon::ExternalSettings.record = true;
 		CDFRCommon::ExternalSettings.RecordInterval = 0;
@@ -572,7 +572,7 @@ void JsonListener::HandleQuery(const json &Query)
 		Response["status"] = "OK";
 		goto send;
 	}
-	if (ActionStr == "END")
+	if (ActionStr == "END") //{"action":"END"}
 	{
 		CDFRCommon::ExternalSettings.record = false;
 		CDFRCommon::InternalSettings.record = false;
@@ -588,13 +588,13 @@ void JsonListener::HandleQuery(const json &Query)
 		goto send;
 	}
 	
-	if (ActionStr == "EXIT")
+	if (ActionStr == "EXIT") //{"action":"EXIT"}
 	{
 		killed = true;
 		Response["status"] = "OK";
 		goto send;
 	}
-	if (ActionStr == "STATUS")
+	if (ActionStr == "STATUS") //{"action":"STATUS"}
 	{
 		Response["status"] = "OK";
 		Response["data"]["parent"] = Parent ? "OK" : "ERROR";
@@ -715,14 +715,14 @@ void JsonListener::HandleQuery(const json &Query)
 				Response["status"] = "ERROR";
 				Response["errorMessage"] = "Error: data.value: Team must be specified";
 			} else {
-				Parent->ExternalRunner->SetTeamLock(StringToTeam(Query["data"]["team"]));
+				Parent->ExternalRunner->SetTeamLock(StringToTeam(Query.at("data").at("team")));
 				Response["status"] = "OK";
 			}
 			goto send;
 		}
-		if (ActionStr == "LOCK_CAMERA")
+		if (ActionStr == "LOCK_CAMERA") //{"action":"LOCK_CAMERA","data":{"value":true}}
 		{
-			Parent->ExternalRunner->SetCameraLock(Query.value("data.value", false));
+			Parent->ExternalRunner->SetCameraLock(Query.at("data").at("value"));
 			Response["status"] = "OK";
 			goto send;
 		}

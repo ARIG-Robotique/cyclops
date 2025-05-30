@@ -85,33 +85,33 @@ struct ObjectTypeConfig
 
 const std::map<ObjectType, ObjectTypeConfig> ObjectTypeNames =
 {
-	{ObjectType::Unknown, 			{"Unknown",				"INCONNU"				,0	,0	,0}},
-	{ObjectType::All, 				{"All",					"TOUT"					,0	,0	,0}},
-	{ObjectType::Data2D, 			{"Data2D",				"DATA2D"				,0	,0	,0}},
-	{ObjectType::Data3D, 			{"Data3D",				"DATA3D"				,0	,0	,0}},
-	{ObjectType::Aruco, 			{"Aruco",				"ARUCO"					,0	,0	,0}},
-	{ObjectType::Yolo, 				{"Yolo",				"YOLO"					,0	,0	,0}},
-	{ObjectType::Tag, 				{"Tag",					"TAG"					,1	,1	,1}},
-	{ObjectType::ReferenceAbsolute, {"Reference Absolute",	"REFERENCE_ABSOLUE"		,0	,0	,0}},
-	{ObjectType::ReferenceRelative, {"Reference Relative",	"REFERENCE_RELATIVE"	,1	,1	,1}},
-	{ObjectType::Camera, 			{"Camera",				"CAMERA"				,1	,1	,0}},
-	{ObjectType::Object, 			{"Object",				"OBJET"					,1	,1	,1}},
-	{ObjectType::Robot, 			{"Robot",				"ROBOT"					,1	,1	,1}},
-	{ObjectType::Pami, 				{"PAMI",				"PAMI"					,1	,1	,1}},
-	{ObjectType::Lens, 				{"Lens",				"LENTILLE"				,1	,1	,0}},
+	{ObjectType::Unknown, 			{"Unknown",				"INCONNU",				0, 0, 0}},
+	{ObjectType::All, 				{"All",					"TOUT",					0, 0, 0}},
+	{ObjectType::Data2D, 			{"Data2D",				"DATA2D",				0, 0, 0}},
+	{ObjectType::Data3D, 			{"Data3D",				"DATA3D",				0, 0, 0}}, //{"action":"DATA","data":{"filters":["DATA3D"]}}
+	{ObjectType::Aruco, 			{"Aruco",				"ARUCO",				0, 0, 0}},
+	{ObjectType::Yolo, 				{"Yolo",				"YOLO",					0, 0, 0}},
+	{ObjectType::Tag, 				{"Tag",					"TAG",					1, 1, 1}},
+	{ObjectType::ReferenceAbsolute, {"Reference Absolute",	"REFERENCE_ABSOLUE",	0, 0, 0}},
+	{ObjectType::ReferenceRelative, {"Reference Relative",	"REFERENCE_RELATIVE",	1, 1, 1}},
+	{ObjectType::Camera, 			{"Camera",				"CAMERA",				1, 1, 0}},
+	{ObjectType::Object, 			{"Object",				"OBJET",				1, 1, 1}},
+	{ObjectType::Robot, 			{"Robot",				"ROBOT",				1, 1, 1}},
+	{ObjectType::Pami, 				{"PAMI",				"PAMI",					1, 1, 1}},
+	{ObjectType::Lens, 				{"Lens",				"LENTILLE",				1, 1, 0}},
 	
-	{ObjectType::SolarPanel2024, 	{"Solar panel",			"PANNEAU_SOLAIRE"		,0	,1	,1}},
-	{ObjectType::Fragile2024, 		{"Fragile",				"YOLO3D"				,1	,0	,1}},
-	{ObjectType::Resistant2024, 	{"Resistant",			"YOLO3D"				,1	,0	,1}},
-	{ObjectType::Pot2024, 			{"Pot",					"YOLO3D"				,1	,0	,1}},
-	{ObjectType::PottedPlant2024, 	{"Potted plant",		"YOLO3D"				,1	,0	,1}},
-	{ObjectType::PlantStock2024,	{"PlantStock",			"STOCK_PLANTES"			,0	,0	,1}},
-	{ObjectType::Hangar2024,		{"Hangar",				"HANGAR"				,0	,0	,1}},
-	{ObjectType::Jardiniere2024,	{"Jardiniere",			"JARDINIERE"			,0	,0	,1}},
+	{ObjectType::SolarPanel2024, 	{"Solar panel",			"PANNEAU_SOLAIRE",		0, 1, 1}},
+	{ObjectType::Fragile2024, 		{"Fragile",				"YOLO3D",				1, 0, 1}},
+	{ObjectType::Resistant2024, 	{"Resistant",			"YOLO3D",				1, 0, 1}},
+	{ObjectType::Pot2024, 			{"Pot",					"YOLO3D",				1, 0, 1}},
+	{ObjectType::PottedPlant2024, 	{"Potted plant",		"YOLO3D",				1, 0, 1}},
+	{ObjectType::PlantStock2024,	{"PlantStock",			"STOCK_PLANTES",		0, 0, 1}},
+	{ObjectType::Hangar2024,		{"Hangar",				"HANGAR",				0, 0, 1}},
+	{ObjectType::Jardiniere2024,	{"Jardiniere",			"JARDINIERE",			0, 0, 1}},
 
-	{ObjectType::DropZone2025, 		{"Drop Zone",			"ZONE_DEPOSE"			,1	,0	,1}},
-	{ObjectType::Stock2025,		 	{"Stock",				"STOCK"					,1	,0	,1}},
-	{ObjectType::Team, 				{"Team",				"EQUIPE"				,0	,0	,0}}
+	{ObjectType::DropZone2025, 		{"Drop Zone",			"ZONE_DEPOSE",			0, 0, 1}},
+	{ObjectType::Stock2025,		 	{"Stock",				"STOCK",				0, 0, 1}},
+	{ObjectType::Team, 				{"Team",				"EQUIPE",				0, 0, 0}}
 };
 
 std::ostream& operator << (std::ostream& out, ObjectType Type);

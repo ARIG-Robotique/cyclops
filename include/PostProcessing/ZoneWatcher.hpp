@@ -15,7 +15,7 @@ class PostProcessZone : public PostProcess
 		ObjectData::Clock::duration TimeSpentContacting;
 		bool Contacting=false, ContactThisTick=false;
 	};
-	std::array<ZoneStatus, 10> Zones;
+	std::array<ZoneStatus, 18> Zones;
 public:
 	PostProcessZone(CDFRExternal* InOwner);
 
