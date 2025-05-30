@@ -44,7 +44,8 @@ std::optional<GLObject> ObjectData::ToGLObject() const
 		{ObjectType::Pami,				MeshNames::toptracker},
 		{ObjectType::Axis,				MeshNames::axis},
 		{ObjectType::Plank2025,			MeshNames::plank2025},
-		{ObjectType::Can2025,			MeshNames::can2025}
+		{ObjectType::Can2025,			MeshNames::can2025},
+		{ObjectType::Stock2025,			MeshNames::axis},
 	};
 
 	auto foundmesh = PacketToMesh.find(type);

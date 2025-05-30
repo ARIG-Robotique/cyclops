@@ -5,6 +5,7 @@
 #include <array>
 #include <memory>
 #include <filesystem>
+#include <atomic>
 
 #include <Communication/ProcessedTypes.hpp>
 #include <ArucoPipeline/ObjectIdentity.hpp>
@@ -24,6 +25,7 @@ private:
 	bool Idle = false, LastIdle = false;
 	//Sleep : If we have no data or noone is seeing (no clients + no visualizers), enter sleep
 	bool Sleep = false, LastSleep = false;
+	std::atomic_bool ResetTemporalData = false;
 
 	//Settings
 	ObjectData::TimePoint LastRecordTime;
@@ -84,6 +86,11 @@ public:
 	void SetTeamLock(CDFRTeam value)
 	{
 		LockedTeam = value;
+	}
+
+	void DoResetTemporalData()
+	{
+		ResetTemporalData = true;
 	}
 
 	CDFRTeam GetTeam();

@@ -24,8 +24,7 @@
 #include <Cameras/VideoCaptureCamera.hpp>
 
 #include <PostProcessing/YoloDeflicker.hpp>
-#include <PostProcessing/StockPlants.hpp>
-#include <PostProcessing/Jardinieres.hpp>
+#include <PostProcessing/ZoneWatcher.hpp>
 #include <PostProcessing/SolarPanel.hpp>
 
 #include <Transport/thread-rename.hpp>
@@ -150,7 +149,7 @@ void CDFRExternal::ThreadEntryPoint()
 	YoloDetector = make_unique<YoloDetect>("cdfr", 4);
 
 	//PostProcesses.emplace_back(make_unique<PostProcessYoloDeflicker>(this));
-	//PostProcesses.emplace_back(make_unique<PostProcessStockPlants>(this));
+	PostProcesses.emplace_back(make_unique<PostProcessZone>(this));
 	//PostProcesses.emplace_back(make_unique<PostProcessJardinieres>(this));
 	//PostProcesses.emplace_back(make_unique<PostProcessSolarPanel>(this));
 
@@ -207,6 +206,15 @@ void CDFRExternal::ThreadEntryPoint()
 	
 	while (!killed)
 	{
+		if (ResetTemporalData)
+		{
+			ResetTemporalData = false;
+			for (auto &pp : PostProcesses)
+			{
+				pp->Reset();
+			}
+		}
+		
 		DetectionFrameCounter.GetDeltaTime();
 		bool LowPower = false;
 		if(Idle)

@@ -18,6 +18,8 @@ public:
 	virtual ~PostProcess();
 
 	std::vector<ObjectData> GetEnemyRobots(std::vector<ObjectData> &Objects) const;
+
+	virtual void Reset();
 	
 	virtual void Process(std::vector<CameraImageData> &ImageData, std::vector<CameraFeatureData> &FeatureData, std::vector<ObjectData> &Objects);
 };

@@ -562,6 +562,11 @@ void JsonListener::HandleQuery(const json &Query)
 				{
 					Parent->ExternalRunner->SetTeamLock(team);
 				}
+				else
+				{
+					cerr << "Could not lock team ! team is unknown !" <<endl;
+				}
+				Parent->ExternalRunner->DoResetTemporalData();
 			}
 		}
 		Response["status"] = "OK";

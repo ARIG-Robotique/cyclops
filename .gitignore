@@ -5,6 +5,7 @@ markers/**
 config.*
 *.blend1
 *.mp4
+*.avi
 .idea/**
 Recordings/**
 ScreenCapture/**
