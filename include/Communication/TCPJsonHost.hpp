@@ -4,6 +4,7 @@
 #include <set>
 #include <thread>
 #include <atomic>
+#include <optional>
 #include <Transport/GenericTransport.hpp>
 
 class TCPJsonHost
@@ -25,5 +26,5 @@ public:
 	}
 
 private:
-	void ThreadEntryPoint(GenericTransport::NetworkInterface interface);
+	void ThreadEntryPoint(std::optional<GenericTransport::NetworkInterface> interface);
 };

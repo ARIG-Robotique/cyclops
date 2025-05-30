@@ -10,11 +10,13 @@
 
 using namespace std;
 
-void TCPJsonHost::ThreadEntryPoint(GenericTransport::NetworkInterface interface)
+void TCPJsonHost::ThreadEntryPoint(optional<GenericTransport::NetworkInterface> interface)
 {
-	string ThreadName = string("TCP Json Host on ") + interface.name;
+	string ThreadName = interface.has_value() ? string("TCP Json Host on ") + interface.value().name : string("TCP Json Host");
 	SetThreadName(ThreadName.c_str());
-	unique_ptr<TCPTransport> Transport = make_unique<TCPTransport>(true, "0.0.0.0", Port, interface.name);
+	
+	
+	unique_ptr<TCPTransport> Transport = make_unique<TCPTransport>(true, "0.0.0.0", Port, interface.has_value() ? interface.value().name : "");
 	set<shared_ptr<JsonListener>> Listeners;
 	while (!killed)
 	{
@@ -52,6 +54,7 @@ TCPJsonHost::TCPJsonHost(int InPort)
 	:Port(InPort)
 {
 	auto interfaces = GenericTransport::GetInterfaces();
+	#if 0
 	for (size_t i=0; i<interfaces.size(); i++)
 	{
 		auto& ni = interfaces[i];
@@ -60,6 +63,11 @@ TCPJsonHost::TCPJsonHost(int InPort)
 		thread* sendthread = new thread(&TCPJsonHost::ThreadEntryPoint, this, ni);
 		ThreadHandles.emplace(sendthread);
 	}
+	#else
+	cout << "Starting TCP Json host, not bound to a specific interface" << endl;
+	thread* sendthread = new thread(&TCPJsonHost::ThreadEntryPoint, this, nullopt);
+	ThreadHandles.emplace(sendthread);
+	#endif
 }
 
 TCPJsonHost::~TCPJsonHost()
@@ -69,5 +77,4 @@ TCPJsonHost::~TCPJsonHost()
 	{
 		thread->join();
 	}
-	
 }
