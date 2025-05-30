@@ -35,6 +35,11 @@ vector<ObjectData> PostProcess::GetEnemyRobots(vector<ObjectData> &Objects) cons
 	return robots;
 }
 
+void PostProcess::Reset()
+{
+
+}
+
 void PostProcess::Process(vector<CameraImageData> &ImageData, vector<CameraFeatureData> &FeatureData, vector<ObjectData> &Objects)
 {
 	(void) ImageData;

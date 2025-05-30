@@ -31,7 +31,7 @@ namespace CDFRCommon
 		bool direct = true;
 		bool v3d = false;
 		bool record = false;
-		int RecordInterval = 0;
+		int RecordInterval = 1;
 
 		bool ArucoDetection = true;
 		bool SegmentedDetection = true;
