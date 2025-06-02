@@ -2,7 +2,8 @@
 	"Calibrations": [
 		{
 			"Want Undistortion" : false,
-			"Undistortion Focal Length Multiplier" : 1.5,
+			"Undistortion Focal Length Divider" : 1.5,
+			"Undistortion Resolution Multiplier" : 1.0,
 			"Lenses": [
 				{
 					"Camera Matrix": {

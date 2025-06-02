@@ -35,7 +35,8 @@ struct CameraSettings
 	uint8_t FramerateDivider;
 
 	bool WantUndistortion;
-	double UndistortFocalLengthMuliply;
+	double UndistortFocalLengthDivider;
+	double UndistortResolutionMultiplier;
 	bool IsMonochrome;
 
 	//single lens settings, for side-by-side cams
@@ -46,7 +47,8 @@ struct CameraSettings
 	std::vector<unsigned int> CameraLockToggles;
 
 	CameraSettings()
-	:Resolution(-1,-1), Framerate(0), FramerateDivider(1), WantUndistortion(false), UndistortFocalLengthMuliply(1.0), IsMonochrome(false)
+	:Resolution(-1,-1), Framerate(0), FramerateDivider(1), WantUndistortion(false), 
+	UndistortFocalLengthDivider(1.0), UndistortResolutionMultiplier(1.0), IsMonochrome(false)
 	{}
 
 	virtual ~CameraSettings(){};

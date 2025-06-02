@@ -10,6 +10,28 @@
 using namespace cv;
 using namespace std;
 
+cv::Affine3d ResolvedLocation::IntersectMultiview(std::vector<ResolvedLocation> Views)
+{
+	if (Views.size() == 1)
+	{
+		return Views[0].WorldToObject;
+	}
+	
+	std::sort(Views.begin(), Views.end());
+	ResolvedLocation &best = Views[Views.size()-1];
+	ResolvedLocation &secondbest = Views[Views.size()-2];
+	Vec3d l1p = best.WorldToObject.translation();
+	Vec3d l2p = secondbest.WorldToObject.translation();
+	Vec3d l1d = NormaliseVector(best.WorldToCamera.translation() - l1p);
+	Vec3d l2d = NormaliseVector(secondbest.WorldToCamera.translation() - l2p);
+	Vec3d l1i, l2i;
+	ClosestPointsOnTwoLine(l1p, l1d, l2p, l2d, l1i, l2i);
+	Vec3d locfinal = (l1i*best.score+l2i*secondbest.score)/(best.score + secondbest.score);
+	Affine3d combinedloc = best.WorldToObject;
+	combinedloc.translation(locfinal);
+	return combinedloc;
+}
+
 ObjectTracker::ObjectTracker(/* args */)
 {
 	assert(ArucoMap.size() == ArucoSizes.size());
@@ -42,21 +64,7 @@ void ObjectTracker::UnregisterTrackedObject(shared_ptr<TrackedObject> object)
 	
 }
 
-struct ResolvedLocation
-{
-	float score;
-	Affine3d AbsLoc;
-	Affine3d CameraLoc;
 
-	ResolvedLocation(float InScore, Affine3d InObjLoc, Affine3d InCamLoc)
-	:score(InScore), AbsLoc(InObjLoc), CameraLoc(InCamLoc)
-	{}
-
-	bool operator<(ResolvedLocation& other)
-	{
-		return score < other.score;
-	}
-};
 
 bool ObjectTracker::SolveCameraLocation(CameraFeatureData& CameraData)
 {
@@ -148,22 +156,11 @@ void ObjectTracker::SolveLocationsPerObject(vector<CameraFeatureData>& CameraDat
 			}
 			if (locations.size() == 1)
 			{
-				object->SetLocation(locations[0].AbsLoc, Tick);
+				object->SetLocation(locations[0].WorldToObject, Tick);
 				//cout << "Object " << object->Name << " is at location " << objects[ObjIdx]->GetLocation().translation() << " / score: " << locations[0].score << ", seen by 1 camera" << endl;
 				continue;
 			}
-			std::sort(locations.begin(), locations.end());
-			ResolvedLocation &best = locations[locations.size()-1];
-			ResolvedLocation &secondbest = locations[locations.size()-2];
-			Vec3d l1p = best.AbsLoc.translation();
-			Vec3d l2p = secondbest.AbsLoc.translation();
-			Vec3d l1d = NormaliseVector(best.CameraLoc.translation() - l1p);
-			Vec3d l2d = NormaliseVector(secondbest.CameraLoc.translation() - l2p);
-			Vec3d l1i, l2i;
-			ClosestPointsOnTwoLine(l1p, l1d, l2p, l2d, l1i, l2i);
-			Vec3d locfinal = (l1i*best.score+l2i*secondbest.score)/(best.score + secondbest.score);
-			Affine3d combinedloc = best.AbsLoc;
-			combinedloc.translation(locfinal);
+			auto combinedloc = ResolvedLocation::IntersectMultiview(locations);
 			object->SetLocation(combinedloc, Tick);
 			//cout << "Object " << object->Name << " is at location " << objects[ObjIdx]->GetLocation().translation() << " / score: " << best.score+secondbest.score << ", seen by " << locations.size() << " cameras" << endl;
 		}

@@ -2,6 +2,7 @@
 
 #include <PostProcessing/PostProcess.hpp>
 #include <array>
+#include <atomic>
 
 class PostProcessZone : public PostProcess
 {
@@ -14,6 +15,7 @@ class PostProcessZone : public PostProcess
 		ObjectData::TimePoint LastContactStart, LastContactEnd;
 		ObjectData::Clock::duration TimeSpentContacting;
 		bool Contacting=false, ContactThisTick=false;
+		std::array<std::atomic<int>, 10> depthBuckets;
 	};
 	std::array<ZoneStatus, 18> Zones;
 public:

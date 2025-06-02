@@ -131,8 +131,8 @@ bool Camera::Read()
 void Camera::Undistort()
 {
 	
-	#if 0
-	double resolution_multiplier = Settings->UndistortFocalLengthMuliply;
+	#if 1
+	double resolution_multiplier = Settings->UndistortResolutionMultiplier;
 	#else
 	double resolution_multiplier = 1;
 	#endif
@@ -159,13 +159,13 @@ void Camera::Undistort()
 
 			lens_undist.CameraMatrix = Settings->Lenses[i].CameraMatrix.clone();
 			
-			float focal_length_multiplier = Settings->UndistortFocalLengthMuliply;
-			
+			float focal_length_multiplier = Settings->UndistortFocalLengthDivider;
+			double& cx = lens_undist.CameraMatrix.at<double>(0,2), &cy = lens_undist.CameraMatrix.at<double>(1,2);
 			lens_undist.CameraMatrix.at<double>(0,0) *= resolution_multiplier/focal_length_multiplier;
 			lens_undist.CameraMatrix.at<double>(1,1) *= resolution_multiplier/focal_length_multiplier;
-			lens_undist.CameraMatrix.at<double>(0,2) *= resolution_multiplier;
-			lens_undist.CameraMatrix.at<double>(1,2) *= resolution_multiplier;
-
+			cx *= resolution_multiplier;
+			cy *= resolution_multiplier;
+			cout << "cx = " << cx << " cy = " << cy << endl;
 			lens_undist.distanceCoeffs = Mat::zeros(4,1, CV_64F);
 
 			lens_undist.ROI = Rect2i(lens.ROI.tl()*resolution_multiplier, lens.ROI.br()*resolution_multiplier);
@@ -187,6 +187,7 @@ void Camera::Undistort()
 			auto T = AffineToUse.translation();
 			Mat &P1 = LensesUndistorted[0].CameraMatrix, &P2 = LensesUndistorted[1].CameraMatrix;
 			Mat &Q = DisparityToDepth;
+			cout << " C1 = " << P1 << " C2 = " << P2 <<  endl;
 			stereoRectify(P1, lens1.distanceCoeffs, P2, lens2.distanceCoeffs,
 				lens1.ROI.size(), R, T, R1, R2, P1, P2, Q, 
 				CALIB_ZERO_DISPARITY, -1, lens1.ROI.size(), &LensesUndistorted[0].StereoROI, &LensesUndistorted[1].StereoROI);
@@ -197,6 +198,8 @@ void Camera::Undistort()
 			LensesUndistorted[1].CameraToLens = lens1.CameraToLens*Lens2ToLens1_new.inv();
 
 			cout << " R = " << R << " R_new = " << R_new << " T = " << T << " T_new = " << T_new << endl;
+
+			cout << "Q = " << Q << " P1 = " << P1 << " P2 = " << P2 <<  endl;
 		}
 		#endif
 

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 #include <opencv2/core.hpp>
 #include <opencv2/core/affine.hpp>
 #include <ArucoPipeline/ArucoTypes.hpp>
@@ -39,6 +40,14 @@ struct LensFeatureData
 	void Clear();
 };
 
+struct DepthData
+{
+	cv::Mat DepthMap;
+	cv::Mat CameraMatrix, DistortionCoefficients;
+	cv::Affine3d CameraToDepth; //camera to reference lens used for depth;
+};
+
+
 struct CameraFeatureData
 {
 	std::string CameraName; 		//Filled by CopyEssentials from CameraImageData
@@ -51,6 +60,8 @@ struct CameraFeatureData
 
 	std::vector<std::vector<cv::Point3d>> ArucoCornersStereo; //Marker corners, in lens 0 frame of reference
 	std::vector<int> ArucoIndicesStereo;
+
+	std::optional<DepthData> Depth;
 
 	void Clear();
 	void CopyEssentials(const struct CameraImageData &source);

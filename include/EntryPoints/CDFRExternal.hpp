@@ -94,6 +94,10 @@ public:
 	}
 
 	CDFRTeam GetTeam();
+	CDFRTeam GetLastTeam()
+	{
+		return LastTeam;
+	}
 
 	virtual void ThreadEntryPoint() override;
 

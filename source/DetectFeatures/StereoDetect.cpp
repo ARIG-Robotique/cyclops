@@ -17,15 +17,18 @@ Ptr<StereoBM> Matcher;
 Ptr<ximgproc::DisparityWLSFilter> Filter;
 Ptr<StereoMatcher> RightMatcher;
 
+#define USE_FILTERS 1
+
 void MakeMatchers()
 {
 	if (!Matcher)
 	{
-		Matcher = StereoBM::create(16*8, 21);
+		Matcher = StereoBM::create(16*2, 21);
 		//Matcher->setTextureThreshold(1);
 		//Matcher->setPreFilterType(StereoBM::PREFILTER_XSOBEL);
 		//Matcher->setUniquenessRatio(2);
 	}
+	#if USE_FILTERS
 	if (!Filter && Matcher)
 	{
 		Filter = ximgproc::createDisparityWLSFilter(Matcher);
@@ -34,6 +37,7 @@ void MakeMatchers()
 	{
 		RightMatcher = ximgproc::createRightMatcher(Matcher);
 	}
+	#endif
 }
 
 
@@ -55,12 +59,28 @@ void DetectStereo(const CameraImageData &InData, CameraFeatureData& OutData)
 	//Matcher->setPreFilterCap(50);
 	UMat left_image = InData.Image(InData.lenses[0].ROI), right_image = InData.Image(InData.lenses[1].ROI);
 	Matcher->compute(left_image, right_image, left_disparity);
+	#if USE_FILTERS
 	RightMatcher->compute(right_image, left_image, right_disparity);
 	Filter->filter(left_disparity, left_image, disparity, right_disparity, Rect(), right_image);
-	d_norm = disparity * 50; 
+	#else
+	disparity = left_disparity;
+	#endif
+	DepthData depth;
+	Affine3d Lens1ToLens2 = InData.lenses[0].CameraToLens.inv() * InData.lenses[1].CameraToLens;
+	Point3d L1L2 = Lens1ToLens2.translation();
+	reprojectImageTo3D(disparity, depth.DepthMap, InData.DisparityToDepth, false);
+	depth.DepthMap /= L1L2.x*1.5; //not sure about that
+	depth.CameraMatrix = InData.lenses[0].CameraMatrix;
+	depth.CameraToDepth = InData.lenses[0].CameraToLens;
+	depth.DistortionCoefficients = InData.lenses[0].distanceCoeffs;
+	OutData.Depth = depth;
+	Point2i middle = disparity.size()/2;
+	cout << "Disparity in the middle " << disparity.at<int16_t>(middle) << ", type " << disparity.type() <<
+	", 3D in the middle " << depth.DepthMap.at<Point3f>(middle) <<endl;
 	//normalize(disparity, d_norm, 255, 0, NORM_MINMAX, CV_8UC1);
 	//imshow("L", undistorted[0]);
 	//imshow("R", undistorted[1]);
+	d_norm = depth.DepthMap * 8.0;
 	imshow("Disparity", d_norm);
 	waitKey(1);
 }

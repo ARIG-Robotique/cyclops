@@ -5,6 +5,24 @@
 #include <ArucoPipeline/ArucoTypes.hpp>
 #include <array>
 
+struct ResolvedLocation
+{
+	float score;
+	cv::Affine3d WorldToObject;
+	cv::Affine3d WorldToCamera;
+
+	ResolvedLocation(float InScore, cv::Affine3d InObjLoc, cv::Affine3d InCamLoc)
+	:score(InScore), WorldToObject(InObjLoc), WorldToCamera(InCamLoc)
+	{}
+
+	bool operator<(ResolvedLocation& other)
+	{
+		return score < other.score;
+	}
+
+	static cv::Affine3d IntersectMultiview(std::vector<ResolvedLocation> Views);
+};
+
 //Class that handles the objects, and holds information about each tag's size
 //Registered objects will have their locations solved and turned into a vector of ObjectData for display and data sending
 class ObjectTracker

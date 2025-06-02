@@ -88,6 +88,11 @@ void PostProcessZone::Process(std::vector<CameraImageData> &ImageData, std::vect
 	for (auto &zone : Zones)
 	{
 		zone.ContactThisTick = false;
+		for (size_t i = 0; i < zone.depthBuckets.size(); i++)
+		{
+			zone.depthBuckets[i] = 0;
+		}
+		
 	}
 	
 	
@@ -99,6 +104,16 @@ void PostProcessZone::Process(std::vector<CameraImageData> &ImageData, std::vect
 		{
 			continue;
 		}
+		if (robot)
+		{
+			auto teamname = TeamNames.at(Owner->GetLastTeam()).JavaName;
+			if (obj.name.substr(0, teamname.size()) == teamname) //skip our robot from touching zones
+			{
+				continue;
+			}
+		}
+		
+		
 		for (auto &zone : Zones)
 		{
 			auto tl = zone.position.tl();
@@ -123,6 +138,42 @@ void PostProcessZone::Process(std::vector<CameraImageData> &ImageData, std::vect
 			}
 		}
 	}
+
+	for (size_t cameraidx = 0; cameraidx < FeatureData.size(); cameraidx++)
+	{
+		auto &fd = FeatureData[cameraidx];
+		if (!fd.Depth.has_value())
+		{
+			continue;
+		}
+		Affine3d WorldToDepth = fd.WorldToCamera * fd.Depth.value().CameraToDepth;
+		//cout << "Depth map type: " << fd.Depth.value().DepthMap.type() << endl;
+		assert(fd.Depth.value().DepthMap.type() == CV_32FC3);
+		fd.Depth.value().DepthMap.forEach<Point3f>(
+			[&WorldToDepth, this](Point3f &value, const int position[]) -> void {
+				if (!isnormal(value.x) || !isnormal(value.y) || !isnormal(value.z))
+				{
+					return;
+				}
+				Point3d WorldPos = WorldToDepth * value;
+				static double clipZ = 0.5;
+				
+				if (abs(WorldPos.x) > 1.5 || abs(WorldPos.y) > 1 || WorldPos.z < 0 || WorldPos.z > clipZ) //must be inside table
+				{
+					return;
+				}
+				Point2d WP2D(WorldPos.x, WorldPos.y);
+				for (auto &zone : Zones)
+				{
+					if (zone.position.contains(WP2D))
+					{
+						int bucket = floor(WorldPos.z/clipZ*zone.depthBuckets.size());
+						zone.depthBuckets[bucket]++;
+					}
+				}
+			}
+		);
+	}
 	
 	for (auto &zone : Zones)
 	{
@@ -135,6 +186,16 @@ void PostProcessZone::Process(std::vector<CameraImageData> &ImageData, std::vect
 		{
 			zone.Contacting = true;
 		}
+		for (size_t i = 0; i < zone.depthBuckets.size(); i++)
+		{
+			if (zone.depthBuckets[i] >0)
+			{
+				cout << "Zone " << zone.name << " had " << zone.depthBuckets[i] << " points in bucket " << i << endl;
+			}
+			
+		}
+		
+		
 		
 		ObjectData obj(zone.IsStock ? ObjectType::Stock2025 : ObjectType::DropZone2025, zone.name, 
 			Affine3d(Vec3d::all(0), Vec3d(zone.position.x+zone.position.width/2, zone.position.y+zone.position.height/2, 0)));
